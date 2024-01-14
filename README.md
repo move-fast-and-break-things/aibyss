@@ -2,10 +2,10 @@
 
 ## Setup
 
-Install [bun](https://bun.sh/) and make sure to install the dependencies:
+Install [node.js](https://nodejs.org/en) and make sure to install the dependencies:
 
 ```bash
-bun install
+npm ci
 ```
 
 ## Development Server
@@ -13,7 +13,7 @@ bun install
 Start the development server on `http://localhost:3000`:
 
 ```bash
-bun run dev
+npm run dev
 ```
 
 ## Production
@@ -21,13 +21,13 @@ bun run dev
 Build the application for production:
 
 ```bash
-bun run build
+npm run build
 ```
 
 Locally preview production build:
 
 ```bash
-bun run preview
+npm run preview
 ```
 
 Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
