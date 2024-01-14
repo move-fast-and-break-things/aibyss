@@ -23,9 +23,17 @@ function step(api) {
  */
 
 /**
+ * @typedef {object} Food
+ * @property {number} x
+ * @property {number} y
+ * @property {number} radius
+ */
+
+/**
  * @typedef {object} API
  * @property {Player} me
  * @property {Player[]} otherPlayers
+ * @property {Food[]} food
  * @property {MoveTowards} moveTowards
  * @property {MoveTo} moveTo
  */

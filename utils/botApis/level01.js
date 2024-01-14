@@ -8,6 +8,7 @@ function getBotApiV1() {
   return {
     me: global._player,
     otherPlayers: global._otherPlayers || [],
+    food: global._food || [],
     moveTowards: moveTo,
     moveTo,
   };

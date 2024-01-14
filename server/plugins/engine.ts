@@ -38,11 +38,30 @@ async function runBots(bots: botUtils.Bots, world: World) {
 
   for (const bot of Object.values(bots)) {
     const { code } = bot;
-    const actions = await runBot(code);
-    // TODO(yurij): sanitize actions
-    // TODO(yurij): limit actions to max actions per step
-    if (actions?.[0]?.type === "move") {
-      world.moveBot(bot.id, actions[0].x, actions[0].y);
+
+    const botObject = state.bots[bot.id];
+    const me = { x: botObject.x, y: botObject.y, radius: botObject.radius };
+    const otherPlayers = Object.values(state.bots)
+      .filter((b) => b.id !== bot.id)
+      .map((b) => ({ x: b.x, y: b.y, radius: b.radius }));
+    const food = state.food.map((f) => ({ x: f.x, y: f.y, radius: f.radius }));
+
+    try {
+      const preparedCode = `
+global._player = ${JSON.stringify(me)};
+global._otherPlayers = ${JSON.stringify(otherPlayers)};
+global._food = ${JSON.stringify(food)};
+
+${code}
+`;
+
+      const actions = await runBot(preparedCode);
+      if (actions?.[0]?.type === "move") {
+        world.moveBot(bot.id, actions[0].x, actions[0].y);
+      }
+    } catch (err) {
+      // TODO(yurij): notify user that their bot crashed
+      console.log(err);
     }
   }
 }
@@ -56,7 +75,7 @@ function startEngine() {
 
   setInterval(() => {
     runBots(bots, WORLD);
-  }, 1000);
+  }, 250);
 }
 
 export default defineNitroPlugin((nitroApp) => {
