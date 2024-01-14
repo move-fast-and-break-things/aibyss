@@ -1,4 +1,4 @@
-# Aibyss
+# Aibyss: code your AI to compete in a survival game
 
 ## Setup
 
