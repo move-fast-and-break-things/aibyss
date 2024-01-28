@@ -2,11 +2,9 @@
 
 ## Setup
 
-Install [node.js](https://nodejs.org/en) and make sure to install the dependencies:
-
-```bash
-npm ci
-```
+- install [node.js](https://nodejs.org/en)
+- (on Windows and macOS) install node-gyp: `npm install -g node-gyp`
+- install the dependencies: `npm ci`
 
 ## Development Server
 
