@@ -16,7 +16,7 @@ npm run dev
 
 ## Contributors guide
 
-- we follow [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/)
+- we follow [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/), name your PRs accordingly
 
 ## Production
 
