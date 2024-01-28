@@ -23,6 +23,7 @@
   },
   "type": "module",
   "dependencies": {
+    "@rollup/rollup-win32-x64-msvc": "^4.9.6",
     "isolated-vm": "^4.6.0"
   }
 }
