@@ -6,13 +6,17 @@
 - (on Windows and macOS) install node-gyp: `npm install -g node-gyp`
 - install the dependencies: `npm ci`
 
-## Development Server
+## Development server
 
 Start the development server on `http://localhost:3000`:
 
 ```bash
 npm run dev
 ```
+
+## Contributors guide
+
+- we follow [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/)
 
 ## Production
 
