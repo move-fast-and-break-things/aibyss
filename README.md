@@ -1,4 +1,4 @@
-# Aibyss: code your AI to compete in a survival game
+# 🚧 UNDER DEVELOPMENT 🚧 Aibyss: code your AI to compete in a survival game
 
 ## Setup
 

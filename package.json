@@ -1,5 +1,6 @@
 {
   "name": "aibyss",
+  "license": "Apache-2.0",
   "devDependencies": {
     "@nuxt/devtools": "latest",
     "@rollup/rollup-win32-x64-msvc": "^4.9.6",
