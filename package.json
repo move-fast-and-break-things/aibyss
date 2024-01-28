@@ -2,6 +2,7 @@
   "name": "aibyss",
   "devDependencies": {
     "@nuxt/devtools": "latest",
+    "@rollup/rollup-win32-x64-msvc": "^4.9.6",
     "autoprefixer": "^10.4.16",
     "monaco-editor": "^0.45.0",
     "nuxt": "^3.8.2",
@@ -23,7 +24,6 @@
   },
   "type": "module",
   "dependencies": {
-    "@rollup/rollup-win32-x64-msvc": "^4.9.6",
     "isolated-vm": "^4.6.0"
   }
 }
