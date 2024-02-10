@@ -16,11 +16,11 @@ export default defineEventHandler(async (event) => {
     const result = await readValidatedBody(event, body => userSchema.safeParse(body));
 
     if (!result.success)
-      return { statusCode: 422 }; 
+      throw createError({statusCode: 422, statusMessage: 'Username and password field is required'});
 
     const user = await prisma.user.findFirst({where: {name: result.data.username}})
     if (!user)
-      return { statusCode: 404 }
+      throw createError({statusCode: 404, statusMessage: `User with username=${result.data.username} not found`});
 
     const hash = user.password;
     const match = await bcrypt.compare(result.data.password, hash);
@@ -35,6 +35,6 @@ export default defineEventHandler(async (event) => {
       return { statusCode: 200 }
     } 
     else {
-      return { statusCode: 401 }
+      throw createError({statusCode: 401, statusMessage: 'Invalid password or username'});
     }
   })
