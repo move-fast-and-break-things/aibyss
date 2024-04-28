@@ -19,9 +19,12 @@
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
+    "dev:external": "nuxt --host dev",
+    "dev:prisma:setup": "prisma migrate dev --name init",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "prisma:generate": "prisma generate"
   },
   "type": "module",
   "dependencies": {
