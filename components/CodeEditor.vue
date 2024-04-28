@@ -73,7 +73,10 @@ function onSubmit(event: Event) {
 </script>
 
 <template>
-  <div class="w-full h-full font-sans">
+  <div
+    class="w-full h-full font-sans"
+    data-testid="code-editor"
+  >
     <form
       class="flex h-full flex-col"
       @submit="onSubmit"

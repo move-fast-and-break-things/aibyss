@@ -1,4 +1,3 @@
-// https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   app: {
     head: {
@@ -9,11 +8,15 @@ export default defineNuxtConfig({
   },
   devtools: { enabled: true },
   css: ["~/assets/css/main.css"],
-  modules: ["nuxt-monaco-editor", "@nuxt/eslint"],
+  modules: ["nuxt-monaco-editor", "@nuxt/eslint", "@nuxt/test-utils/module"],
   nitro: {
     hooks: {
       "dev:reload": () => require("isolated-vm"),
     },
+    serverAssets: [{
+      baseName: "botApis",
+      dir: "./botApis",
+    }],
   },
   postcss: {
     plugins: {

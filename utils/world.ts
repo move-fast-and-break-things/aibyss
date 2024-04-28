@@ -1,3 +1,5 @@
+import getRandomElement from "./getRandomElement";
+
 interface Sprite {
   x: number;
   y: number;
