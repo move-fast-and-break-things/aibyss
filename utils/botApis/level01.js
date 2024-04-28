@@ -16,6 +16,7 @@ function getBotApiV1() {
 
 function doStep() {
   const botApi = getBotApiV1();
+  // eslint-disable-next-line no-undef -- defined by our script loading the API
   step(botApi);
   return JSON.stringify(global._actions);
 }

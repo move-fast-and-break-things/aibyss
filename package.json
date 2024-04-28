@@ -3,8 +3,11 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "@nuxt/devtools": "latest",
+    "@nuxt/eslint": "^0.3.10",
     "@types/bcrypt": "^5.0.2",
     "autoprefixer": "^10.4.16",
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.2",
     "monaco-editor": "^0.45.0",
     "nuxt": "^3.8.2",
     "nuxt-monaco-editor": "^1.2.6",
@@ -18,13 +21,19 @@
   "private": true,
   "scripts": {
     "build": "nuxt build",
-    "dev": "nuxt dev",
+    "dev": "npm run dev:prisma && nuxt dev",
     "dev:external": "nuxt --host dev",
-    "dev:prisma:setup": "prisma migrate dev --name init",
+    "dev:prisma": "prisma migrate dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "prisma:generate": "prisma generate"
+    "prisma:generate": "prisma generate",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*": "npm run lint:fix"
   },
   "type": "module",
   "dependencies": {

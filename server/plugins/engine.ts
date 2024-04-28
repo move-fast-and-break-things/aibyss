@@ -1,10 +1,9 @@
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+import ivm from "isolated-vm";
 import * as botUtils from "~/utils/botstore";
-
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-import ivm from 'isolated-vm';
 import World from "~/utils/world";
 
 const MEMORY_LIMIT_MB = 64;
@@ -15,13 +14,13 @@ export const WORLD = new World ({ width: 600, height: 600 });
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const API_LEVEL_1 = fs.readFileSync(path.join(__dirname, '..', '..', 'utils', 'botApis', 'level01.js'), 'utf8');
+const API_LEVEL_1 = fs.readFileSync(path.join(__dirname, "..", "..", "utils", "botApis", "level01.js"), "utf8");
 
 async function runBot(code: string) {
   const isolate = new ivm.Isolate({ memoryLimit: MEMORY_LIMIT_MB });
   const context = await isolate.createContext();
   const jail = context.global;
-  await jail.set('global', jail.derefInto());
+  await jail.set("global", jail.derefInto());
   const result = await context.eval(`${code}\n${API_LEVEL_1}`, { timeout: TIME_LIMIT_MS });
   return JSON.parse(result);
 }
@@ -31,7 +30,7 @@ async function runBots(bots: botUtils.Bots, world: World) {
   const botIds = Object.keys(bots);
 
   for (const botId of botIds) {
-    if (!state.bots[botId]) {
+    if (!state.bots.get(botId)) {
       world.addBot(botId);
     }
   }
@@ -39,12 +38,18 @@ async function runBots(bots: botUtils.Bots, world: World) {
   for (const bot of Object.values(bots)) {
     const { code } = bot;
 
-    const botObject = state.bots[bot.id];
+    const botObject = state.bots.get(bot.id);
+    if (!botObject) {
+      // TODO(yurij): add better logging
+      console.error(`Bot with id ${bot.id} not found in the world`);
+      continue;
+    }
+
     const me = { x: botObject.x, y: botObject.y, radius: botObject.radius };
     const otherPlayers = Object.values(state.bots)
-      .filter((b) => b.id !== bot.id)
-      .map((b) => ({ x: b.x, y: b.y, radius: b.radius }));
-    const food = state.food.map((f) => ({ x: f.x, y: f.y, radius: f.radius }));
+      .filter(b => b.id !== bot.id)
+      .map(b => ({ x: b.x, y: b.y, radius: b.radius }));
+    const food = state.food.map(f => ({ x: f.x, y: f.y, radius: f.radius }));
 
     try {
       const preparedCode = `
@@ -78,6 +83,6 @@ function startEngine() {
   }, 250);
 }
 
-export default defineNitroPlugin((nitroApp) => {
+export default defineNitroPlugin(() => {
   startEngine();
-})
+});
