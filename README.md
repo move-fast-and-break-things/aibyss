@@ -15,9 +15,25 @@ Start the development server on `http://localhost:3000`:
 npm run dev
 ```
 
+## Running the tests
+
+### unit tests
+
+```bash
+npm run test
+```
+
+### e2e tests
+
+First, setup e2e tests by running `npm run test:e2e:install`, then run the tests with:
+
+```bash
+npm run test:e2e
+```
+
 ## Contributors guide
 
-- we follow [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/), name your PRs accordingly
+We follow [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/), name your PRs accordingly
 
 ## Production
 
