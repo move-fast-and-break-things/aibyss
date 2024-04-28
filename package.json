@@ -3,7 +3,6 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "@nuxt/devtools": "latest",
-    "@rollup/rollup-win32-x64-msvc": "^4.9.6",
     "@types/bcrypt": "^5.0.2",
     "autoprefixer": "^10.4.16",
     "monaco-editor": "^0.45.0",

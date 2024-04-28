@@ -3,7 +3,8 @@
 ## Setup
 
 - install [node.js](https://nodejs.org/en)
-- (on Windows and macOS) install node-gyp: `npm install -g node-gyp`
+- **(on Windows and macOS)** install `node-gyp`: `npm install -g node-gyp`
+- **(on Windows only)*** install `@rollup/rollup-win32-x64-msvc`: `npm install @rollup/rollup-win32-x64-msvc`
 - install the dependencies: `npm ci`
 
 ## Development server
