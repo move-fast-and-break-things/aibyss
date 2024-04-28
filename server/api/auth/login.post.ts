@@ -2,17 +2,16 @@ import { PrismaClient } from '@prisma/client'
 import { z } from 'zod'
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
-import { SESSION_STORAGE, SESSION_TTL } from '~/utils/sessionStorage';
+import { SESSION_COOKIE_NAME, SESSION_STORAGE, SESSION_TTL } from '~/utils/sessionStorage';
+import prisma from '~/utils/db';
 
 const userSchema = z.object({
   username: z.string(),
   password: z.string(),
 })
-const prisma = new PrismaClient()
 
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event);
   const result = await readValidatedBody(event, body => userSchema.safeParse(body));
 
   if (!result.success)
@@ -25,7 +24,7 @@ export default defineEventHandler(async (event) => {
   const match = await bcrypt.compare(result.data.password, hash);
   if (match) {
     const sessionId = crypto.randomUUID();
-    setCookie(event, 'session_id', sessionId, {
+    setCookie(event, SESSION_COOKIE_NAME, sessionId, {
       httpOnly: true,
       secure: true,
       maxAge: SESSION_TTL,

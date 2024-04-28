@@ -1,14 +1,21 @@
-import { SESSION_STORAGE } from "~/utils/sessionStorage"
+import prisma from "~/utils/db";
+import { SESSION_COOKIE_NAME, SESSION_STORAGE } from "~/utils/sessionStorage"
 
-export default defineEventHandler((event) => {
+export default defineEventHandler(async (event) => {
     if (event.path.includes('login'))
-        return
+        return;
 
-    const sessionId = getCookie(event, 'session_id')
+    const sessionId = getCookie(event, SESSION_COOKIE_NAME);
     if (!sessionId)
         return sendRedirect(event, '/login');
-    const userId = SESSION_STORAGE.get(sessionId)
+    const userId = SESSION_STORAGE.get(sessionId);
     if (!userId)
         return sendRedirect(event, '/login');
-    event.context.userId = userId
-  })
+    const user = await prisma.user.findFirst({ where: { id: userId } });
+    if (!user) {
+        SESSION_STORAGE.delete(sessionId)
+        deleteCookie(event, SESSION_COOKIE_NAME)
+        return sendRedirect(event, '/login');
+    }
+    event.context.user = user;
+})
