@@ -59,7 +59,10 @@ watch(gameState, (newState) => {
 </script>
 
 <template>
-  <div class="h-full w-full">
+  <div
+    class="h-full w-full"
+    data-testid="game-screen"
+  >
     <canvas ref="canvas" />
   </div>
 </template>

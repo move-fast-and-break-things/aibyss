@@ -1,7 +1,3 @@
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-
 import ivm from "isolated-vm";
 import * as botUtils from "~/utils/botstore";
 import World from "~/utils/world";
@@ -11,21 +7,22 @@ const TIME_LIMIT_MS = 100;
 
 export const WORLD = new World ({ width: 600, height: 600 });
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const API_LEVEL_1 = fs.readFileSync(path.join(__dirname, "..", "..", "utils", "botApis", "level01.js"), "utf8");
-
 async function runBot(code: string) {
   const isolate = new ivm.Isolate({ memoryLimit: MEMORY_LIMIT_MB });
   const context = await isolate.createContext();
   const jail = context.global;
   await jail.set("global", jail.derefInto());
-  const result = await context.eval(`${code}\n${API_LEVEL_1}`, { timeout: TIME_LIMIT_MS });
+  const result = await context.eval(code, { timeout: TIME_LIMIT_MS });
   return JSON.parse(result);
 }
 
-async function runBots(bots: botUtils.Bots, world: World) {
+type RunBotArgs = {
+  bots: botUtils.Bots;
+  world: World;
+  botApi: string;
+};
+
+async function runBots({ bots, world, botApi }: RunBotArgs) {
   const state = world.getState();
   const botIds = Object.keys(bots);
 
@@ -58,6 +55,8 @@ global._otherPlayers = ${JSON.stringify(otherPlayers)};
 global._food = ${JSON.stringify(food)};
 
 ${code}
+
+${botApi}
 `;
 
       const actions = await runBot(preparedCode);
@@ -71,7 +70,11 @@ ${code}
   }
 }
 
-function startEngine() {
+type StartEngineArgs = {
+  botApi: string;
+};
+
+function startEngine({ botApi }: StartEngineArgs) {
   let bots = botUtils.getBots();
 
   botUtils.subscribeToBotsUpdate((newBots) => {
@@ -79,10 +82,16 @@ function startEngine() {
   });
 
   setInterval(() => {
-    runBots(bots, WORLD);
+    runBots({ bots, world: WORLD, botApi });
   }, 250);
 }
 
-export default defineNitroPlugin(() => {
-  startEngine();
+export default defineNitroPlugin(async () => {
+  const level01Api = await useStorage("assets:botApis").getItem("level01.js");
+
+  if (!level01Api || typeof level01Api !== "string") {
+    throw new Error("Could not load level01.js");
+  }
+
+  startEngine({ botApi: level01Api });
 });

@@ -15,6 +15,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 422, statusMessage: "Username and password field is required" });
   }
 
+  prisma.$connect().catch((err) => {
+    console.error(err);
+  });
+
   const user = await prisma.user.findFirst({ where: { username: result.data.username } });
   if (!user) {
     throw createError({ statusCode: 401, statusMessage: `Unauthorized` });
