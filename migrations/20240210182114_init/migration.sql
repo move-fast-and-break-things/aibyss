@@ -6,4 +6,4 @@ CREATE TABLE "User" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "User_name_key" ON "User"("username");
+CREATE UNIQUE INDEX "User_username_key" ON "User"("username");

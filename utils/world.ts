@@ -14,7 +14,7 @@ export interface BotSprite extends Sprite {
   color: string;
 }
 
-type BotSprites = Record<string, BotSprite>;
+type BotSprites = Map<string, BotSprite>;
 
 type WorldArgs = {
   width: number;
@@ -22,19 +22,19 @@ type WorldArgs = {
 };
 
 const BOT_COLORS = [
-  '#00FF00',
-  '#0000FF',
-  '#00FFFF',
-  '#FF0000',
-  '#114B5F',
-  '#E0B0FF',
-  '#FFD700',
-  '#FF00FF',
-  '#FFA500',
+  "#00FF00",
+  "#0000FF",
+  "#00FFFF",
+  "#FF0000",
+  "#114B5F",
+  "#E0B0FF",
+  "#FFD700",
+  "#FF00FF",
+  "#FFA500",
 ];
 
 export default class World {
-  private bots: BotSprites = {};
+  private bots: BotSprites = new Map();
   private food: Sprite[] = [];
   private width: number;
   private height: number;
@@ -57,21 +57,16 @@ export default class World {
     }
   }
 
-  private positionStringify({ x, y }: { x: number, y: number }): string {
+  private positionStringify({ x, y }: { x: number; y: number }): string {
     return `${x}-${y}`;
   }
 
-  private positionParse(position: string): { x: number, y: number } {
-    const [x, y] = position.split('-');
-    return { x: parseInt(x), y: parseInt(y) };
-  }
-
-  private getAvailableBotPositions(newBotRadius: number): { x: number, y: number }[] {
-    const availablePositions: { x: number, y: number }[] = [];
+  private getAvailableBotPositions(newBotRadius: number): { x: number; y: number }[] {
+    const availablePositions: { x: number; y: number }[] = [];
     const takenPositions: Set<string> = new Set();
 
     // to avoid computing distances between points when spawning new bots, assume that bots are square
-    for (const bot of Object.values(this.bots)) {
+    for (const bot of this.bots.values()) {
       const { x, y, radius } = bot;
       const safeRadius = radius + this.minSpawnDistance + newBotRadius;
 
@@ -109,14 +104,14 @@ export default class World {
     const availablePositions = this.getAvailableBotPositions(this.newBotRadius);
 
     if (availablePositions.length === 0) {
-      throw new Error('No available positions to spawn bot');
+      throw new Error("No available positions to spawn bot");
     }
 
-    const randomIndex = Math.floor(Math.random() * availablePositions.length);
-    const randomPosition = availablePositions[randomIndex];
+    const randomPosition = getRandomElement(availablePositions);
+    const color = getRandomElement(BOT_COLORS);
 
-    const newBot = { ...randomPosition, id, radius: this.newBotRadius, color: BOT_COLORS[Math.floor(Math.random() * BOT_COLORS.length)] };
-    this.bots[id] = newBot;
+    const newBot = { ...randomPosition, id, radius: this.newBotRadius, color };
+    this.bots.set(id, newBot);
     return newBot;
   }
 
@@ -143,7 +138,7 @@ export default class World {
   }
 
   moveBot(id: string, x: number, y: number) {
-    const bot = this.bots[id];
+    const bot = this.bots.get(id);
     if (!bot) {
       throw new Error(`Bot with id ${id} not found`);
     }
@@ -160,11 +155,13 @@ export default class World {
     bot.y = y;
 
     let checkLimit = 5;
-    while (this.checkCollisions(id) && --checkLimit) {};
+    while (this.checkCollisions(id) && --checkLimit) {
+      continue;
+    }
   }
 
   checkCollisions(botId: string) {
-    const bot = this.bots[botId];
+    const bot = this.bots.get(botId);
     if (!bot) {
       throw new Error(`Bot with id ${botId} not found`);
     }
@@ -186,8 +183,9 @@ export default class World {
     // check if bot eats food
     const food = this.food;
     const foodIdxToRemove: number[] = [];
-    for (let i = 0; i < food.length; i++) {
-      const distance = World.distance(bot, food[i]);
+    for (let i = 0; i < food.length; ++i) {
+      // it's safe to cast to Sprite because know that `i` is within the bounds of the array
+      const distance = World.distance(bot, food[i] as Sprite);
       if (distance < bot.radius) {
         foodIdxToRemove.push(i);
       }
@@ -195,12 +193,17 @@ export default class World {
 
     // remove food and bots
     for (const botIdToRemove of botIdsToRemove) {
-      bot.radius += bots[botIdToRemove].radius;
-      delete bots[botIdToRemove];
+      const botToRemove = bots.get(botIdToRemove);
+      if (!botToRemove) {
+        continue;
+      }
+      bot.radius += botToRemove.radius;
+      bots.delete(botIdToRemove);
     }
 
     for (const foodIdx of foodIdxToRemove) {
-      bot.radius += food[foodIdx].radius;
+      // it's safe to cast to Sprite because know that `foodIdx` is within the bounds of the array
+      bot.radius += (food[foodIdx] as Sprite).radius;
       food.splice(foodIdx, 1);
     }
 
