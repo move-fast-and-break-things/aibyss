@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import bcrypt from "bcrypt";
 import { z } from "zod";
-import { SESSION_COOKIE_NAME, SESSION_STORAGE, SESSION_TTL } from "~/utils/sessionStorage";
+import { SESSION_COOKIE_NAME, SESSION_STORAGE, SESSION_TTL_SECONDS } from "~/utils/sessionStorage";
 import prisma from "~/utils/db";
 
 const userSchema = z.object({
@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
     setCookie(event, SESSION_COOKIE_NAME, sessionId, {
       httpOnly: true,
       secure: true,
-      maxAge: SESSION_TTL,
+      maxAge: SESSION_TTL_SECONDS,
     });
     SESSION_STORAGE.set(sessionId, user.id);
     return sendRedirect(event, "/");
