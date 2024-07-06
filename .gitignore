@@ -19,12 +19,11 @@ logs
 .idea
 
 # Local env files
-.env
 .env.*
 !.env.example
 !.env.e2e
 
-# Data Base
+# Database
 dev.db
 dev.db-journal
 
