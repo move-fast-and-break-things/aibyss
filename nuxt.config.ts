@@ -6,9 +6,11 @@ export default defineNuxtConfig({
       title: "Aibyss",
     },
   },
+
   devtools: { enabled: true },
   css: ["~/assets/css/main.css"],
   modules: ["nuxt-monaco-editor", "@nuxt/eslint", "@nuxt/test-utils/module"],
+
   nitro: {
     hooks: {
       "dev:reload": () => require("isolated-vm"),
@@ -18,16 +20,19 @@ export default defineNuxtConfig({
       dir: "./botApis",
     }],
   },
+
   postcss: {
     plugins: {
       tailwindcss: {},
       autoprefixer: {},
     },
   },
+
   typescript: {
     typeCheck: true,
     strict: true,
   },
+
   eslint: {
     config: {
       stylistic: {
@@ -40,4 +45,6 @@ export default defineNuxtConfig({
       },
     },
   },
+
+  compatibilityDate: "2024-07-06",
 });
