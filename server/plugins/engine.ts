@@ -53,6 +53,8 @@ async function runBots({ bots, world, botApi }: RunBotArgs) {
 global._player = ${JSON.stringify(me)};
 global._otherPlayers = ${JSON.stringify(otherPlayers)};
 global._food = ${JSON.stringify(food)};
+global._worldWidth = ${state.width};
+global._worldHeight = ${state.height};
 
 ${code}
 
