@@ -7,6 +7,8 @@ const { data: gameState, refresh } = await useFetch("/api/state");
 
 const intervalRef = ref<number | null>(null);
 
+const refetchIntervalMs = 1000;
+
 onMounted(async () => {
   const ctx = canvas.value?.getContext("2d", { alpha: false });
   if (!ctx) {
@@ -14,7 +16,7 @@ onMounted(async () => {
     return;
   }
   context.value = ctx;
-  intervalRef.value = window.setInterval(refresh, 1000);
+  intervalRef.value = window.setInterval(refresh, refetchIntervalMs);
 });
 
 onBeforeUnmount(() => {
@@ -63,6 +65,9 @@ watch(gameState, (newState) => {
     class="h-full w-full"
     data-testid="game-screen"
   >
-    <canvas ref="canvas" />
+    <canvas
+      ref="canvas"
+      class="shadow m-4 mt-0"
+    />
   </div>
 </template>

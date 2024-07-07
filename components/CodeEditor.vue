@@ -84,7 +84,7 @@ function onSubmit(event: Event) {
       <MonacoEditor
         v-model="state.code"
         lang="javascript"
-        class="flex-grow mb-4"
+        class="flex-grow mb-4 shadow"
       />
       <div class="flex justify-end">
         <button
