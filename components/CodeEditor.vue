@@ -8,10 +8,17 @@ const defaultCode = `/**
  */
 function step(api) {
   const target = api.otherPlayers[0];
-  if (target) {
+  if (target && Math.random() > 0.3) {
     api.moveTowards(target);
   } else {
-    api.moveTo({ x: 0, y: 0 })
+    api.moveTo({
+      x: Math.random() > 0.5
+        ? Math.max(api.me.x - 10, 0)
+        : Math.min(api.me.x + 10, api.worldWidth),
+      y: Math.random() > 0.5
+        ? Math.max(api.me.y - 10, 0)
+        : Math.min(api.me.y + 10, api.worldHeight),
+    });
   }
 }
 
@@ -36,6 +43,8 @@ function step(api) {
  * @property {Food[]} food
  * @property {MoveTowards} moveTowards
  * @property {MoveTo} moveTo
+ * @property {number} worldHeight
+ * @property {number} worldWidth
  */
 
 /**
