@@ -1,4 +1,5 @@
 import ivm from "isolated-vm";
+import prepareBotCode from "../../utils/prepareBotCode";
 import * as botUtils from "~/utils/botstore";
 import World from "~/utils/world";
 
@@ -33,33 +34,12 @@ async function runBots({ bots, world, botApi }: RunBotArgs) {
   }
 
   for (const bot of Object.values(bots)) {
-    const { code } = bot;
-
-    const botObject = state.bots.get(bot.id);
-    if (!botObject) {
-      // TODO(yurij): add better logging
-      console.error(`Bot with id ${bot.id} not found in the world`);
-      continue;
-    }
-
-    const me = { x: botObject.x, y: botObject.y, radius: botObject.radius };
-    const otherPlayers = Object.values(state.bots)
-      .filter(b => b.id !== bot.id)
-      .map(b => ({ x: b.x, y: b.y, radius: b.radius }));
-    const food = state.food.map(f => ({ x: f.x, y: f.y, radius: f.radius }));
-
     try {
-      const preparedCode = `
-global._player = ${JSON.stringify(me)};
-global._otherPlayers = ${JSON.stringify(otherPlayers)};
-global._food = ${JSON.stringify(food)};
-global._worldWidth = ${state.width};
-global._worldHeight = ${state.height};
-
-${code}
-
-${botApi}
-`;
+      const preparedCode = prepareBotCode({ bot, state, botApi });
+      if (!preparedCode) {
+        console.error(`Failed to prepare code for bot ${bot.id}`);
+        continue;
+      }
 
       const actions = await runBot(preparedCode);
       if (actions?.[0]?.type === "move") {

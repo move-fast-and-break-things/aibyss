@@ -1,6 +1,6 @@
 import EventEmitter from "node:events";
 
-interface Bot {
+export interface Bot {
   id: string;
   code: string;
 }
