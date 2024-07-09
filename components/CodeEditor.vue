@@ -98,7 +98,7 @@ function onSubmit(event: Event) {
       <div class="flex justify-end">
         <button
           type="submit"
-          class="h-10 px-6 font-semibold rounded-md bg-black text-white"
+          class="h-10 px-6 font-semibold shadow bg-black text-white hover:bg-gray-800"
         >
           Submit
         </button>
