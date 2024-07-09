@@ -1,6 +1,6 @@
 import getRandomElement from "./getRandomElement";
 
-interface Sprite {
+export interface Sprite {
   x: number;
   y: number;
   radius: number;
@@ -14,6 +14,13 @@ interface Position {
 export interface BotSprite extends Sprite {
   id: string;
   color: string;
+}
+
+export interface WorldState {
+  bots: BotSprites;
+  food: Sprite[];
+  width: number;
+  height: number;
 }
 
 type BotSprites = Map<string, BotSprite>;
@@ -117,7 +124,7 @@ export default class World {
     return newBot;
   }
 
-  getState() {
+  getState(): WorldState {
     return {
       bots: this.bots,
       food: this.food,
@@ -171,7 +178,7 @@ export default class World {
     // check if bot eats other bots
     const bots = this.bots;
     const botIdsToRemove: string[] = [];
-    for (const [otherBotId, otherBot] of Object.entries(bots)) {
+    for (const [otherBotId, otherBot] of bots.entries()) {
       if (otherBot.id === botId) {
         continue;
       }
@@ -203,8 +210,10 @@ export default class World {
       bots.delete(botIdToRemove);
     }
 
+    // sort in descending order to avoid index shifting when removing elements
+    foodIdxToRemove.sort((a, b) => b - a);
     for (const foodIdx of foodIdxToRemove) {
-      // it's safe to cast to Sprite because know that `foodIdx` is within the bounds of the array
+      // it's safe to cast to Sprite because we know that `foodIdx` is within the bounds of the array
       bot.radius += (food[foodIdx] as Sprite).radius;
       food.splice(foodIdx, 1);
     }
