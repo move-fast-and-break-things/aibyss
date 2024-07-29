@@ -12,8 +12,9 @@ interface Position {
 }
 
 export interface BotSprite extends Sprite {
-  id: string;
+  botId: string;
   color: string;
+  spawnId: string;
 }
 
 export interface WorldState {
@@ -43,7 +44,8 @@ const BOT_COLORS = [
 ];
 
 export default class World {
-  private bots: BotSprites = new Map();
+  private botSpawns: BotSprites = new Map();
+  private botIdToSpawnId: Map<string, string> = new Map();
   private food: Sprite[] = [];
   private width: number;
   private height: number;
@@ -75,7 +77,7 @@ export default class World {
     const takenPositions: Set<string> = new Set();
 
     // to avoid computing distances between points when spawning new bots, assume that bots are square
-    for (const bot of this.bots.values()) {
+    for (const bot of this.botSpawns.values()) {
       const { x, y, radius } = bot;
       const safeRadius = radius + this.minSpawnDistance + newBotRadius;
 
@@ -109,7 +111,11 @@ export default class World {
     return availablePositions;
   }
 
-  addBot(id: string): BotSprite {
+  hasBot(botId: string) {
+    return this.botIdToSpawnId.has(botId);
+  }
+
+  addBot(botId: string): BotSprite {
     const availablePositions = this.getAvailableBotPositions(this.newBotRadius);
 
     if (availablePositions.length === 0) {
@@ -119,14 +125,25 @@ export default class World {
     const randomPosition = getRandomElement(availablePositions);
     const color = getRandomElement(BOT_COLORS);
 
-    const newBot = { ...randomPosition, id, radius: this.newBotRadius, color };
-    this.bots.set(id, newBot);
+    // spawnId is unique per bot live
+    // useful to track respawns on the UI
+    const spawnId = Math.random().toString(36).substring(5);
+
+    const newBot = {
+      ...randomPosition,
+      botId,
+      radius: this.newBotRadius,
+      color,
+      spawnId,
+    };
+    this.botSpawns.set(spawnId, newBot);
+    this.botIdToSpawnId.set(botId, spawnId);
     return newBot;
   }
 
   getState(): WorldState {
     return {
-      bots: this.bots,
+      bots: this.botSpawns,
       food: this.food,
       width: this.width,
       height: this.height,
@@ -146,10 +163,15 @@ export default class World {
     return { x: newX, y: newY };
   }
 
-  moveBot(id: string, x: number, y: number) {
-    const bot = this.bots.get(id);
+  moveBot(botId: string, x: number, y: number) {
+    const spawnId = this.botIdToSpawnId.get(botId);
+    if (!spawnId) {
+      throw new Error(`Bot with id ${botId} not found`);
+    }
+
+    const bot = this.botSpawns.get(spawnId);
     if (!bot) {
-      throw new Error(`Bot with id ${id} not found`);
+      throw new Error(`Bot with id ${botId} not found`);
     }
 
     const distance = World.distance(bot, { x, y });
@@ -164,28 +186,33 @@ export default class World {
     bot.y = y;
 
     let checkLimit = 5;
-    while (this.checkCollisions(id) && --checkLimit) {
+    while (this.checkCollisions(botId) && --checkLimit) {
       continue;
     }
   }
 
   checkCollisions(botId: string) {
-    const bot = this.bots.get(botId);
+    const spawnId = this.botIdToSpawnId.get(botId);
+    if (!spawnId) {
+      throw new Error(`Bot with id ${botId} not found`);
+    }
+
+    const bot = this.botSpawns.get(spawnId);
     if (!bot) {
       throw new Error(`Bot with id ${botId} not found`);
     }
 
     // check if bot eats other bots
-    const bots = this.bots;
+    const botSpawns = this.botSpawns;
     const botIdsToRemove: string[] = [];
-    for (const [otherBotId, otherBot] of bots.entries()) {
-      if (otherBot.id === botId) {
+    for (const [otherBotSpawnId, otherBot] of botSpawns.entries()) {
+      if (otherBotSpawnId === spawnId) {
         continue;
       }
 
       const distance = World.distance(bot, otherBot);
       if (distance < bot.radius && bot.radius > otherBot.radius) {
-        botIdsToRemove.push(otherBotId);
+        botIdsToRemove.push(otherBotSpawnId);
       }
     }
 
@@ -201,13 +228,14 @@ export default class World {
     }
 
     // remove food and bots
-    for (const botIdToRemove of botIdsToRemove) {
-      const botToRemove = bots.get(botIdToRemove);
+    for (const botSpawnIdToRemove of botIdsToRemove) {
+      const botToRemove = botSpawns.get(botSpawnIdToRemove);
       if (!botToRemove) {
         continue;
       }
       bot.radius += botToRemove.radius;
-      bots.delete(botIdToRemove);
+      this.botIdToSpawnId.delete(botToRemove.botId);
+      botSpawns.delete(botSpawnIdToRemove);
     }
 
     // sort in descending order to avoid index shifting when removing elements

@@ -1,20 +1,13 @@
 <script setup lang="ts">
-// create canvas ref
-const canvas = ref<HTMLCanvasElement | null>(null);
-const context = ref<CanvasRenderingContext2D | null>(null);
+import { Application, Graphics } from "pixi.js";
+
+const refreshIntervalMs = 1000;
 
 const { data: gameState, refresh } = await useFetch("/api/state");
-
 const intervalRef = ref<number | null>(null);
 
 onMounted(async () => {
-  const ctx = canvas.value?.getContext("2d", { alpha: false });
-  if (!ctx) {
-    window.alert("Can't render the game. Please, refresh the page. If the problem persists, report the issue at https://github.com/move-fast-and-break-things/aibyss/issues. Include as many details as possible.");
-    return;
-  }
-  context.value = ctx;
-  intervalRef.value = window.setInterval(refresh, 1000);
+  intervalRef.value = window.setInterval(refresh, refreshIntervalMs);
 });
 
 onBeforeUnmount(() => {
@@ -23,38 +16,121 @@ onBeforeUnmount(() => {
   }
 });
 
-watch(gameState, (newState) => {
-  if (!canvas.value || !newState) {
+const canvas = ref<HTMLCanvasElement | null>(null);
+const appRef = ref<Application | null>(null);
+const foodRef = ref<{ x: number; y: number; graphics: Graphics }[]>([]);
+const botSpawnsRef = ref<Record<string, Graphics>>({});
+
+const tickFnRef = ref<() => void>();
+
+watch(gameState, async (newState, prevState) => {
+  if (!canvas.value) {
+    window.alert("Can't render the game. Please, refresh the page. If the problem persists, report the issue at https://github.com/move-fast-and-break-things/aibyss/issues. Include as many details as possible.");
     return;
   }
 
-  canvas.value.width = newState.width;
-  canvas.value.height = newState.height;
-
-  const ctx = canvas.value.getContext("2d", { alpha: false });
-  if (!ctx) {
-    window.alert("Can't render the game. Please, refresh the page. If the problem persists, report the issue at");
-    throw new Error("Can't render the game");
-  }
-  context.value = ctx;
-
-  ctx.clearRect(0, 0, canvas.value.width, canvas.value.height);
-  ctx.fillStyle = "#FFFFFF";
-  ctx.fillRect(0, 0, canvas.value.width, canvas.value.height);
-
-  for (const food of newState.food) {
-    ctx.fillStyle = "#FF0000";
-    ctx.beginPath();
-    ctx.arc(food.x, food.y, food.radius, 0, 2 * Math.PI);
-    ctx.fill();
+  if (!prevState || !newState) {
+    return;
   }
 
-  for (const bot of Object.values(newState.bots)) {
-    ctx.fillStyle = bot.color;
-    ctx.beginPath();
-    ctx.arc(bot.x, bot.y, bot.radius, 0, 2 * Math.PI);
-    ctx.fill();
+  if (tickFnRef.value) {
+    appRef.value?.ticker.remove(tickFnRef.value);
   }
+
+  if (!appRef.value || appRef.value.renderer.width !== prevState.width || appRef.value.renderer.height !== prevState.height) {
+    appRef.value?.destroy();
+
+    const app = new Application();
+    appRef.value = app;
+
+    await app.init({
+      width: prevState.width,
+      height: prevState.height,
+      canvas: canvas.value,
+      backgroundColor: "#FFFFFF",
+      antialias: true,
+      resolution: 1,
+    });
+
+    // render food
+    for (const food of prevState.food) {
+      const graphics = new Graphics();
+      graphics.circle(food.x, food.y, food.radius);
+      graphics.fill("#FF0000");
+      app.stage.addChild(graphics);
+      foodRef.value.push({ x: food.x, y: food.y, graphics });
+    }
+
+    // render bots
+    for (const bot of Object.values(prevState.bots)) {
+      const graphics = new Graphics();
+      app.stage.addChild(graphics);
+      graphics.circle(bot.x, bot.y, bot.radius);
+      graphics.fill(bot.color);
+      botSpawnsRef.value[bot.spawnId] = graphics;
+    }
+  } else {
+    // remove eaten food
+    for (const food of foodRef.value) {
+      if (!prevState.food.find(f => f.x === food.x && f.y === food.y)) {
+        // @ts-expect-error - food.graphics has some weird type
+        appRef.value.stage.removeChild(food.graphics);
+      }
+    }
+
+    // remove eaten bots
+    for (const spawnId of Object.keys(botSpawnsRef.value)) {
+      const existingBotGraphics = botSpawnsRef.value[spawnId];
+      if (existingBotGraphics && !newState.bots[spawnId]) {
+        appRef.value.stage.removeChild(existingBotGraphics);
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+        delete botSpawnsRef.value[spawnId];
+      }
+    }
+
+    // move or add bots
+    for (const bot of Object.values(prevState.bots)) {
+      if (!newState.bots[bot.spawnId]) {
+        continue;
+      }
+
+      const existingBot = botSpawnsRef.value[bot.spawnId];
+
+      if (existingBot) {
+        existingBot.clear();
+        existingBot.circle(bot.x, bot.y, bot.radius);
+        existingBot.fill(bot.color);
+      } else {
+        const graphics = new Graphics();
+        appRef.value.stage.addChild(graphics);
+        graphics.circle(bot.x, bot.y, bot.radius);
+        graphics.fill(bot.color);
+        botSpawnsRef.value[bot.spawnId] = graphics;
+      }
+    }
+  }
+
+  // slowly move the bots from prevState to newState during the refresh interval
+  const updateTime = Date.now();
+  tickFnRef.value = () => {
+    const now = Date.now();
+    const progress = (now - updateTime) / refreshIntervalMs;
+
+    for (const bot of Object.values(newState.bots)) {
+      const existingBot = botSpawnsRef.value[bot.spawnId];
+      const prevBot = prevState.bots[bot.spawnId];
+
+      if (existingBot && prevBot) {
+        const x = prevBot.x + (bot.x - prevBot.x) * progress;
+        const y = prevBot.y + (bot.y - prevBot.y) * progress;
+
+        existingBot.clear();
+        existingBot.circle(x, y, prevBot.radius);
+        existingBot.fill(bot.color);
+      }
+    }
+  };
+  appRef.value.ticker.add(tickFnRef.value);
 });
 </script>
 

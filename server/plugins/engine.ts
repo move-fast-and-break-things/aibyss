@@ -4,7 +4,7 @@ import * as botUtils from "~/utils/botstore";
 import World from "~/utils/world";
 
 const MEMORY_LIMIT_MB = 64;
-const TIME_LIMIT_MS = 100;
+const TIME_LIMIT_MS = 75;
 
 export const WORLD = new World ({ width: 600, height: 600 });
 
@@ -14,6 +14,7 @@ async function runBot(code: string) {
   const jail = context.global;
   await jail.set("global", jail.derefInto());
   const result = await context.eval(code, { timeout: TIME_LIMIT_MS });
+  isolate.dispose();
   return JSON.parse(result);
 }
 
@@ -28,7 +29,7 @@ async function runBots({ bots, world, botApi }: RunBotArgs) {
   const botIds = Object.keys(bots);
 
   for (const botId of botIds) {
-    if (!state.bots.get(botId)) {
+    if (!world.hasBot(botId)) {
       world.addBot(botId);
     }
   }
