@@ -10,7 +10,7 @@ type PrepareBotCodeArgs = {
 export default function prepareBotCode({ bot, state, botApi }: PrepareBotCodeArgs): string | undefined {
   const { code } = bot;
 
-  const botObject = state.bots.get(bot.id);
+  const botObject = [...state.bots.values()].find(b => bot.id === b.botId);
   if (!botObject) {
     // TODO(yurij): handle this better
     console.error(`Bot with id ${bot.id} not found in the world`);
@@ -19,7 +19,7 @@ export default function prepareBotCode({ bot, state, botApi }: PrepareBotCodeArg
 
   const me = { x: botObject.x, y: botObject.y, radius: botObject.radius };
   const otherPlayers = [...state.bots.values()]
-    .filter(b => b.id !== bot.id)
+    .filter(b => b.botId !== bot.id)
     .map(b => ({ x: b.x, y: b.y, radius: b.radius }));
   const food = state.food.map(f => ({ x: f.x, y: f.y, radius: f.radius }));
 
