@@ -18,7 +18,7 @@ model Game {
   start_time String
   end_time   String
   end_reason String
-  game_stats Game_stats[]
+  game_stats GameStats[]
 }
 
 model GameStats {
@@ -28,5 +28,5 @@ model GameStats {
   size       Float
   num_eaten  Int
   num_ate    Int
-  games      Games  @relation(fields: [game_id], references: [game_id])
+  games      Game  @relation(fields: [game_id], references: [game_id])
 }
