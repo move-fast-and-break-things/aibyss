@@ -12,3 +12,21 @@ model User {
   password String
   username String  @unique
 }
+
+model Games {
+  game_id    Int   @id @default(autoincrement())
+  start_time String
+  end_time   String
+  end_reason String
+  game_stats Game_stats[]
+}
+
+model Game_stats {
+  id         Int    @id @default(autoincrement())
+  game_id    Int
+  player_id  Int
+  size       Float
+  num_eaten  Int
+  num_ate    Int
+  games      Games  @relation(fields: [game_id], references: [game_id])
+}
