@@ -13,7 +13,7 @@ model User {
   username String  @unique
 }
 
-model Games {
+model Game {
   game_id    Int   @id @default(autoincrement())
   start_time String
   end_time   String
@@ -21,7 +21,7 @@ model Games {
   game_stats Game_stats[]
 }
 
-model Game_stats {
+model GameStats {
   id         Int    @id @default(autoincrement())
   game_id    Int
   player_id  Int
