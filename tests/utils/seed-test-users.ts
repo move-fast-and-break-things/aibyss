@@ -1,4 +1,3 @@
-import bcrypt from "bcrypt";
 import db from "../../utils/db";
 
 const TEST_USERS = [
@@ -17,12 +16,6 @@ export async function seedTestUsers() {
       }
     }
 
-    const hashedPassword = bcrypt.hashSync(user.password, 11);
-    await db.user.create({
-      data: {
-        username: user.username,
-        password: hashedPassword,
-      },
-    });
+    await createUser({ username: user.username, password: user.password });
   }
 }
