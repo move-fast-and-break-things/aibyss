@@ -6,6 +6,7 @@
     "@nuxt/eslint": "^0.3.10",
     "@nuxt/test-utils": "^3.12.1",
     "@playwright/test": "^1.43.1",
+    "@types/argparse": "^2.0.16",
     "@types/bcrypt": "^5.0.2",
     "@vue/test-utils": "^2.4.5",
     "autoprefixer": "^10.4.16",
@@ -42,6 +43,7 @@
     "test:e2e:open": "playwright test --ui",
     "test:e2e:install": "npx playwright install",
     "test:e2e:seed-test-users": "npx jiti ./bin/seed-test-users.ts",
+    "create-user": "npx jiti ./bin/create-user.ts",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -50,6 +52,7 @@
   "type": "module",
   "dependencies": {
     "@prisma/client": "^5.9.1",
+    "argparse": "^2.0.1",
     "bcrypt": "^5.1.1",
     "isolated-vm": "^4.6.0",
     "lru-cache": "^10.2.0",
