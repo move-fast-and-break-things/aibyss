@@ -1,4 +1,5 @@
 import db from "../../utils/db";
+import createUser from "../../utils/createUser";
 
 const TEST_USERS = [
   { username: "test", password: "1234" },
