@@ -15,6 +15,12 @@ Start the development server on `http://localhost:3000`:
 npm run dev
 ```
 
+## Create new user
+
+```bash
+npm run create-user <username>
+```
+
 ## Running the tests
 
 ### unit tests
