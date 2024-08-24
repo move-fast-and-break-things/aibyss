@@ -1,8 +1,8 @@
-import { WORLD } from "../plugins/engine";
+import { WORLD_REF } from "../plugins/engine";
 import * as botStore from "~/utils/botstore";
 
 export default defineEventHandler(async () => {
-  const gameState = WORLD.getState();
+  const gameState = WORLD_REF.world.getState();
 
   const botCodes = botStore.getBots();
 

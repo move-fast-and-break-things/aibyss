@@ -130,6 +130,17 @@ watch(gameState, async (newState, prevState) => {
       }
     }
 
+    // add new food
+    for (const food of prevState.food) {
+      if (!foodRef.value.find(f => f.x === food.x && f.y === food.y)) {
+        const graphics = new Graphics();
+        graphics.circle(food.x, food.y, food.radius);
+        graphics.fill("#FF0000");
+        appRef.value.stage.addChild(graphics);
+        foodRef.value.push({ x: food.x, y: food.y, graphics });
+      }
+    }
+
     // remove eaten bots
     for (const spawnId of Object.keys(botSpawnsRef.value)) {
       const existingBotGraphics = botSpawnsRef.value[spawnId];
