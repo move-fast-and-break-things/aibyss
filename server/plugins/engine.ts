@@ -5,8 +5,9 @@ import World from "~/utils/world";
 
 const MEMORY_LIMIT_MB = 64;
 const TIME_LIMIT_MS = 75;
+const MAX_ROUND_TIME_MS = 15 * 1000 * 60;
 
-export const WORLD = new World ({ width: 600, height: 600 });
+export const WORLD_REF = { world: new World ({ width: 600, height: 600 }) };
 
 async function runBot(code: string) {
   const isolate = new ivm.Isolate({ memoryLimit: MEMORY_LIMIT_MB });
@@ -65,8 +66,20 @@ function startEngine({ botApi }: StartEngineArgs) {
   });
 
   setInterval(() => {
-    runBots({ bots, world: WORLD, botApi });
+    runBots({ bots, world: WORLD_REF.world, botApi });
+    const worldState = WORLD_REF.world.getState();
+    for (const bot of worldState.bots.values()) {
+      if (bot.radius > worldState.height / 2) {
+        WORLD_REF.world = new World ({ width: 600, height: 600 });
+        console.debug(`The World was restarted cus ${bot.botId} was oversized`);
+      }
+    }
   }, 250);
+
+  setInterval(() => {
+    WORLD_REF.world = new World ({ width: 600, height: 600 });
+    console.debug(`The World was restarted after ${MAX_ROUND_TIME_MS} ms`);
+  }, MAX_ROUND_TIME_MS);
 }
 
 export default defineNitroPlugin(async () => {
