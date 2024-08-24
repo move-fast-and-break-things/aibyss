@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Application, Graphics } from "pixi.js";
+import { Application, Graphics, Text, FillGradient } from "pixi.js";
 
 const refreshIntervalMs = 1000;
 
@@ -22,6 +22,59 @@ const foodRef = ref<{ x: number; y: number; graphics: Graphics }[]>([]);
 const botSpawnsRef = ref<Record<string, Graphics>>({});
 
 const tickFnRef = ref<() => void>();
+
+type DrawBotArgs = {
+  bot: {
+    x: number;
+    y: number;
+    radius: number;
+    color: string;
+    username: string;
+  };
+  graphics: Graphics;
+};
+
+async function drawBot({ bot, graphics }: DrawBotArgs) {
+  graphics.clear();
+
+  // draw bot
+  graphics.circle(bot.x, bot.y, bot.radius);
+  graphics.fill(bot.color);
+
+  const existingUsername = graphics.children.find(child => child instanceof Text);
+  if (existingUsername) {
+    // avoid recreating username if it already exists
+    existingUsername.x = bot.x;
+    existingUsername.y = bot.y - bot.radius - 10;
+  } else {
+    // draw username
+
+    // we have to use FillGradient because
+    // using color as a fill doesn't work with pixi.js, vue.js, and Text
+    // https://github.com/pixijs/pixijs/discussions/10444
+    const fillGradient = new FillGradient(0, 0, 1, 1);
+    fillGradient.addColorStop(0, bot.color);
+    fillGradient.addColorStop(1, bot.color);
+
+    const username = new Text({
+      anchor: {
+        x: 0.5,
+        y: 0.5,
+      },
+      text: bot.username,
+      style: {
+        fontFamily: "Verdana",
+        fontSize: 12,
+        fontWeight: "100",
+        fill: fillGradient,
+      },
+    });
+    username.x = bot.x;
+    username.y = bot.y - bot.radius - 10;
+
+    graphics.addChild(username);
+  }
+}
 
 watch(gameState, async (newState, prevState) => {
   if (!canvas.value) {
@@ -65,8 +118,7 @@ watch(gameState, async (newState, prevState) => {
     for (const bot of Object.values(prevState.bots)) {
       const graphics = new Graphics();
       app.stage.addChild(graphics);
-      graphics.circle(bot.x, bot.y, bot.radius);
-      graphics.fill(bot.color);
+      drawBot({ bot, graphics });
       botSpawnsRef.value[bot.spawnId] = graphics;
     }
   } else {
@@ -97,14 +149,11 @@ watch(gameState, async (newState, prevState) => {
       const existingBot = botSpawnsRef.value[bot.spawnId];
 
       if (existingBot) {
-        existingBot.clear();
-        existingBot.circle(bot.x, bot.y, bot.radius);
-        existingBot.fill(bot.color);
+        drawBot({ bot, graphics: existingBot });
       } else {
         const graphics = new Graphics();
         appRef.value.stage.addChild(graphics);
-        graphics.circle(bot.x, bot.y, bot.radius);
-        graphics.fill(bot.color);
+        drawBot({ bot, graphics });
         botSpawnsRef.value[bot.spawnId] = graphics;
       }
     }
@@ -124,9 +173,7 @@ watch(gameState, async (newState, prevState) => {
         const x = prevBot.x + (bot.x - prevBot.x) * progress;
         const y = prevBot.y + (bot.y - prevBot.y) * progress;
 
-        existingBot.clear();
-        existingBot.circle(x, y, prevBot.radius);
-        existingBot.fill(bot.color);
+        drawBot({ bot: { ...bot, x, y }, graphics: existingBot });
       }
     }
   };

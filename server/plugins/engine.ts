@@ -19,7 +19,7 @@ async function runBot(code: string) {
 }
 
 type RunBotArgs = {
-  bots: botUtils.Bots;
+  bots: botUtils.BotCodes;
   world: World;
   botApi: string;
 };
