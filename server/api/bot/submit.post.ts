@@ -1,10 +1,20 @@
-import * as botUtils from "~/utils/botstore";
+import { z } from "zod";
+import * as botStore from "~/utils/botstore";
+
+const submitBotCodeSchema = z.object({
+  code: z.string(),
+});
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event);
-  const code = body.code;
+  const result = await readValidatedBody(event, body => submitBotCodeSchema.safeParse(body));
+  if (!result.success) {
+    throw createError({ statusCode: 422, statusMessage: "Username and password field is required" });
+  }
 
-  botUtils.submitBot(code);
+  botStore.submitBotCode({
+    username: event.context.user.username,
+    code: result.data.code,
+  });
 
   return { statusCode: 200 };
 });

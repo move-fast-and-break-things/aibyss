@@ -1,19 +1,26 @@
 import EventEmitter from "node:events";
 
-export interface Bot {
+export interface BotCode {
   id: string;
   code: string;
+  username: string;
 }
 
-export type Bots = Record<string, Bot>;
+export type BotCodes = Record<string, BotCode>;
 
-let STORE: Bots = {};
+let STORE: BotCodes = {};
 
 const botEventEmitter = new EventEmitter();
 
-export function submitBot(code: string) {
-  const id = Math.random().toString(36).substring(5);
-  STORE[id] = { id, code };
+type SubmitBotCodeArgs = {
+  code: string;
+  username: string;
+};
+
+export function submitBotCode({ code, username }: SubmitBotCodeArgs) {
+  // ensure each user has only one bot
+  const id = Object.values(STORE).find(botCode => botCode.username === username)?.id || Math.random().toString(36).substring(5);
+  STORE[id] = { id, code, username };
   botEventEmitter.emit("update", STORE);
 }
 
@@ -25,7 +32,7 @@ export function getBots() {
   return { ...STORE };
 }
 
-export function subscribeToBotsUpdate(onUpdate: (bots: Bots) => void): () => void {
+export function subscribeToBotsUpdate(onUpdate: (bots: BotCodes) => void): () => void {
   botEventEmitter.on("update", onUpdate);
   return () => botEventEmitter.off("update", onUpdate);
 }

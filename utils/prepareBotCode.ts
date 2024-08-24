@@ -1,8 +1,8 @@
-import type { Bot } from "~/utils/botstore";
+import type { BotCode } from "~/utils/botstore";
 import type { WorldState } from "~/utils/world";
 
 type PrepareBotCodeArgs = {
-  bot: Bot;
+  bot: BotCode;
   state: WorldState;
   botApi: string;
 };
