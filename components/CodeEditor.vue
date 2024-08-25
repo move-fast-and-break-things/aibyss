@@ -59,26 +59,28 @@ function onCloseAPIReferenceModal() {
     class="w-full h-full font-sans flex flex-col"
     data-testid="code-editor"
   >
-    <div class="flex flex-row justify-end mb-2 gap-6">
-      <ButtonLink @click="onRestoreDefaultCodeClick">
-        restore example code
-      </ButtonLink>
-      <ButtonLink @click="onShowAPIReferenceClick">
-        API reference
-      </ButtonLink>
-    </div>
     <form
       class="flex flex-grow flex-col"
       @submit="onSubmit"
     >
-      <MonacoEditor
-        v-model="state.code"
-        lang="javascript"
-        class="flex-grow mb-4 shadow"
-        :options="{
-          smoothScrolling: true,
-        }"
-      />
+      <div class="flex flex-grow flex-col shadow mb-4">
+        <div class="flex flex-row justify-end mb-2 mt-1 mx-2 gap-6">
+          <ButtonLink @click="onRestoreDefaultCodeClick">
+            restore example code
+          </ButtonLink>
+          <ButtonLink @click="onShowAPIReferenceClick">
+            API reference
+          </ButtonLink>
+        </div>
+        <MonacoEditor
+          v-model="state.code"
+          lang="javascript"
+          class="flex-grow"
+          :options="{
+            smoothScrolling: true,
+          }"
+        />
+      </div>
       <div class="flex justify-end">
         <button
           type="submit"
