@@ -64,8 +64,10 @@ function step(api) {
  */
 `;
 
+const { data: user } = await useFetch("/api/auth/user");
+
 const state = reactive<{ code: string }>({
-  code: defaultCode,
+  code: user.value?.body.code || defaultCode,
 });
 
 function onSubmit(event: Event) {
