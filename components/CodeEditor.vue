@@ -1,73 +1,32 @@
 <script setup lang="ts">
-const defaultCode = `/**
- * Implement your strategy in the function "step".
- * This function will be called once per frame.
- * Reference the types below the function for information about the API.
- *
- * @param {API} api
- */
-function step(api) {
-  const target = api.otherPlayers[0];
-  if (target && Math.random() > 0.3) {
-    api.moveTowards(target);
-  } else {
-    api.moveTo({
-      x: Math.random() > 0.5
-        ? Math.max(api.me.x - 10, 0)
-        : Math.min(api.me.x + 10, api.worldWidth),
-      y: Math.random() > 0.5
-        ? Math.max(api.me.y - 10, 0)
-        : Math.min(api.me.y + 10, api.worldHeight),
-    });
-  }
+import { defaultCode, jsdoc } from "~/utils/defaultCode.js";
+
+if (import.meta.client) {
+  // configure monaco editor on client side
+  // because we can't import monaco on server side
+  const monaco = await import("monaco-editor");
+
+  // enable type & syntax checking
+  monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+    ...monaco.languages.typescript.javascriptDefaults.getDiagnosticsOptions(),
+    noSemanticValidation: false,
+    noSuggestionDiagnostics: false,
+    noSyntaxValidation: false,
+  });
+  monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
+    ...monaco.languages.typescript.javascriptDefaults.getCompilerOptions(),
+    checkJs: true,
+  });
+
+  // add JSDoc so the autocompletion always works
+  monaco.languages.typescript.javascriptDefaults.addExtraLib(jsdoc);
 }
-
-/**
- * @typedef {object} Player
- * @property {number} x
- * @property {number} y
- * @property {number} radius
- */
-
-/**
- * @typedef {object} Food
- * @property {number} x
- * @property {number} y
- * @property {number} radius
- */
-
-/**
- * @typedef {object} API
- * @property {Player} me
- * @property {Player[]} otherPlayers
- * @property {Food[]} food
- * @property {MoveTowards} moveTowards
- * @property {MoveTo} moveTo
- * @property {number} worldHeight
- * @property {number} worldWidth
- */
-
-/**
- * @callback MoveTowards
- * @param {Player} player
- */
-
-/**
- * @typedef {object} Position
- * @property {number} x
- * @property {number} y
- */
-
-/**
- * @callback MoveTo
- * @param {Position} position
- */
-`;
 
 const { data: user } = await useFetch("/api/auth/user");
 
-const state = reactive<{ code: string }>({
+const state = reactive({
   code: user.value?.body.code || defaultCode,
+  showAPIReference: false,
 });
 
 function onSubmit(event: Event) {
@@ -81,21 +40,44 @@ function onSubmit(event: Event) {
     body: JSON.stringify({ code: state.code }),
   });
 }
+
+function onRestoreDefaultCodeClick() {
+  state.code = defaultCode;
+}
+
+function onShowAPIReferenceClick() {
+  state.showAPIReference = true;
+}
+
+function onCloseAPIReferenceModal() {
+  state.showAPIReference = false;
+}
 </script>
 
 <template>
   <div
-    class="w-full h-full font-sans"
+    class="w-full h-full font-sans flex flex-col"
     data-testid="code-editor"
   >
+    <div class="flex flex-row justify-end mb-2 gap-6">
+      <ButtonLink @click="onRestoreDefaultCodeClick">
+        restore example code
+      </ButtonLink>
+      <ButtonLink @click="onShowAPIReferenceClick">
+        API reference
+      </ButtonLink>
+    </div>
     <form
-      class="flex h-full flex-col"
+      class="flex flex-grow flex-col"
       @submit="onSubmit"
     >
       <MonacoEditor
         v-model="state.code"
         lang="javascript"
         class="flex-grow mb-4 shadow"
+        :options="{
+          smoothScrolling: true,
+        }"
       />
       <div class="flex justify-end">
         <button
@@ -106,5 +88,31 @@ function onSubmit(event: Event) {
         </button>
       </div>
     </form>
+  </div>
+  <div
+    v-if="state.showAPIReference"
+    class="absolute z-10 w-full h-full top-0 left-0 bg-slate-400 bg-opacity-20"
+    @click.self="onCloseAPIReferenceModal"
+  >
+    <div class="bg-white z-10 flex flex-col max-w-xl max-h-[calc(100vh-140px)] h-[600px] shadow p-4 pt-2 mx-auto mt-[110px]">
+      <div class="flex flex-row justify-end mb-2">
+        <ButtonLink @click="onCloseAPIReferenceModal">
+          close
+        </ButtonLink>
+      </div>
+      <MonacoEditor
+        v-model="jsdoc"
+        lang="javascript"
+        :options="{
+          readOnly: true,
+          readOnlyMessage: { value: 'Cannot edit API reference' },
+          lineNumbers: 'off',
+          smoothScrolling: true,
+          scrollBeyondLastLine: false,
+          minimap: { enabled: false },
+        }"
+        class="flex-grow"
+      />
+    </div>
   </div>
 </template>

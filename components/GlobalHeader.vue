@@ -17,12 +17,9 @@ const { data: user } = await useFetch("/api/auth/user");
         action="/api/auth/logout"
         method="POST"
       >
-        <button
-          type="submit"
-          class="text-indigo-600 hover:text-indigo-400"
-        >
+        <ButtonLink type="submit">
           Log out
-        </button>
+        </ButtonLink>
       </form>
     </div>
   </header>
