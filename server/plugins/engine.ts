@@ -1,6 +1,6 @@
 import ivm from "isolated-vm";
 import prepareBotCode from "../../utils/prepareBotCode";
-import * as botUtils from "~/utils/botstore";
+import * as botCodeStore from "~/utils/botCodeStore";
 import World from "~/utils/world";
 
 const MEMORY_LIMIT_MB = 64;
@@ -20,7 +20,7 @@ async function runBot(code: string) {
 }
 
 type RunBotArgs = {
-  bots: botUtils.BotCodes;
+  bots: botCodeStore.BotCodes;
   world: World;
   botApi: string;
 };
@@ -59,9 +59,9 @@ type StartEngineArgs = {
 };
 
 function startEngine({ botApi }: StartEngineArgs) {
-  let bots = botUtils.getBots();
+  let bots = botCodeStore.getBots();
 
-  botUtils.subscribeToBotsUpdate((newBots) => {
+  botCodeStore.subscribeToBotsUpdate((newBots) => {
     bots = newBots;
   });
 
