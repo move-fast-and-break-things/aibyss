@@ -102,7 +102,8 @@ watch(gameState, async (newState, prevState) => {
       canvas: canvas.value,
       backgroundColor: "#FFFFFF",
       antialias: true,
-      resolution: 1,
+      resolution: 4,
+      autoDensity: true,
     });
 
     // render food
