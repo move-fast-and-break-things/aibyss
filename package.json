@@ -18,7 +18,7 @@
     "nuxt": "^3.8.2",
     "nuxt-monaco-editor": "^1.2.6",
     "postcss": "^8.4.32",
-    "prisma": "^5.18.0",
+    "prisma": "^5.19.0",
     "tailwindcss": "^3.3.6",
     "typescript": "^5.3.2",
     "vitest": "^1.5.2",
@@ -52,7 +52,7 @@
   },
   "type": "module",
   "dependencies": {
-    "@prisma/client": "^5.9.1",
+    "@prisma/client": "^5.19.0",
     "argparse": "^2.0.1",
     "bcrypt": "^5.1.1",
     "isolated-vm": "^4.6.0",
