@@ -43,9 +43,16 @@ const BOT_COLORS = [
   "#FFA500",
 ];
 
+type Stats = {
+  kills: number;
+  deaths: number;
+  foodEaten: number;
+};
+
 export default class World {
   private botSpawns: BotSprites = new Map();
   private botIdToSpawnId: Map<string, string> = new Map();
+  private stats: Map<string, Stats> = new Map();
   private food: Sprite[] = [];
   private width: number;
   private height: number;
@@ -136,8 +143,14 @@ export default class World {
       color,
       spawnId,
     };
+    const startStats = {
+      kills: 0,
+      deaths: 0,
+      foodEaten: 0,
+    };
     this.botSpawns.set(spawnId, newBot);
     this.botIdToSpawnId.set(botId, spawnId);
+    this.stats.set(botId, startStats);
     return newBot;
   }
 
@@ -213,6 +226,14 @@ export default class World {
       const distance = World.distance(bot, otherBot);
       if (distance < bot.radius && bot.radius > otherBot.radius) {
         botIdsToRemove.push(otherBotSpawnId);
+        // updating statistic
+        this.stats.set(bot.botId, {
+          ...this.stats.get(bot.botId) as Stats,
+          kills: (this.stats.get(bot.botId)?.kills || 0) + 1 });
+        this.stats.set(otherBot.botId, {
+          ...this.stats.get(otherBot.botId) as Stats,
+          deaths: (this.stats.get(otherBot.botId)?.deaths || 0) + 1 });
+        console.log(...this.stats);
       }
     }
 
@@ -224,6 +245,11 @@ export default class World {
       const distance = World.distance(bot, food[i] as Sprite);
       if (distance < bot.radius) {
         foodIdxToRemove.push(i);
+        // updating statistic
+        this.stats.set(bot.botId, {
+          ...this.stats.get(bot.botId) as Stats,
+          foodEaten: (this.stats.get(bot.botId)?.foodEaten || 0) + 1 });
+        console.log(...this.stats);
       }
     }
 
