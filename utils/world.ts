@@ -22,6 +22,7 @@ export interface WorldState {
   food: Sprite[];
   width: number;
   height: number;
+  stats: Map<string, Stats>;
 }
 
 type BotSprites = Map<string, BotSprite>;
@@ -143,14 +144,8 @@ export default class World {
       color,
       spawnId,
     };
-    const startStats = {
-      kills: 0,
-      deaths: 0,
-      foodEaten: 0,
-    };
     this.botSpawns.set(spawnId, newBot);
     this.botIdToSpawnId.set(botId, spawnId);
-    this.stats.set(botId, startStats);
     return newBot;
   }
 
@@ -160,6 +155,7 @@ export default class World {
       food: this.food,
       width: this.width,
       height: this.height,
+      stats: this.stats,
     };
   }
 
@@ -233,7 +229,6 @@ export default class World {
         this.stats.set(otherBot.botId, {
           ...this.stats.get(otherBot.botId) as Stats,
           deaths: (this.stats.get(otherBot.botId)?.deaths || 0) + 1 });
-        console.log(...this.stats);
       }
     }
 
@@ -249,7 +244,6 @@ export default class World {
         this.stats.set(bot.botId, {
           ...this.stats.get(bot.botId) as Stats,
           foodEaten: (this.stats.get(bot.botId)?.foodEaten || 0) + 1 });
-        console.log(...this.stats);
       }
     }
 
