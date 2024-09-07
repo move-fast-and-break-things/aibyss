@@ -24,9 +24,10 @@ model Game {
 model GameStats {
   id         Int    @id @default(autoincrement())
   game_id    Int
-  player_id  Int
+  player_id  String
   size       Float
-  num_eaten  Int
-  num_ate    Int
+  food_eaten Int
+  kills      Int
+  deaths     Int
   games      Game  @relation(fields: [game_id], references: [game_id])
 }

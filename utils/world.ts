@@ -23,6 +23,7 @@ export interface WorldState {
   width: number;
   height: number;
   stats: Map<string, Stats>;
+  startTime: string;
 }
 
 type BotSprites = Map<string, BotSprite>;
@@ -60,6 +61,7 @@ export default class World {
   private minSpawnDistance = 10;
   private maxMoveDistance = 2;
   private newBotRadius = 5;
+  private startTime = new Date().getTime.toString();
 
   constructor({ width, height }: WorldArgs) {
     this.width = width;
@@ -163,6 +165,7 @@ export default class World {
       width: this.width,
       height: this.height,
       stats: this.stats,
+      startTime: this.startTime,
     };
   }
 
@@ -283,5 +286,9 @@ export default class World {
     }
 
     return Boolean(botIdsToRemove.length || foodIdxToRemove.length);
+  }
+
+  getSpawnId(botId: string) {
+    return String(this.botIdToSpawnId.get(botId));
   }
 }

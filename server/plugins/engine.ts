@@ -2,6 +2,7 @@ import ivm from "isolated-vm";
 import prepareBotCode from "../../utils/prepareBotCode";
 import * as botCodeStore from "~/utils/botCodeStore";
 import World from "~/utils/world";
+import { recordGameEnd } from "~/utils/recordGamedb";
 
 const MEMORY_LIMIT_MB = 64;
 const TIME_LIMIT_MS = 75;
@@ -70,16 +71,36 @@ function startEngine({ botApi }: StartEngineArgs) {
     const worldState = WORLD_REF.world.getState();
     for (const bot of worldState.bots.values()) {
       if (bot.radius > worldState.height / 2) {
-        WORLD_REF.world = new World ({ width: 600, height: 600 });
+        endGame("Player overdominating");
         console.debug(`The World was restarted cus ${bot.botId} was oversized`);
       }
     }
   }, 250);
 
   setInterval(() => {
-    WORLD_REF.world = new World ({ width: 600, height: 600 });
+    endGame("Time's up");
     console.debug(`The World was restarted after ${MAX_ROUND_TIME_MS} ms`);
   }, MAX_ROUND_TIME_MS);
+}
+
+function endGame(reason: string) {
+  const endTime = new Date().getTime().toString();
+  const worldState = WORLD_REF.world.getState();
+  recordGameEnd({
+    startTime: worldState.startTime,
+    endTime: endTime,
+    endReason: reason,
+    stats: Array.from(worldState.stats.entries()).map(([playerId, stat]) => {
+      return {
+        player_id: playerId,
+        size: worldState.bots.get(WORLD_REF.world.getSpawnId(playerId))?.radius || 0,
+        food_eaten: stat.foodEaten,
+        kills: stat.kills,
+        deaths: stat.deaths,
+      };
+    }),
+  });
+  WORLD_REF.world = new World ({ width: 600, height: 600 });
 }
 
 export default defineNitroPlugin(async () => {
