@@ -240,13 +240,8 @@ export default class World {
           console.error(new Error("can't find other bot stats; check if they were created in `.addBot`"));
           continue;
         }
-        this.stats.set(bot.botId, {
-          ...botStats,
-          kills: botStats.kills + 1,
-        });
-        this.stats.set(otherBot.botId, {
-          ...otherBotStats,
-          deaths: otherBotStats.deaths + 1 });
+        botStats.kills += 1;
+        otherBotStats.deaths + 1;
       }
     }
 
@@ -264,10 +259,7 @@ export default class World {
           console.error(new Error("can't find bot stats; check if they were created in `.addBot`"));
           continue;
         }
-        this.stats.set(bot.botId, {
-          ...botStats,
-          foodEaten: botStats.foodEaten + 1,
-        });
+        botStats.foodEaten += 1;
       }
     }
 
