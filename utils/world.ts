@@ -231,11 +231,11 @@ export default class World {
         botIdsToRemove.push(otherBotSpawnId);
         // updating statistic
         const botStats = this.stats.get(bot.botId);
-        const otherBotStats = this.stats.get(otherBot.botId);
         if (!botStats) {
           console.error(new Error("can't find bot stats; check if they were created in `.addBot`"));
           continue;
         }
+        const otherBotStats = this.stats.get(otherBot.botId);
         if (!otherBotStats) {
           console.error(new Error("can't find other bot stats; check if they were created in `.addBot`"));
           continue;
