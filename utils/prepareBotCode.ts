@@ -3,7 +3,7 @@ import type { WorldState } from "~/utils/world";
 
 type PrepareBotCodeArgs = {
   bot: BotCode;
-  state: WorldState;
+  state: Pick<WorldState, "bots" | "food" | "width" | "height">;
   botApi: string;
 };
 

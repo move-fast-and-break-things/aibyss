@@ -146,6 +146,13 @@ export default class World {
     };
     this.botSpawns.set(spawnId, newBot);
     this.botIdToSpawnId.set(botId, spawnId);
+    if (!this.stats.has(botId)) {
+      this.stats.set(botId, {
+        kills: 0,
+        deaths: 0,
+        foodEaten: 0,
+      });
+    }
     return newBot;
   }
 
@@ -223,12 +230,23 @@ export default class World {
       if (distance < bot.radius && bot.radius > otherBot.radius) {
         botIdsToRemove.push(otherBotSpawnId);
         // updating statistic
+        const botStats = this.stats.get(bot.botId);
+        const otherBotStats = this.stats.get(otherBot.botId);
+        if (!botStats) {
+          console.error(new Error("can't find bot stats; check if they were created in `.addBot`"));
+          continue;
+        }
+        if (!otherBotStats) {
+          console.error(new Error("can't find other bot stats; check if they were created in `.addBot`"));
+          continue;
+        }
         this.stats.set(bot.botId, {
-          ...this.stats.get(bot.botId) as Stats,
-          kills: (this.stats.get(bot.botId)?.kills || 0) + 1 });
+          ...botStats,
+          kills: botStats.kills + 1,
+        });
         this.stats.set(otherBot.botId, {
-          ...this.stats.get(otherBot.botId) as Stats,
-          deaths: (this.stats.get(otherBot.botId)?.deaths || 0) + 1 });
+          ...otherBotStats,
+          deaths: otherBotStats.deaths + 1 });
       }
     }
 
@@ -241,9 +259,15 @@ export default class World {
       if (distance < bot.radius) {
         foodIdxToRemove.push(i);
         // updating statistic
+        const botStats = this.stats.get(bot.botId);
+        if (!botStats) {
+          console.error(new Error("can't find bot stats; check if they were created in `.addBot`"));
+          continue;
+        }
         this.stats.set(bot.botId, {
-          ...this.stats.get(bot.botId) as Stats,
-          foodEaten: (this.stats.get(bot.botId)?.foodEaten || 0) + 1 });
+          ...botStats,
+          foodEaten: botStats.foodEaten + 1,
+        });
       }
     }
 
