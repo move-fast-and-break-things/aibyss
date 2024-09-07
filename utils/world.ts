@@ -22,6 +22,7 @@ export interface WorldState {
   food: Sprite[];
   width: number;
   height: number;
+  stats: Map<string, Stats>;
 }
 
 type BotSprites = Map<string, BotSprite>;
@@ -43,9 +44,16 @@ const BOT_COLORS = [
   "#FFA500",
 ];
 
+type Stats = {
+  kills: number;
+  deaths: number;
+  foodEaten: number;
+};
+
 export default class World {
   private botSpawns: BotSprites = new Map();
   private botIdToSpawnId: Map<string, string> = new Map();
+  private stats: Map<string, Stats> = new Map();
   private food: Sprite[] = [];
   private width: number;
   private height: number;
@@ -138,6 +146,13 @@ export default class World {
     };
     this.botSpawns.set(spawnId, newBot);
     this.botIdToSpawnId.set(botId, spawnId);
+    if (!this.stats.has(botId)) {
+      this.stats.set(botId, {
+        kills: 0,
+        deaths: 0,
+        foodEaten: 0,
+      });
+    }
     return newBot;
   }
 
@@ -147,6 +162,7 @@ export default class World {
       food: this.food,
       width: this.width,
       height: this.height,
+      stats: this.stats,
     };
   }
 
@@ -213,6 +229,19 @@ export default class World {
       const distance = World.distance(bot, otherBot);
       if (distance < bot.radius && bot.radius > otherBot.radius) {
         botIdsToRemove.push(otherBotSpawnId);
+        // updating statistic
+        const botStats = this.stats.get(bot.botId);
+        if (!botStats) {
+          console.error(new Error("can't find bot stats; check if they were created in `.addBot`"));
+          continue;
+        }
+        const otherBotStats = this.stats.get(otherBot.botId);
+        if (!otherBotStats) {
+          console.error(new Error("can't find other bot stats; check if they were created in `.addBot`"));
+          continue;
+        }
+        botStats.kills += 1;
+        otherBotStats.deaths + 1;
       }
     }
 
@@ -224,6 +253,13 @@ export default class World {
       const distance = World.distance(bot, food[i] as Sprite);
       if (distance < bot.radius) {
         foodIdxToRemove.push(i);
+        // updating statistic
+        const botStats = this.stats.get(bot.botId);
+        if (!botStats) {
+          console.error(new Error("can't find bot stats; check if they were created in `.addBot`"));
+          continue;
+        }
+        botStats.foodEaten += 1;
       }
     }
 
