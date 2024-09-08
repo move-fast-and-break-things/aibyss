@@ -84,7 +84,7 @@ function startEngine({ botApi }: StartEngineArgs) {
 }
 
 function endGame(reason: string) {
-  const endTime = new Date().getTime().toString();
+  const endTime = new Date();
   const worldState = WORLD_REF.world.getState();
   recordGameEnd({
     startTime: worldState.startTime,
@@ -92,9 +92,9 @@ function endGame(reason: string) {
     endReason: reason,
     stats: Array.from(worldState.stats.entries()).map(([playerId, stat]) => {
       return {
-        player_id: playerId,
+        playerId: playerId,
         size: worldState.bots.get(WORLD_REF.world.getSpawnId(playerId))?.radius || 0,
-        food_eaten: stat.foodEaten,
+        foodEaten: stat.foodEaten,
         kills: stat.kills,
         deaths: stat.deaths,
       };

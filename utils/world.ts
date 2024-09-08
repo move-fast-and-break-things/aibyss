@@ -23,7 +23,7 @@ export interface WorldState {
   width: number;
   height: number;
   stats: Map<string, Stats>;
-  startTime: string;
+  startTime: Date;
 }
 
 type BotSprites = Map<string, BotSprite>;
@@ -61,7 +61,7 @@ export default class World {
   private minSpawnDistance = 10;
   private maxMoveDistance = 2;
   private newBotRadius = 5;
-  private startTime = new Date().getTime.toString();
+  private startTime = new Date();
 
   constructor({ width, height }: WorldArgs) {
     this.width = width;

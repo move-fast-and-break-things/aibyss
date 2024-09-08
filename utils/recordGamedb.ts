@@ -1,21 +1,21 @@
 import prisma from "~/utils/db";
 
 type GameStat = {
-  player_id: string;
+  playerId: string;
   size: number;
-  food_eaten: number;
+  foodEaten: number;
   kills: number;
   deaths: number;
 };
 
-type recordGameArgs = {
-  startTime: string;
-  endTime: string;
+type RecordGameArgs = {
+  startTime: Date;
+  endTime: Date;
   endReason: string;
   stats: GameStat[];
 };
 
-export async function recordGameEnd({ startTime, endTime, endReason, stats }: recordGameArgs) {
+export async function recordGameEnd({ startTime, endTime, endReason, stats }: RecordGameArgs) {
   try {
     // Создание записи о завершении игры
     const game = await prisma.game.create({
@@ -25,9 +25,9 @@ export async function recordGameEnd({ startTime, endTime, endReason, stats }: re
         end_reason: endReason,
         game_stats: {
           create: stats.map(stat => ({
-            player_id: stat.player_id,
+            player_id: stat.playerId,
             size: stat.size,
-            food_eaten: stat.food_eaten,
+            food_eaten: stat.foodEaten,
             kills: stat.kills,
             deaths: stat.deaths,
           })),
@@ -41,7 +41,5 @@ export async function recordGameEnd({ startTime, endTime, endReason, stats }: re
     console.log("Game record added:", game);
   } catch (error) {
     console.error("Error recording game end:", error);
-  } finally {
-    await prisma.$disconnect();
   }
 }

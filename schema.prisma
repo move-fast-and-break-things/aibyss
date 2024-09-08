@@ -15,8 +15,8 @@ model User {
 
 model Game {
   game_id    Int   @id @default(autoincrement())
-  start_time String
-  end_time   String
+  start_time DateTime
+  end_time   DateTime
   end_reason String
   game_stats GameStats[]
 }
