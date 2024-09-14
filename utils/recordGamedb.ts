@@ -1,7 +1,7 @@
 import prisma from "~/utils/db";
 
-type GameStat = {
-  playerId: string;
+export type GameStat = {
+  userId: number;
   size: number;
   foodEaten: number;
   kills: number;
@@ -25,7 +25,7 @@ export async function recordGameEnd({ startTime, endTime, endReason, stats }: Re
         end_reason: endReason,
         game_stats: {
           create: stats.map(stat => ({
-            player_id: stat.playerId,
+            user_id: stat.userId,
             size: stat.size,
             food_eaten: stat.foodEaten,
             kills: stat.kills,

@@ -13,6 +13,7 @@ export default defineEventHandler(async (event) => {
 
   botCodeStore.submitBotCode({
     username: event.context.user.username,
+    userId: event.context.user.id,
     code: result.data.code,
   });
 

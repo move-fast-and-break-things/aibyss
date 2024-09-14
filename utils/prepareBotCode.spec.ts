@@ -6,6 +6,7 @@ it("prepares bot code correctly when there is one bot in the world", () => {
     id: "1",
     code: "console.log('hello world');",
     username: "yurij",
+    userId: 1,
   };
 
   const state = {
@@ -27,6 +28,7 @@ it("prepares bot code correctly when there are two bots in the world", () => {
     id: "1",
     code: "console.log('hello world');",
     username: "yurij",
+    userId: 1,
   };
 
   const state = {
@@ -51,6 +53,7 @@ it("prepares bot code correctly when there are three bots and some food in the w
     id: "1",
     code: "console.log('hello world');",
     username: "yurij",
+    userId: 1,
   };
 
   const state = {

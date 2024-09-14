@@ -2,7 +2,7 @@ import ivm from "isolated-vm";
 import prepareBotCode from "../../utils/prepareBotCode";
 import * as botCodeStore from "~/utils/botCodeStore";
 import World from "~/utils/world";
-import { recordGameEnd } from "~/utils/recordGamedb";
+import { recordGameEnd, type GameStat } from "~/utils/recordGamedb";
 
 const MEMORY_LIMIT_MB = 64;
 const TIME_LIMIT_MS = 75;
@@ -90,15 +90,15 @@ function endGame(reason: string) {
     startTime: worldState.startTime,
     endTime: endTime,
     endReason: reason,
-    stats: Array.from(worldState.stats.entries()).map(([playerId, stat]) => {
+    stats: Array.from(worldState.stats.entries()).map(([botId, stat]) => {
       return {
-        playerId: playerId,
-        size: worldState.bots.get(WORLD_REF.world.getSpawnId(playerId))?.radius || 0,
+        userId: botCodeStore.getBots()[botId]?.userId,
+        size: worldState.bots.get(WORLD_REF.world.getSpawnId(botId))?.radius,
         foodEaten: stat.foodEaten,
         kills: stat.kills,
         deaths: stat.deaths,
       };
-    }),
+    }).filter((entry): entry is GameStat => entry.userId !== undefined && entry.size !== undefined),
   });
   WORLD_REF.world = new World ({ width: 600, height: 600 });
 }

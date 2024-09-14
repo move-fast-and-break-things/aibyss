@@ -1,20 +1,21 @@
 datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
-} 
+}
 
 generator client {
   provider = "prisma-client-js"
 }
 
 model User {
-  id       Int     @id @default(autoincrement())
-  password String
-  username String  @unique
+  id        Int         @id @default(autoincrement())
+  password  String
+  username  String      @unique
+  game_stats GameStats[]
 }
 
 model Game {
-  game_id    Int   @id @default(autoincrement())
+  game_id    Int         @id @default(autoincrement())
   start_time DateTime
   end_time   DateTime
   end_reason String
@@ -22,12 +23,13 @@ model Game {
 }
 
 model GameStats {
-  id         Int    @id @default(autoincrement())
+  id         Int   @id @default(autoincrement())
   game_id    Int
-  player_id  String
+  user_id    Int
   size       Float
   food_eaten Int
   kills      Int
   deaths     Int
+  user       User  @relation(fields: [user_id], references: [id])
   games      Game  @relation(fields: [game_id], references: [game_id])
 }

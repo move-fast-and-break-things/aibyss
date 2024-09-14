@@ -7,6 +7,7 @@ export interface BotCode {
   id: string;
   code: string;
   username: string;
+  userId: number;
 }
 
 export type BotCodes = Record<string, BotCode>;
@@ -18,12 +19,13 @@ const botEventEmitter = new EventEmitter();
 type SubmitBotCodeArgs = {
   code: string;
   username: string;
+  userId: number;
 };
 
-export function submitBotCode({ code, username }: SubmitBotCodeArgs) {
+export function submitBotCode({ code, username, userId }: SubmitBotCodeArgs) {
   // ensure each user has only one bot
   const id = Object.values(STORE).find(botCode => botCode.username === username)?.id || Math.random().toString(36).substring(5);
-  const botCode = { id, code, username };
+  const botCode = { id, code, username, userId };
   STORE[id] = botCode;
   saveBot(botCode);
   botEventEmitter.emit("update", STORE);
@@ -52,19 +54,20 @@ function loadBots() {
   for (const file of files) {
     const code = fs.readFileSync(`${BOT_CODE_DIR}/${file}`, "utf8");
     const username = file.split("-")[0];
-    const id = file.split("-")[1]?.replace(".js", "");
-    if (!id || !code || !username) {
+    const id = file.split("-")[1];
+    const userId = file.split("-")[2]?.replace(".js", "");
+    if (!id || !code || !username || !userId) {
       throw new Error(`Invalid bot code file: ${file}`);
     }
-    STORE[id] = { id, code, username };
+    STORE[id] = { id, code, username, userId: +userId };
   }
 }
 
-function saveBot({ id, code, username }: BotCode) {
+function saveBot({ id, code, username, userId }: BotCode) {
   if (!fs.existsSync(BOT_CODE_DIR)) {
     fs.mkdirSync(BOT_CODE_DIR);
   }
-  const botCodeFile = `${BOT_CODE_DIR}/${username}-${id}.js`;
+  const botCodeFile = `${BOT_CODE_DIR}/${username}-${id}-${userId}.js`;
 
   fs.writeFileSync(botCodeFile, code);
 }
