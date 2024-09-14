@@ -93,7 +93,7 @@ function endGame(reason: string) {
     stats: Array.from(worldState.stats.entries()).map(([botId, stat]) => {
       return {
         userId: botCodeStore.getBots()[botId]?.userId,
-        size: worldState.bots.get(WORLD_REF.world.getSpawnId(botId))?.radius,
+        size: worldState.bots.get(WORLD_REF.world.getSpawnId(botId))?.radius || 0,
         foodEaten: stat.foodEaten,
         kills: stat.kills,
         deaths: stat.deaths,
