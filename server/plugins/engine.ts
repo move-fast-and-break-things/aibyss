@@ -70,7 +70,7 @@ function startEngine({ botApi }: StartEngineArgs) {
     runBots({ bots, world: WORLD_REF.world, botApi });
     const worldState = WORLD_REF.world.getState();
     for (const bot of worldState.bots.values()) {
-      if (bot.radius > worldState.height / 2) {
+      if (bot.radius > worldState.height / 4) {
         endGame("Player overdominating");
         console.debug(`The World was restarted cus ${bot.botId} was oversized`);
       }
