@@ -244,7 +244,7 @@ export default class World {
           continue;
         }
         botStats.kills += 1;
-        otherBotStats.deaths + 1;
+        otherBotStats.deaths += 1;
       }
     }
 
