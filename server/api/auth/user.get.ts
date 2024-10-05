@@ -1,4 +1,4 @@
-import * as botCodeStore from "~/utils/botCodeStore";
+import * as botCodeStore from "~/other/botCodeStore";
 
 export default defineEventHandler(async (event) => {
   if (!event.context.user) {

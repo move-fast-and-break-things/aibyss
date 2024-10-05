@@ -1,5 +1,5 @@
-import prisma from "~/utils/db";
-import { SESSION_COOKIE_NAME, SESSION_STORAGE } from "~/utils/sessionStorage";
+import prisma from "~/other/db";
+import { SESSION_COOKIE_NAME, SESSION_STORAGE } from "~/other/sessionStorage";
 
 export default defineEventHandler(async (event) => {
   if (event.path.includes("login")) {

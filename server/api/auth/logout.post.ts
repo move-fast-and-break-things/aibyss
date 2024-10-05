@@ -1,4 +1,4 @@
-import { SESSION_COOKIE_NAME, SESSION_STORAGE } from "~/utils/sessionStorage";
+import { SESSION_COOKIE_NAME, SESSION_STORAGE } from "~/other/sessionStorage";
 
 export default defineEventHandler(async (event) => {
   if (!event.context.user) {

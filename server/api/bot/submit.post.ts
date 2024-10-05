@@ -1,5 +1,5 @@
 import { z } from "zod";
-import * as botCodeStore from "~/utils/botCodeStore";
+import * as botCodeStore from "~/other/botCodeStore";
 
 const submitBotCodeSchema = z.object({
   code: z.string(),

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defaultCode, jsdoc } from "~/utils/defaultCode.js";
+import { defaultCode, jsdoc } from "~/other/defaultCode.js";
 
 if (import.meta.client) {
   // configure monaco editor on client side
