@@ -1,13 +1,17 @@
 <script setup lang="ts">
-import { Application, Graphics, Text, FillGradient } from "pixi.js";
+import { Application, Graphics, Text, FillGradient, Assets, type Texture, Sprite } from "pixi.js";
 
 const refreshIntervalMs = 1000;
 
 const { data: gameState, refresh } = await useFetch("/api/state");
 const intervalRef = ref<number | null>(null);
 
+const fishRef = ref<Texture | null>(null);
+
 onMounted(async () => {
   intervalRef.value = window.setInterval(refresh, refreshIntervalMs);
+
+  fishRef.value = await Assets.load("/sprites/fish.png");
 });
 
 onBeforeUnmount(() => {
@@ -31,15 +35,35 @@ type DrawBotArgs = {
     color: string;
     username: string;
   };
+  previousPosition: {
+    x: number;
+    y: number;
+  };
   graphics: Graphics;
 };
 
-async function drawBot({ bot, graphics }: DrawBotArgs) {
+function getDirectionAngle(previousPosition: { x: number; y: number }, newPosition: { x: number; y: number }): number {
+  return Math.atan2(newPosition.y - previousPosition.y, newPosition.x - previousPosition.x);
+}
+
+async function drawBot({ bot, graphics, previousPosition }: DrawBotArgs) {
+  for (const child of graphics.children) {
+    graphics.removeChild(child);
+  }
   graphics.clear();
 
   // draw bot
-  graphics.circle(bot.x, bot.y, bot.radius);
-  graphics.fill(bot.color);
+  if (!fishRef.value) {
+    throw new Error("Fish sprite is not loaded");
+  }
+  const sprite = new Sprite(fishRef.value);
+  sprite.anchor.set(0.5);
+  sprite.width = bot.radius * 2;
+  sprite.height = bot.radius * 2;
+  sprite.x = bot.x;
+  sprite.y = bot.y;
+  sprite.rotation = getDirectionAngle(previousPosition, { x: bot.x, y: bot.y });
+  graphics.addChild(sprite);
 
   const existingUsername = graphics.children.find(child => child instanceof Text);
   if (existingUsername) {
@@ -119,7 +143,7 @@ watch(gameState, async (newState, prevState) => {
     for (const bot of Object.values(prevState.bots)) {
       const graphics = new Graphics();
       app.stage.addChild(graphics);
-      drawBot({ bot, graphics });
+      drawBot({ bot, graphics, previousPosition: bot });
       botSpawnsRef.value[bot.spawnId] = graphics;
     }
   } else {
@@ -161,11 +185,11 @@ watch(gameState, async (newState, prevState) => {
       const existingBot = botSpawnsRef.value[bot.spawnId];
 
       if (existingBot) {
-        drawBot({ bot, graphics: existingBot });
+        drawBot({ bot, graphics: existingBot, previousPosition: bot });
       } else {
         const graphics = new Graphics();
         appRef.value.stage.addChild(graphics);
-        drawBot({ bot, graphics });
+        drawBot({ bot, graphics, previousPosition: bot });
         botSpawnsRef.value[bot.spawnId] = graphics;
       }
     }
@@ -185,7 +209,7 @@ watch(gameState, async (newState, prevState) => {
         const x = prevBot.x + (bot.x - prevBot.x) * progress;
         const y = prevBot.y + (bot.y - prevBot.y) * progress;
 
-        drawBot({ bot: { ...bot, x, y }, graphics: existingBot });
+        drawBot({ bot: { ...bot, x, y }, graphics: existingBot, previousPosition: prevBot });
       }
     }
   };
