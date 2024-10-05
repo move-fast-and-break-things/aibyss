@@ -1,4 +1,4 @@
-import prisma from "~/utils/db";
+import prisma from "~/other/db";
 
 export type GameStat = {
   userId: number;

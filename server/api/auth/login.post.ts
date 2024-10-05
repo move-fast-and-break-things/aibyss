@@ -1,9 +1,9 @@
 import crypto from "crypto";
 import bcrypt from "bcrypt";
 import { z } from "zod";
-import { SESSION_COOKIE_NAME, SESSION_STORAGE, SESSION_TTL_SECONDS } from "~/utils/sessionStorage";
-import prisma from "~/utils/db";
-import { STATUS_CODES } from "~/utils/statusCodes";
+import { SESSION_COOKIE_NAME, SESSION_STORAGE, SESSION_TTL_SECONDS } from "~/other/sessionStorage";
+import prisma from "~/other/db";
+import { HTTP_STATUS_CODES } from "~/other/httpStatusCodes";
 
 const ERROR_MESSAGES = {
   VALIDATION_ERROR: "Username and password field is required",
@@ -19,12 +19,12 @@ const userSchema = z.object({
 export default defineEventHandler(async (event) => {
   const result = await readValidatedBody(event, body => userSchema.safeParse(body));
   if (!result.success) {
-    throw createError({ statusCode: STATUS_CODES.UNPROCESSABLE_ENTITY, statusMessage: ERROR_MESSAGES.VALIDATION_ERROR });
+    throw createError({ statusCode: HTTP_STATUS_CODES.UNPROCESSABLE_ENTITY, statusMessage: ERROR_MESSAGES.VALIDATION_ERROR });
   }
 
   const user = await prisma.user.findFirst({ where: { username: result.data.username } });
   if (!user) {
-    throw createError({ statusCode: STATUS_CODES.UNAUTHORIZED, statusMessage: ERROR_MESSAGES.USER_NOT_FOUND });
+    throw createError({ statusCode: HTTP_STATUS_CODES.UNAUTHORIZED, statusMessage: ERROR_MESSAGES.USER_NOT_FOUND });
   }
 
   const isPasswordValid = await bcrypt.compare(result.data.password, user.password);
@@ -38,6 +38,6 @@ export default defineEventHandler(async (event) => {
     SESSION_STORAGE.set(sessionId, user.id);
     return sendRedirect(event, "/");
   } else {
-    throw createError({ statusCode: STATUS_CODES.UNAUTHORIZED, statusMessage: ERROR_MESSAGES.INVALID_CREDENTIALS });
+    throw createError({ statusCode: HTTP_STATUS_CODES.UNAUTHORIZED, statusMessage: ERROR_MESSAGES.INVALID_CREDENTIALS });
   }
 });

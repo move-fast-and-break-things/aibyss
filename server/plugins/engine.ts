@@ -1,8 +1,8 @@
 import ivm from "isolated-vm";
-import prepareBotCode from "../../utils/prepareBotCode";
-import * as botCodeStore from "~/utils/botCodeStore";
-import World from "~/utils/world";
-import { recordGameEnd, type GameStat } from "~/utils/recordGamedb";
+import prepareBotCode from "~/other/prepareBotCode";
+import * as botCodeStore from "~/other/botCodeStore";
+import World from "~/other/world";
+import { recordGameEnd, type GameStat } from "~/other/recordGamedb";
 
 const MEMORY_LIMIT_MB = 64;
 const TIME_LIMIT_MS = 75;
