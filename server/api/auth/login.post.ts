@@ -3,7 +3,13 @@ import bcrypt from "bcrypt";
 import { z } from "zod";
 import { SESSION_COOKIE_NAME, SESSION_STORAGE, SESSION_TTL_SECONDS } from "~/utils/sessionStorage";
 import prisma from "~/utils/db";
-import { STATUS_CODES, ERROR_MESSAGES } from '~/utils/stat/statusCodes';
+import { STATUS_CODES } from '~/utils/stat/statusCodes';
+
+export const ERROR_MESSAGES = {
+  VALIDATION_ERROR: "Username and password field is required",
+  USER_NOT_FOUND: "Invalid username or password",
+  INVALID_CREDENTIALS: "Invalid username or password",
+};
 
 const userSchema = z.object({
   username: z.string(),
