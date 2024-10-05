@@ -36,6 +36,8 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate deploy",
+    "start": "node .output/server/index.mjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "vitest --run --exclude tests/e2e",

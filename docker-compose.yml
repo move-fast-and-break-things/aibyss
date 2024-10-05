@@ -1,0 +1,16 @@
+services:
+  aibyss:
+    container_name: aibyss
+    build: .
+    restart: unless-stopped
+    ports:
+      - 127.0.0.1:3005:3000
+    environment:
+      - DATABASE_URL=file:/data/db.sqlite
+      - BOT_CODE_DIR=/data/bot-codes
+    volumes:
+      - data:/data
+
+volumes:
+  data:
+    driver: local
