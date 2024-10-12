@@ -201,8 +201,8 @@ export default class World {
       y = newY;
     }
 
-    bot.x = x;
-    bot.y = y;
+    bot.x = Math.max(0, Math.min(x, this.width));
+    bot.y = Math.max(0, Math.min(y, this.height));
 
     let checkLimit = 5;
     while (this.checkCollisions(botId) && --checkLimit) {
