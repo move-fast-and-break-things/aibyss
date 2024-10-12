@@ -74,3 +74,63 @@ it("shouldn't crash when bot eats two food items and one of them with the last i
   // @ts-expect-error - world.food is private
   expect(world.food.length).toBeLessThan(100);
 });
+
+it("doesn't allow the bot to go outside the world with large x and y", () => {
+  const world = new World({ width: 100, height: 100 });
+  world.addBot("1");
+
+  // @ts-expect-error - world.botSpawns is private
+  const bot = [...world.botSpawns.values()].find(bot => bot.botId === "1") as BotSprite;
+  bot.x = 100;
+  bot.y = 100;
+
+  const worldStateBeforeMove = world.getState();
+  const botsBeforeMove = [...worldStateBeforeMove.bots.values()];
+  const botFromStateBeforeMove = botsBeforeMove[0];
+  if (!botFromStateBeforeMove) {
+    throw new Error("Bot not found in the state");
+  }
+  expect(botFromStateBeforeMove.x).toBe(100);
+  expect(botFromStateBeforeMove.y).toBe(100);
+
+  world.moveBot("1", 101, 101);
+
+  const worldStateAfterMove = world.getState();
+  const botsAfterMove = [...worldStateAfterMove.bots.values()];
+  const botFromStateAfterMove = botsAfterMove[0];
+  if (!botFromStateAfterMove) {
+    throw new Error("Bot not found in the state");
+  }
+  expect(botFromStateAfterMove.x).toBe(100);
+  expect(botFromStateAfterMove.y).toBe(100);
+});
+
+it("doesn't allow the bot to go outside the world with negative x and y", () => {
+  const world = new World({ width: 100, height: 100 });
+  world.addBot("1");
+
+  // @ts-expect-error - world.botSpawns is private
+  const bot = [...world.botSpawns.values()].find(bot => bot.botId === "1") as BotSprite;
+  bot.x = 0;
+  bot.y = 0;
+
+  const worldStateBeforeMove = world.getState();
+  const botsBeforeMove = [...worldStateBeforeMove.bots.values()];
+  const botFromStateBeforeMove = botsBeforeMove[0];
+  if (!botFromStateBeforeMove) {
+    throw new Error("Bot not found in the state");
+  }
+  expect(botFromStateBeforeMove.x).toBe(0);
+  expect(botFromStateBeforeMove.y).toBe(0);
+
+  world.moveBot("1", -1, -1);
+
+  const worldStateAfterMove = world.getState();
+  const botsAfterMove = [...worldStateAfterMove.bots.values()];
+  const botFromStateAfterMove = botsAfterMove[0];
+  if (!botFromStateAfterMove) {
+    throw new Error("Bot not found in the state");
+  }
+  expect(botFromStateAfterMove.x).toBe(0);
+  expect(botFromStateAfterMove.y).toBe(0);
+});
