@@ -11,7 +11,29 @@ const fishRef = ref<Texture | null>(null);
 onMounted(async () => {
   intervalRef.value = window.setInterval(refresh, refreshIntervalMs);
 
-  fishRef.value = await Assets.load("/sprites/fish.png");
+  let ranNumOfPNG = Math.floor(5 * Math.random());
+  switch (ranNumOfPNG) {
+    case 0: {
+      fishRef.value = await Assets.load("/sprites/FishVer1Short.png");
+      break;
+    }
+    case 1: {
+      fishRef.value = await Assets.load("/sprites/FishVer2Short.png");
+      break;
+    }
+    case 2: {
+      fishRef.value = await Assets.load("/sprites/FishVer3Short.png");
+      break;
+    }
+    case 3: {
+      fishRef.value = await Assets.load("/sprites/FishVer4Short.png");
+      break;
+    }
+    case 4: {
+      fishRef.value = await Assets.load("/sprites/FishVer5Short.png");
+      break;
+    }
+  }
 });
 
 onBeforeUnmount(() => {
