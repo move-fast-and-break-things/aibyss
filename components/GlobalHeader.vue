@@ -3,8 +3,15 @@ const { subtitle } = defineProps<{ subtitle?: string }>();
 
 const { data: user } = await useFetch("/api/auth/user");
 
-useHead({
-  title: subtitle ? `${subtitle} • Aibyss` : "Aibyss",
+const title = subtitle ? `${subtitle} • Aibyss` : "Aibyss";
+const description = "Aibyss: code your AI to compete in a survival game";
+useSeoMeta({
+  title,
+  ogTitle: title,
+  description,
+  ogDescription: description,
+  ogImage: "https://aibyss.mfbt.community/og-image.png",
+  twitterCard: "summary_large_image",
 });
 </script>
 
