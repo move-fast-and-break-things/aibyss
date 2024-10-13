@@ -86,7 +86,7 @@ const { data: rating, status } = await useFetch("/api/rating");
             >
               <th
                 scope="row"
-                class="px-6 py-4"
+                class="px-6 py-4 font-medium text-gray-900"
               >
                 {{ index + 1 }}
               </th>
