@@ -198,9 +198,16 @@ watch(gameState, async (newState, prevState) => {
     class="h-full w-full"
     data-testid="game-screen"
   >
-    <canvas
-      ref="canvas"
-      class="shadow m-4 mt-0"
-    />
+    <div
+      class="flex flex-col shadow ml-4"
+      :style="{ maxWidth: gameState?.width + 'px' }"
+    >
+      <div class="flex flex-row justify-end mb-2 mt-1 mx-4 gap-6">
+        <AnchorLink href="/rating">
+          rating
+        </AnchorLink>
+      </div>
+      <canvas ref="canvas" />
+    </div>
   </div>
 </template>
