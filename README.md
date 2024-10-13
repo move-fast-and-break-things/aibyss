@@ -1,5 +1,9 @@
 # 🚧 UNDER DEVELOPMENT 🚧 Aibyss: code your AI to compete in a survival game
 
+<div align="center">
+  <img alt="Aibyss social image" src="https://raw.githubusercontent.com/move-fast-and-break-things/aibyss/refs/heads/main/public/og-image.png" width="600px" />
+</div>
+
 ## Setup
 
 - install [node.js](https://nodejs.org/en)
