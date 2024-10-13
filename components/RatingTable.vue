@@ -3,12 +3,12 @@ const { data: rating, status } = await useFetch("/api/rating");
 </script>
 
 <template>
-  <div class="flex flex-col mx-auto items-center">
+  <div class="flex flex-col mx-auto items-center max-w-full">
     <div class="text-lg font-semibold">
       Player rating for the last 7 days
     </div>
 
-    <div class="flex mx-auto relative overflow-x-auto shadow-md mt-8">
+    <div class="flex mx-auto relative overflow-x-auto shadow-md mt-8 max-w-full">
       <div v-if="status === 'pending'">
         Loading...
       </div>
