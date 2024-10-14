@@ -10,7 +10,7 @@ useSeoMeta({
   ogTitle: title,
   description,
   ogDescription: description,
-  ogImage: "https://aibyss.mfbt.community/og-image.png?v=1",
+  ogImage: "https://aibyss.mfbt.community/og-image.png?v=2",
   twitterCard: "summary_large_image",
 });
 </script>
