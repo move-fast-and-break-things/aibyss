@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { editor } from "monaco-editor";
 import { defaultCode, jsdoc } from "~/other/defaultCode.js";
 
 if (import.meta.client) {
@@ -20,6 +21,19 @@ if (import.meta.client) {
 
   // add JSDoc so the autocompletion always works
   monaco.languages.typescript.javascriptDefaults.addExtraLib(jsdoc);
+
+  const instance = getCurrentInstance();
+  if (instance) {
+    const editor = instance.refs.editor as editor.IMarker;
+
+    // Функция для обновления состояния кнопки
+    function updateButtonState() {
+      state.errorsInCode = monaco.editor.getModelMarkers(editor).length > 0;
+    }
+
+    // Подписываемся на изменения маркеров
+    monaco.editor.onDidChangeMarkers(updateButtonState);
+  }
 }
 
 const { data: user } = await useFetch("/api/auth/user");
@@ -27,6 +41,7 @@ const { data: user } = await useFetch("/api/auth/user");
 const state = reactive({
   code: user.value?.body.code || defaultCode,
   showAPIReference: false,
+  errorsInCode: false,
 });
 
 function onSubmit(event: Event) {
@@ -84,7 +99,13 @@ function onCloseAPIReferenceModal() {
       <div class="flex justify-end">
         <button
           type="submit"
-          class="h-10 px-6 font-semibold shadow bg-black text-white hover:bg-gray-800 transition"
+          class="h-10 px-6 font-semibold shadow text-white hover:bg-gray-800 transition"
+          :title="state.errorsInCode ? 'В коде допущена ошибка' : ''"
+          :disabled="state.errorsInCode"
+          :style="{
+            backgroundColor: state.errorsInCode ? 'gray' : 'black',
+            cursor: state.errorsInCode ? 'not-allowed' : 'pointer',
+          }"
         >
           Submit
         </button>
@@ -103,6 +124,7 @@ function onCloseAPIReferenceModal() {
         </ButtonLink>
       </div>
       <MonacoEditor
+        ref="editor"
         v-model="jsdoc"
         lang="javascript"
         :options="{
