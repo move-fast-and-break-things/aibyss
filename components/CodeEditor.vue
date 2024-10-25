@@ -27,11 +27,13 @@ const { data: user } = await useFetch("/api/auth/user");
 const state = reactive({
   code: user.value?.body.code || defaultCode,
   showAPIReference: false,
+  intervalSubmit: false,
 });
+
+const buttonText = ref("Submit");
 
 function onSubmit(event: Event) {
   event.preventDefault();
-
   fetch("/api/bot/submit", {
     method: "POST",
     headers: {
@@ -39,8 +41,20 @@ function onSubmit(event: Event) {
     },
     body: JSON.stringify({ code: state.code }),
   });
-}
 
+  state.intervalSubmit = true;
+  let countdown = 4;
+
+  const timer = setInterval(() => {
+    buttonText.value = `${countdown.toFixed(1)}`;
+    countdown -= 0.1;
+    if (countdown < 0) {
+      clearInterval(timer);
+      buttonText.value = "Submit";
+      state.intervalSubmit = false;
+    }
+  }, 100);
+}
 function onRestoreDefaultCodeClick() {
   state.code = defaultCode;
 }
@@ -84,9 +98,14 @@ function onCloseAPIReferenceModal() {
       <div class="flex justify-end">
         <button
           type="submit"
-          class="h-10 px-6 font-semibold shadow bg-black text-white hover:bg-gray-800 transition"
+          class="h-10 w-24 px-6 font-semibold shadow bg-black text-white hover:bg-gray-800 transition"
+          :disabled="state.intervalSubmit"
+          :style="{
+            backgroundColor: state.intervalSubmit ? 'gray' : 'black',
+            cursor: state.intervalSubmit ? 'not-allowed' : 'pointer',
+          }"
         >
-          Submit
+          {{ buttonText }}
         </button>
       </div>
     </form>
