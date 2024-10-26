@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
   const lastRequestTime = rateLimit.get(event.context.user.id);
 
   if (lastRequestTime && Date.now() - lastRequestTime <= RATE_LIMIT_THRESHOLD_IN_MILLIS) {
-    return { statusCode: 418, statusMessage: "Teapot needs 4 seconds to think about your code" };
+    return { statusCode: 429, statusMessage: "Teapot needs 4 seconds to think about your code" };
   }
 
   const result = await readValidatedBody(event, body => submitBotCodeSchema.safeParse(body));
