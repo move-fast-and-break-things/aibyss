@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { defaultCode, jsdoc } from "~/other/defaultCode.js";
+import { SUBMIT_COOLDOWN_SEC } from "~/other/submitApiRatelimitConstants";
 
 if (import.meta.client) {
   // configure monaco editor on client side
@@ -33,7 +34,7 @@ const state = reactive({
   code: user.value?.body.code || defaultCode,
   codeHasErrors: false,
   showAPIReference: false,
-  intervalSubmit: false,
+  submitCooldownSec: 0,
 });
 
 const buttonText = ref("Submit");
@@ -48,19 +49,15 @@ function onSubmit(event: Event) {
     body: JSON.stringify({ code: state.code }),
   });
 
-  state.intervalSubmit = true;
-  let countdown = 4;
-
+  state.submitCooldownSec = SUBMIT_COOLDOWN_SEC;
   const timer = setInterval(() => {
-    buttonText.value = `${countdown.toFixed(1)}`;
-    countdown -= 0.1;
-    if (countdown < 0) {
+    state.submitCooldownSec -= 1;
+    if (state.submitCooldownSec === 0) {
       clearInterval(timer);
-      buttonText.value = "Submit";
-      state.intervalSubmit = false;
     }
-  }, 100);
+  }, 1000);
 }
+
 function onRestoreDefaultCodeClick() {
   state.code = defaultCode;
 }
@@ -105,8 +102,8 @@ function onCloseAPIReferenceModal() {
         <button
           type="submit"
           class="h-10 px-6 font-semibold shadow bg-black text-white hover:bg-gray-800 transition disabled:opacity-50 disabled:bg-black disabled:cursor-not-allowed"
-          :title="state.intervalSubmit ? `Wait for ${state.intervalSubmit} more seconds to submit the code again` : state.codeHasErrors ? 'Fix errors in the code to submit' : undefined"
-          :disabled="state.codeHasErrors || state.intervalSubmit"
+          :title="state.submitCooldownSec > 0 ? `Wait for ${state.submitCooldownSec} more seconds to submit the code again` : state.codeHasErrors ? 'Fix errors in the code to submit' : undefined"
+          :disabled="state.codeHasErrors || state.submitCooldownSec > 0"
         >
           {{ buttonText }}
         </button>
