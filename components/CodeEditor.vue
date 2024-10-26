@@ -26,7 +26,6 @@ if (import.meta.client) {
   if (instance) {
     const editor = instance.refs.editor as editor.IMarker;
 
-    // Функция для обновления состояния кнопки
     function updateButtonState() {
       state.errorsInCode = monaco.editor.getModelMarkers(editor).length > 0;
     }
