@@ -20,12 +20,18 @@ if (import.meta.client) {
 
   // add JSDoc so the autocompletion always works
   monaco.languages.typescript.javascriptDefaults.addExtraLib(jsdoc);
+
+  monaco.editor.onDidChangeMarkers(() => {
+    const modelMarkers = monaco.editor.getModelMarkers({});
+    state.codeHasErrors = modelMarkers.some(marker => marker.severity === monaco.MarkerSeverity.Error);
+  });
 }
 
 const { data: user } = await useFetch("/api/auth/user");
 
 const state = reactive({
   code: user.value?.body.code || defaultCode,
+  codeHasErrors: false,
   showAPIReference: false,
 });
 
@@ -84,7 +90,9 @@ function onCloseAPIReferenceModal() {
       <div class="flex justify-end">
         <button
           type="submit"
-          class="h-10 px-6 font-semibold shadow bg-black text-white hover:bg-gray-800 transition"
+          class="h-10 px-6 font-semibold shadow bg-black text-white hover:bg-gray-800 transition disabled:opacity-50 disabled:bg-black disabled:cursor-not-allowed"
+          :title="state.codeHasErrors ? 'Fix errors in the code to submit' : undefined"
+          :disabled="state.codeHasErrors"
         >
           Submit
         </button>
