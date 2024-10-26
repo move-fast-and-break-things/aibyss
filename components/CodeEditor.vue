@@ -37,8 +37,6 @@ const state = reactive({
   submitCooldownSec: 0,
 });
 
-const buttonText = ref("Submit");
-
 function onSubmit(event: Event) {
   event.preventDefault();
   fetch("/api/bot/submit", {
@@ -105,7 +103,7 @@ function onCloseAPIReferenceModal() {
           :title="state.submitCooldownSec > 0 ? `Wait for ${state.submitCooldownSec} more seconds to submit the code again` : state.codeHasErrors ? 'Fix errors in the code to submit' : undefined"
           :disabled="state.codeHasErrors || state.submitCooldownSec > 0"
         >
-          {{ buttonText }}
+          Submit
         </button>
       </div>
     </form>
