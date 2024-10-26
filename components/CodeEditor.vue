@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { editor } from "monaco-editor";
 import { defaultCode, jsdoc } from "~/other/defaultCode.js";
 
 if (import.meta.client) {
@@ -22,24 +21,18 @@ if (import.meta.client) {
   // add JSDoc so the autocompletion always works
   monaco.languages.typescript.javascriptDefaults.addExtraLib(jsdoc);
 
-  const instance = getCurrentInstance();
-  if (instance) {
-    const editor = instance.refs.editor as editor.IMarker;
-
-    function updateButtonState() {
-      state.errorsInCode = monaco.editor.getModelMarkers(editor).length > 0;
-    }
-
-    monaco.editor.onDidChangeMarkers(updateButtonState);
-  }
+  monaco.editor.onDidChangeMarkers(() => {
+    const modelMarkers = monaco.editor.getModelMarkers({});
+    state.codeHasErrors = modelMarkers.some(marker => marker.severity === monaco.MarkerSeverity.Error);
+  });
 }
 
 const { data: user } = await useFetch("/api/auth/user");
 
 const state = reactive({
   code: user.value?.body.code || defaultCode,
+  codeHasErrors: false,
   showAPIReference: false,
-  errorsInCode: false,
 });
 
 function onSubmit(event: Event) {
@@ -97,13 +90,9 @@ function onCloseAPIReferenceModal() {
       <div class="flex justify-end">
         <button
           type="submit"
-          class="h-10 px-6 font-semibold shadow text-white hover:bg-gray-800 transition"
-          :title="state.errorsInCode ? 'В коде допущена ошибка' : ''"
-          :disabled="state.errorsInCode"
-          :style="{
-            backgroundColor: state.errorsInCode ? 'gray' : 'black',
-            cursor: state.errorsInCode ? 'not-allowed' : 'pointer',
-          }"
+          class="h-10 px-6 font-semibold shadow bg-black text-white hover:bg-gray-800 transition disabled:opacity-50 disabled:bg-black disabled:cursor-not-allowed"
+          :title="state.codeHasErrors ? 'Fix errors in the code to submit' : undefined"
+          :disabled="state.codeHasErrors"
         >
           Submit
         </button>
@@ -122,7 +111,6 @@ function onCloseAPIReferenceModal() {
         </ButtonLink>
       </div>
       <MonacoEditor
-        ref="editor"
         v-model="jsdoc"
         lang="javascript"
         :options="{
