@@ -66,6 +66,11 @@ function startEngine({ botApi }: StartEngineArgs) {
     bots = newBots;
   });
 
+  const gameTimeoutInterval = setInterval(() => {
+    endGame("Time's up");
+    console.debug(`The World was restarted after ${MAX_ROUND_TIME_MS} ms`);
+  }, MAX_ROUND_TIME_MS);
+
   setInterval(() => {
     runBots({ bots, world: WORLD_REF.world, botApi });
     const worldState = WORLD_REF.world.getState();
@@ -73,14 +78,10 @@ function startEngine({ botApi }: StartEngineArgs) {
       if (bot.radius > worldState.height / 4) {
         endGame("Player overdominating");
         console.debug(`The World was restarted cus ${bot.botId} was oversized`);
+        gameTimeoutInterval.refresh();
       }
     }
   }, 250);
-
-  setInterval(() => {
-    endGame("Time's up");
-    console.debug(`The World was restarted after ${MAX_ROUND_TIME_MS} ms`);
-  }, MAX_ROUND_TIME_MS);
 }
 
 function endGame(reason: string) {
