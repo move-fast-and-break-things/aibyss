@@ -66,7 +66,7 @@ function startEngine({ botApi }: StartEngineArgs) {
     bots = newBots;
   });
 
-  const timerInterval = setInterval(() => {
+  const gameTimeoutInterval = setInterval(() => {
     endGame("Time's up");
     console.debug(`The World was restarted after ${MAX_ROUND_TIME_MS} ms`);
   }, MAX_ROUND_TIME_MS);
