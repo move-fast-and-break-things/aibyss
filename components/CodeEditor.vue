@@ -30,7 +30,6 @@ if (import.meta.client) {
       state.errorsInCode = monaco.editor.getModelMarkers(editor).length > 0;
     }
 
-    // Подписываемся на изменения маркеров
     monaco.editor.onDidChangeMarkers(updateButtonState);
   }
 }
