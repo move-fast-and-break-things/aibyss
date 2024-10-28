@@ -39,6 +39,13 @@ export function getBots() {
   return { ...STORE };
 }
 
+export function getBotUsername(botId: string) {
+  if (!STORE[botId]) {
+    return "";
+  }
+  return STORE[botId].username;
+}
+
 export function subscribeToBotsUpdate(onUpdate: (bots: BotCodes) => void): () => void {
   botEventEmitter.on("update", onUpdate);
   return () => botEventEmitter.off("update", onUpdate);

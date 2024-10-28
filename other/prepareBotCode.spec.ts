@@ -10,7 +10,7 @@ it("prepares bot code correctly when there is one bot in the world", () => {
   };
 
   const state = {
-    bots: new Map([["1", { x: 0, y: 0, radius: 5, botId: "1", color: "#00FF00", spawnId: "s1" }]]),
+    bots: new Map([["1", { x: 0, y: 0, radius: 5, botId: "1", color: "#00FF00", spawnId: "s1", username: "bot1" }]]),
     food: [],
     width: 100,
     height: 100,
@@ -33,8 +33,8 @@ it("prepares bot code correctly when there are two bots in the world", () => {
 
   const state = {
     bots: new Map([
-      ["1", { x: 0, y: 0, radius: 5, botId: "1", color: "#00FF00", spawnId: "s1" }],
-      ["2", { x: 10, y: 10, radius: 5, botId: "2", color: "#00FF00", spawnId: "s2" }],
+      ["1", { x: 0, y: 0, radius: 5, botId: "1", color: "#00FF00", spawnId: "s1", username: "bot1" }],
+      ["2", { x: 10, y: 10, radius: 5, botId: "2", color: "#00FF00", spawnId: "s2", username: "bot2" }],
     ]),
     food: [],
     width: 100,
@@ -58,9 +58,9 @@ it("prepares bot code correctly when there are three bots and some food in the w
 
   const state = {
     bots: new Map([
-      ["1", { x: 0, y: 0, radius: 5, botId: "1", color: "#00FF00", spawnId: "s1" }],
-      ["2", { x: 10, y: 10, radius: 5, botId: "2", color: "#00FF00", spawnId: "s2" }],
-      ["3", { x: 20, y: 20, radius: 5, botId: "3", color: "#00FF00", spawnId: "s3" }],
+      ["1", { x: 0, y: 0, radius: 5, botId: "1", color: "#00FF00", spawnId: "s1", username: "bot1" }],
+      ["2", { x: 10, y: 10, radius: 5, botId: "2", color: "#00FF00", spawnId: "s2", username: "bot2" }],
+      ["3", { x: 20, y: 20, radius: 5, botId: "3", color: "#00FF00", spawnId: "s3", username: "bot3" }],
     ]),
     food: [{ x: 30, y: 30, radius: 5 }, { x: 40, y: 40, radius: 5 }],
     width: 100,

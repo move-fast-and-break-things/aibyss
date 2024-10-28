@@ -17,10 +17,10 @@ export default function prepareBotCode({ bot, state, botApi }: PrepareBotCodeArg
     return;
   }
 
-  const me = { x: botObject.x, y: botObject.y, radius: botObject.radius };
+  const me = { x: botObject.x, y: botObject.y, radius: botObject.radius, username: botObject.username };
   const otherPlayers = [...state.bots.values()]
     .filter(b => b.botId !== bot.id)
-    .map(b => ({ x: b.x, y: b.y, radius: b.radius }));
+    .map(b => ({ x: b.x, y: b.y, radius: b.radius, username: b.username }));
   const food = state.food.map(f => ({ x: f.x, y: f.y, radius: f.radius }));
 
   const preparedCode = `
