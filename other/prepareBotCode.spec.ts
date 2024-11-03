@@ -9,6 +9,8 @@ it("prepares bot code correctly when there is one bot in the world", () => {
     userId: 1,
   };
 
+  const botCodes = { 1: bot };
+
   const state = {
     bots: new Map([["1", { x: 0, y: 0, radius: 5, botId: "1", color: "#00FF00", spawnId: "s1" }]]),
     food: [],
@@ -18,7 +20,7 @@ it("prepares bot code correctly when there is one bot in the world", () => {
 
   const botApi = "console.log('hello bot api');";
 
-  const preparedCode = prepareBotCode({ bot, state, botApi });
+  const preparedCode = prepareBotCode({ bot, botCodes, state, botApi });
 
   expect(preparedCode).toMatchSnapshot();
 });
@@ -29,6 +31,16 @@ it("prepares bot code correctly when there are two bots in the world", () => {
     code: "console.log('hello world');",
     username: "yurij",
     userId: 1,
+  };
+
+  const botCodes = {
+    1: bot,
+    2: {
+      id: "2",
+      code: "console.log('hello world');",
+      username: "danil",
+      userId: 2,
+    },
   };
 
   const state = {
@@ -43,7 +55,7 @@ it("prepares bot code correctly when there are two bots in the world", () => {
 
   const botApi = "console.log('hello bot api');";
 
-  const preparedCode = prepareBotCode({ bot, state, botApi });
+  const preparedCode = prepareBotCode({ bot, botCodes, state, botApi });
 
   expect(preparedCode).toMatchSnapshot();
 });
@@ -54,6 +66,22 @@ it("prepares bot code correctly when there are three bots and some food in the w
     code: "console.log('hello world');",
     username: "yurij",
     userId: 1,
+  };
+
+  const botCodes = {
+    1: bot,
+    2: {
+      id: "2",
+      code: "console.log('hello world');",
+      username: "danil",
+      userId: 2,
+    },
+    3: {
+      id: "3",
+      code: "console.log('hello world');",
+      username: "andrey",
+      userId: 3,
+    },
   };
 
   const state = {
@@ -69,7 +97,7 @@ it("prepares bot code correctly when there are three bots and some food in the w
 
   const botApi = "console.log('hello bot api');";
 
-  const preparedCode = prepareBotCode({ bot, state, botApi });
+  const preparedCode = prepareBotCode({ bot, botCodes, state, botApi });
 
   expect(preparedCode).toMatchSnapshot();
 });

@@ -38,7 +38,7 @@ async function runBots({ bots, world, botApi }: RunBotArgs) {
 
   for (const bot of Object.values(bots)) {
     try {
-      const preparedCode = prepareBotCode({ bot, state, botApi });
+      const preparedCode = prepareBotCode({ bot, botCodes: bots, state, botApi });
       if (!preparedCode) {
         console.error(`Failed to prepare code for bot ${bot.id}`);
         continue;

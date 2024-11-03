@@ -27,6 +27,7 @@ export const jsdoc = `/**
  * @property {number} x
  * @property {number} y
  * @property {number} radius
+ * @property {string} username
  */
 
 /**
