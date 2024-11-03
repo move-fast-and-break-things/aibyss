@@ -1,3 +1,11 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  @font-face {
+    font-family: 'Retropix';
+    font-style: normal;
+    src: url(/fonts/retropix.otf);
+  }
+}

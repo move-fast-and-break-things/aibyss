@@ -108,30 +108,22 @@ function onCloseAPIReferenceModal() {
       </div>
     </form>
   </div>
-  <div
-    v-if="state.showAPIReference"
-    class="absolute z-10 w-full h-full top-0 left-0 bg-slate-400 bg-opacity-20"
-    @click.self="onCloseAPIReferenceModal"
+  <ModalDialog
+    :open="state.showAPIReference"
+    :on-close="onCloseAPIReferenceModal"
   >
-    <div class="bg-white z-10 flex flex-col max-w-xl max-h-[calc(100vh-140px)] h-[600px] shadow p-4 pt-2 mx-auto mt-[110px]">
-      <div class="flex flex-row justify-end mb-2">
-        <ButtonLink @click="onCloseAPIReferenceModal">
-          close
-        </ButtonLink>
-      </div>
-      <MonacoEditor
-        v-model="jsdoc"
-        lang="javascript"
-        :options="{
-          readOnly: true,
-          readOnlyMessage: { value: 'Cannot edit API reference' },
-          lineNumbers: 'off',
-          smoothScrolling: true,
-          scrollBeyondLastLine: false,
-          minimap: { enabled: false },
-        }"
-        class="flex-grow"
-      />
-    </div>
-  </div>
+    <MonacoEditor
+      v-model="jsdoc"
+      lang="javascript"
+      :options="{
+        readOnly: true,
+        readOnlyMessage: { value: 'Cannot edit API reference' },
+        lineNumbers: 'off',
+        smoothScrolling: true,
+        scrollBeyondLastLine: false,
+        minimap: { enabled: false },
+      }"
+      class="flex-grow"
+    />
+  </ModalDialog>
 </template>
