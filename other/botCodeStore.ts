@@ -39,13 +39,6 @@ export function getBots() {
   return { ...STORE };
 }
 
-export function getBotUsername(botId: string) {
-  if (!STORE[botId]) {
-    throw new Error(`bot with botId=${botId} not found in the botCodeStore`);
-  }
-  return STORE[botId].username;
-}
-
 export function subscribeToBotsUpdate(onUpdate: (bots: BotCodes) => void): () => void {
   botEventEmitter.on("update", onUpdate);
   return () => botEventEmitter.off("update", onUpdate);

@@ -1,4 +1,3 @@
-import { getBotUsername } from "./botCodeStore";
 import getRandomElement from "./getRandomElement";
 
 export interface Sprite {
@@ -16,7 +15,6 @@ export interface BotSprite extends Sprite {
   botId: string;
   color: string;
   spawnId: string;
-  username: string;
 }
 
 export interface WorldState {
@@ -140,7 +138,6 @@ export default class World {
     // spawnId is unique per bot live
     // useful to track respawns on the UI
     const spawnId = Math.random().toString(36).substring(5);
-    const username = getBotUsername(botId);
 
     const newBot = {
       ...randomPosition,
@@ -148,7 +145,6 @@ export default class World {
       radius: this.newBotRadius,
       color,
       spawnId,
-      username,
     };
     this.botSpawns.set(spawnId, newBot);
     this.botIdToSpawnId.set(botId, spawnId);
