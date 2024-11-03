@@ -41,7 +41,7 @@ export function getBots() {
 
 export function getBotUsername(botId: string) {
   if (!STORE[botId]) {
-    return "";
+    throw new Error(`bot with botId=${botId} not found in the botCodeStore`);
   }
   return STORE[botId].username;
 }
