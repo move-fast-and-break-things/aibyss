@@ -1,39 +1,26 @@
 <script setup lang="ts">
-import { Application, Graphics, Text, FillGradient, Assets, type Texture, Sprite } from "pixi.js";
+import { Application, Graphics, Text, FillGradient, Assets, type Texture, Sprite, Color } from "pixi.js";
 
 const refreshIntervalMs = 1000;
 
 const { data: gameState, refresh } = await useFetch("/api/state");
 const intervalRef = ref<number | null>(null);
 
-const fishRef = ref<Texture | null>(null);
+const fishRef1 = ref<Texture | null>(null);
+const fishRef2 = ref<Texture | null>(null);
+const fishRef3 = ref<Texture | null>(null);
+const fishRef4 = ref<Texture | null>(null);
+const fishRef5 = ref<Texture | null>(null);
 
 onMounted(async () => {
   intervalRef.value = window.setInterval(refresh, refreshIntervalMs);
 
-  let ranNumOfPNG = Math.floor(5 * Math.random());
-  switch (ranNumOfPNG) {
-    case 0: {
-      fishRef.value = await Assets.load("/sprites/FishVer1Short.png");
-      break;
-    }
-    case 1: {
-      fishRef.value = await Assets.load("/sprites/FishVer2Short.png");
-      break;
-    }
-    case 2: {
-      fishRef.value = await Assets.load("/sprites/FishVer3Short.png");
-      break;
-    }
-    case 3: {
-      fishRef.value = await Assets.load("/sprites/FishVer4Short.png");
-      break;
-    }
-    case 4: {
-      fishRef.value = await Assets.load("/sprites/FishVer5Short.png");
-      break;
-    }
-  }
+  fishRef1.value = await Assets.load("/sprites/FishVer1Short.png");
+  fishRef2.value = await Assets.load("/sprites/FishVer2Short.png");
+  fishRef3.value = await Assets.load("/sprites/FishVer3Short.png");
+  fishRef4.value = await Assets.load("/sprites/FishVer4Short.png");
+  fishRef5.value = await Assets.load("/sprites/FishVer5Short.png");
+
 });
 
 onBeforeUnmount(() => {
@@ -67,7 +54,7 @@ type DrawBotArgs = {
 function getDirectionAngle(previousPosition: { x: number; y: number }, newPosition: { x: number; y: number }): number {
   return Math.atan2(newPosition.y - previousPosition.y, newPosition.x - previousPosition.x);
 }
-
+let i = 1;
 async function drawBot({ bot, graphics, previousPosition }: DrawBotArgs) {
   for (const child of graphics.children) {
     graphics.removeChild(child);
@@ -75,18 +62,47 @@ async function drawBot({ bot, graphics, previousPosition }: DrawBotArgs) {
   graphics.clear();
 
   // draw bot
-  if (!fishRef.value) {
-    throw new Error("Fish sprite is not loaded");
+  switch (bot.username) {
+    case 'ivanBee': {
+      if (!fishRef4.value) {
+        throw new Error("Fish sprite is not loaded");
+      }
+      let sprite = new Sprite(fishRef4.value);
+      sprite.anchor.set(0.5);
+      sprite.width = bot.radius * 2;
+      sprite.height = bot.radius * 2;
+      sprite.x = bot.x;
+      sprite.y = bot.y;
+      sprite.rotation = getDirectionAngle(previousPosition, { x: bot.x, y: bot.y });
+      graphics.addChild(sprite);
+    } break;
+    case 'IvanBee2': {
+      if (!fishRef5.value) {
+        throw new Error("Fish sprite is not loaded");
+      }
+      let sprite = new Sprite(fishRef5.value);
+      sprite.anchor.set(0.5);
+      sprite.width = bot.radius * 2;
+      sprite.height = bot.radius * 2;
+      sprite.x = bot.x;
+      sprite.y = bot.y;
+      sprite.rotation = getDirectionAngle(previousPosition, { x: bot.x, y: bot.y });
+      graphics.addChild(sprite);
+    } break;
+    default: {
+      if (!fishRef3.value) {
+        throw new Error("Fish sprite is not loaded");
+      }
+      let sprite = new Sprite(fishRef3.value);
+      sprite.anchor.set(0.5);
+      sprite.width = bot.radius * 2;
+      sprite.height = bot.radius * 2;
+      sprite.x = bot.x;
+      sprite.y = bot.y;
+      sprite.rotation = getDirectionAngle(previousPosition, { x: bot.x, y: bot.y });
+      graphics.addChild(sprite);
+    } break;
   }
-  const sprite = new Sprite(fishRef.value);
-  sprite.anchor.set(0.5);
-  sprite.width = bot.radius * 2;
-  sprite.height = bot.radius * 2;
-  sprite.x = bot.x;
-  sprite.y = bot.y;
-  sprite.rotation = getDirectionAngle(previousPosition, { x: bot.x, y: bot.y });
-  graphics.addChild(sprite);
-
   const existingUsername = graphics.children.find(child => child instanceof Text);
   if (existingUsername) {
     // avoid recreating username if it already exists
