@@ -53,6 +53,7 @@ async function runBots({ bots, world, prevWorldState, botApi }: RunBotArgs) {
     } catch (err) {
       // TODO(yurij): notify user that their bot crashed
       console.error(err);
+      botActions.push([]);
     }
   };
 
