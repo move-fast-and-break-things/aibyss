@@ -5,11 +5,11 @@ type PrepareBotCodeArgs = {
   bot: BotCode;
   botInfo: Record<string, { username: string }>;
   state: Pick<WorldState, "bots" | "food" | "width" | "height">;
-  previousState: Pick<WorldState, "bots" | "food">;
+  prevState: Pick<WorldState, "bots" | "food">;
   botApi: string;
 };
 
-export default function prepareBotCode({ bot, botInfo, state, previousState, botApi }: PrepareBotCodeArgs): string {
+export default function prepareBotCode({ bot, botInfo, state, prevState, botApi }: PrepareBotCodeArgs): string {
   const { code, username } = bot;
 
   const botObject = [...state.bots.values()].find(b => bot.id === b.botId);
@@ -28,7 +28,7 @@ export default function prepareBotCode({ bot, botInfo, state, previousState, bot
     }));
   const food = state.food.map(f => ({ x: f.x, y: f.y, radius: f.radius }));
 
-  const prevBotObject = [...previousState.bots.values()].find(b => bot.id === b.botId);
+  const prevBotObject = [...prevState.bots.values()].find(b => bot.id === b.botId);
   // if bot was not in the previous state, this means we've just spawned
   // and we should use the current state as the previous state
   const prevMe = prevBotObject
@@ -38,10 +38,10 @@ export default function prepareBotCode({ bot, botInfo, state, previousState, bot
         radius: prevBotObject.radius,
       }
     : me;
-  const prevOtherPlayers = [...previousState.bots.values()]
+  const prevOtherPlayers = [...prevState.bots.values()]
     .filter(b => b.botId !== bot.id)
     .map(b => ({ x: b.x, y: b.y, radius: b.radius, username: botInfo[b.botId]?.username }));
-  const prevFood = previousState.food.map(f => ({ x: f.x, y: f.y, radius: f.radius }));
+  const prevFood = prevState.food.map(f => ({ x: f.x, y: f.y, radius: f.radius }));
 
   const preparedCode = `
 global._player = ${JSON.stringify(me)};

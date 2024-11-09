@@ -45,7 +45,7 @@ async function runBots({ bots, world, prevWorldState, botApi }: RunBotArgs) {
         bot,
         botInfo: bots,
         state,
-        previousState: prevWorldState,
+        prevState: prevWorldState,
         botApi,
       });
       const actions = await runBot(preparedCode);
@@ -89,10 +89,13 @@ function startEngine({ botApi }: StartEngineArgs) {
   // at the very start of the game, `prevWorldState` equals to the current world state
   let prevWorldState = WORLD_REF.world.getState();
   setInterval(async () => {
+    const newPrevWorldState = WORLD_REF.world.getState();
     await runBots({ bots, world: WORLD_REF.world, prevWorldState, botApi });
-    prevWorldState = WORLD_REF.world.getState();
-    for (const bot of prevWorldState.bots.values()) {
-      if (bot.radius > prevWorldState.height / 4) {
+    prevWorldState = newPrevWorldState;
+
+    const worldState = WORLD_REF.world.getState();
+    for (const bot of worldState.bots.values()) {
+      if (bot.radius > worldState.height / 4) {
         endGame("Player overdominating");
         console.debug(`The World was restarted cus ${bot.botId} was oversized`);
         gameTimeoutInterval.refresh();

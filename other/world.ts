@@ -161,8 +161,8 @@ export default class World {
    */
   getState(): WorldState {
     const botSpawnsCopy = new Map();
-    for (const [botSpawnId, bot] of this.botSpawns.entries()) {
-      botSpawnsCopy.set(botSpawnId, { ...bot });
+    for (const [botSpawnId, botSpawn] of this.botSpawns.entries()) {
+      botSpawnsCopy.set(botSpawnId, { ...botSpawn });
     }
 
     return {
