@@ -22,8 +22,6 @@ export interface WorldState {
   food: Sprite[];
   width: number;
   height: number;
-  stats: Map<string, Stats>;
-  startTime: Date;
 }
 
 type BotSprites = Map<string, BotSprite>;
@@ -158,12 +156,25 @@ export default class World {
     return newBot;
   }
 
+  /**
+   * @returns {WorldState} a deep copy of the current state of the world
+   */
   getState(): WorldState {
+    const botSpawnsCopy = new Map();
+    for (const [botSpawnId, bot] of this.botSpawns.entries()) {
+      botSpawnsCopy.set(botSpawnId, { ...bot });
+    }
+
     return {
-      bots: this.botSpawns,
-      food: this.food,
+      bots: botSpawnsCopy,
+      food: [...this.food],
       width: this.width,
       height: this.height,
+    };
+  }
+
+  getStats() {
+    return {
       stats: this.stats,
       startTime: this.startTime,
     };
@@ -203,89 +214,95 @@ export default class World {
 
     bot.x = Math.max(0, Math.min(x, this.width));
     bot.y = Math.max(0, Math.min(y, this.height));
-
-    let checkLimit = 5;
-    while (this.checkCollisions(botId) && --checkLimit) {
-      continue;
-    }
   }
 
-  checkCollisions(botId: string) {
-    const spawnId = this.botIdToSpawnId.get(botId);
-    if (!spawnId) {
-      throw new Error(`Bot with id ${botId} not found`);
-    }
+  checkCollisions() {
+    let hasCollisions = false;
 
-    const bot = this.botSpawns.get(spawnId);
-    if (!bot) {
-      throw new Error(`Bot with id ${botId} not found`);
-    }
+    // always process smallest first to give them a better chance and
+    // make the game more interesting
+    const sortedBotSpawns = [...this.botSpawns.values()]
+      .sort((a, b) => a.radius - b.radius);
 
-    // check if bot eats other bots
-    const botSpawns = this.botSpawns;
-    const botIdsToRemove: string[] = [];
-    for (const [otherBotSpawnId, otherBot] of botSpawns.entries()) {
-      if (otherBotSpawnId === spawnId) {
+    for (const bot of sortedBotSpawns) {
+      if (!this.botSpawns.has(bot.spawnId)) {
+        // nothing to do here if the bot was just eaten
         continue;
       }
 
-      const distance = World.distance(bot, otherBot);
-      if (distance < bot.radius && bot.radius > otherBot.radius) {
-        botIdsToRemove.push(otherBotSpawnId);
-        // updating statistic
-        const botStats = this.stats.get(bot.botId);
-        if (!botStats) {
-          console.error(new Error("can't find bot stats; check if they were created in `.addBot`"));
+      // check if bot eats other bots
+      const botIdsToRemove: string[] = [];
+      for (const [otherBotSpawnId, otherBot] of this.botSpawns.entries()) {
+        if (otherBotSpawnId === bot.spawnId) {
           continue;
         }
-        const otherBotStats = this.stats.get(otherBot.botId);
-        if (!otherBotStats) {
-          console.error(new Error("can't find other bot stats; check if they were created in `.addBot`"));
+
+        const distance = World.distance(bot, otherBot);
+        if (distance < bot.radius && bot.radius > otherBot.radius) {
+          botIdsToRemove.push(otherBotSpawnId);
+
+          // update stats
+          const botStats = this.stats.get(bot.botId);
+          if (!botStats) {
+            console.error(new Error("can't find bot stats; check if they were created in `.addBot`"));
+            continue;
+          }
+          botStats.kills += 1;
+
+          const otherBotStats = this.stats.get(otherBot.botId);
+          if (!otherBotStats) {
+            console.error(new Error("can't find other bot stats; check if they were created in `.addBot`"));
+            continue;
+          }
+          otherBotStats.deaths += 1;
+        }
+      }
+
+      // check if bot eats food
+      const food = this.food;
+      const foodIdxToRemove: number[] = [];
+      for (let i = 0; i < food.length; ++i) {
+        const foodElement = food[i];
+        if (!foodElement) {
+          throw new Error("unexpected: food element is undefined");
+        }
+        const distance = World.distance(bot, foodElement);
+        if (distance < bot.radius) {
+          foodIdxToRemove.push(i);
+
+          // update stats
+          const botStats = this.stats.get(bot.botId);
+          if (!botStats) {
+            console.error(new Error("can't find bot stats; check if they were created in `.addBot`"));
+            continue;
+          }
+          botStats.foodEaten += 1;
+        }
+      }
+
+      // remove food and bots
+      for (const botSpawnIdToRemove of botIdsToRemove) {
+        const botToRemove = this.botSpawns.get(botSpawnIdToRemove);
+        if (!botToRemove) {
           continue;
         }
-        botStats.kills += 1;
-        otherBotStats.deaths += 1;
+        bot.radius += botToRemove.radius;
+        this.botIdToSpawnId.delete(botToRemove.botId);
+        this.botSpawns.delete(botSpawnIdToRemove);
       }
-    }
 
-    // check if bot eats food
-    const food = this.food;
-    const foodIdxToRemove: number[] = [];
-    for (let i = 0; i < food.length; ++i) {
-      // it's safe to cast to Sprite because know that `i` is within the bounds of the array
-      const distance = World.distance(bot, food[i] as Sprite);
-      if (distance < bot.radius) {
-        foodIdxToRemove.push(i);
-        // updating statistic
-        const botStats = this.stats.get(bot.botId);
-        if (!botStats) {
-          console.error(new Error("can't find bot stats; check if they were created in `.addBot`"));
-          continue;
-        }
-        botStats.foodEaten += 1;
+      // sort in descending order to avoid index shifting when removing elements
+      foodIdxToRemove.sort((a, b) => b - a);
+      for (const foodIdx of foodIdxToRemove) {
+        // it's safe to cast to Sprite because we know that `foodIdx` is within the bounds of the array
+        bot.radius += (food[foodIdx] as Sprite).radius;
+        food.splice(foodIdx, 1);
       }
+
+      hasCollisions = hasCollisions || botIdsToRemove.length > 0 || foodIdxToRemove.length > 0;
     }
 
-    // remove food and bots
-    for (const botSpawnIdToRemove of botIdsToRemove) {
-      const botToRemove = botSpawns.get(botSpawnIdToRemove);
-      if (!botToRemove) {
-        continue;
-      }
-      bot.radius += botToRemove.radius;
-      this.botIdToSpawnId.delete(botToRemove.botId);
-      botSpawns.delete(botSpawnIdToRemove);
-    }
-
-    // sort in descending order to avoid index shifting when removing elements
-    foodIdxToRemove.sort((a, b) => b - a);
-    for (const foodIdx of foodIdxToRemove) {
-      // it's safe to cast to Sprite because we know that `foodIdx` is within the bounds of the array
-      bot.radius += (food[foodIdx] as Sprite).radius;
-      food.splice(foodIdx, 1);
-    }
-
-    return Boolean(botIdsToRemove.length || foodIdxToRemove.length);
+    return hasCollisions;
   }
 
   getSpawnId(botId: string) {

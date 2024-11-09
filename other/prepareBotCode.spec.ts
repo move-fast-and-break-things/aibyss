@@ -20,7 +20,7 @@ it("prepares bot code correctly when there is one bot in the world", () => {
 
   const botApi = "console.log('hello bot api');";
 
-  const preparedCode = prepareBotCode({ bot, botCodes, state, botApi });
+  const preparedCode = prepareBotCode({ bot, botInfo: botCodes, state, botApi });
 
   expect(preparedCode).toMatchSnapshot();
 });
@@ -55,7 +55,7 @@ it("prepares bot code correctly when there are two bots in the world", () => {
 
   const botApi = "console.log('hello bot api');";
 
-  const preparedCode = prepareBotCode({ bot, botCodes, state, botApi });
+  const preparedCode = prepareBotCode({ bot, botInfo: botCodes, state, botApi });
 
   expect(preparedCode).toMatchSnapshot();
 });
@@ -97,7 +97,7 @@ it("prepares bot code correctly when there are three bots and some food in the w
 
   const botApi = "console.log('hello bot api');";
 
-  const preparedCode = prepareBotCode({ bot, botCodes, state, botApi });
+  const preparedCode = prepareBotCode({ bot, botInfo: botCodes, state, botApi });
 
   expect(preparedCode).toMatchSnapshot();
 });

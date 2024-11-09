@@ -1,21 +1,20 @@
-import type { BotCode, BotCodes } from "~/other/botCodeStore";
+import type { BotCode } from "~/other/botCodeStore";
 import type { WorldState } from "~/other/world";
 
 type PrepareBotCodeArgs = {
   bot: BotCode;
-  botCodes: BotCodes;
+  botInfo: Record<string, { username: string }>;
   state: Pick<WorldState, "bots" | "food" | "width" | "height">;
+  // prevState: Pick<WorldState, "bots" | "food">;
   botApi: string;
 };
 
-export default function prepareBotCode({ bot, botCodes, state, botApi }: PrepareBotCodeArgs): string | undefined {
+export default function prepareBotCode({ bot, botInfo, state, botApi }: PrepareBotCodeArgs): string {
   const { code, username } = bot;
 
   const botObject = [...state.bots.values()].find(b => bot.id === b.botId);
   if (!botObject) {
-    // TODO(yurij): handle this better
-    console.error(`Bot with id ${bot.id} not found in the world`);
-    return;
+    throw new Error(`Bot with id ${bot.id} not found in the world`);
   }
 
   const me = { x: botObject.x, y: botObject.y, radius: botObject.radius, username };
@@ -25,9 +24,16 @@ export default function prepareBotCode({ bot, botCodes, state, botApi }: Prepare
       x: b.x,
       y: b.y,
       radius: b.radius,
-      username: botCodes[b.botId]?.username,
+      username: botInfo[b.botId]?.username,
     }));
   const food = state.food.map(f => ({ x: f.x, y: f.y, radius: f.radius }));
+
+  // const prevBotObject = [...prevState.bots.values()].find(b => bot.id === b.botId);
+  // if (!prevBotObject) {
+  //   // TODO(yurij): handle this better
+  //   console.error(`Bot with id ${bot.id} not found in the previous state`);
+  //   return;
+  // }
 
   const preparedCode = `
 global._player = ${JSON.stringify(me)};

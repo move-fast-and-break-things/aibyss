@@ -18,7 +18,7 @@ it("correctly removes the smaller bot when the bigger bot eats it", () => {
   bot2.x = 10;
   bot2.y = 10;
 
-  world.checkCollisions("1");
+  world.checkCollisions();
 
   expect(world.hasBot("1")).toBe(true);
   expect(world.hasBot("2")).toBe(false);
@@ -41,7 +41,7 @@ it("correctly removes food when the bot eats it", () => {
   food.x = 10;
   food.y = 10;
 
-  world.checkCollisions("1");
+  world.checkCollisions();
 
   // @ts-expect-error - world.food is private
   expect(world.food.length).toBeLessThan(100);
@@ -69,7 +69,7 @@ it("shouldn't crash when bot eats two food items and one of them with the last i
   food2.x = 10;
   food2.y = 10;
 
-  world.checkCollisions("1");
+  world.checkCollisions();
 
   // @ts-expect-error - world.food is private
   expect(world.food.length).toBeLessThan(100);
@@ -94,6 +94,7 @@ it("doesn't allow the bot to go outside the world with large x and y", () => {
   expect(botFromStateBeforeMove.y).toBe(100);
 
   world.moveBot("1", 101, 101);
+  world.checkCollisions();
 
   const worldStateAfterMove = world.getState();
   const botsAfterMove = [...worldStateAfterMove.bots.values()];
@@ -124,6 +125,7 @@ it("doesn't allow the bot to go outside the world with negative x and y", () => 
   expect(botFromStateBeforeMove.y).toBe(0);
 
   world.moveBot("1", -1, -1);
+  world.checkCollisions();
 
   const worldStateAfterMove = world.getState();
   const botsAfterMove = [...worldStateAfterMove.bots.values()];
