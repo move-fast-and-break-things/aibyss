@@ -21,7 +21,7 @@ const onCloseAboutModal = () => {
 </script>
 
 <template>
-  <header class="p-4 flex flex-row items-center justify-between">
+  <header class="px-4 py-2 flex flex-row items-center justify-between h-18">
     <div class="flex flex-row items-center gap-3 text-slate-900 text-3xl font-['Retropix']">
       <a href="/">
         <img
@@ -30,7 +30,7 @@ const onCloseAboutModal = () => {
           width="42px"
         >
       </a>
-      <div class="flex flex-row items-center gap-2 mt-[4px]">
+      <div class="flex flex-row items-center gap-2 mt-[8px]">
         <h2 v-if="subtitle">
           {{ subtitle }}
         </h2>
