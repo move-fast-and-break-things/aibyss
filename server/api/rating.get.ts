@@ -3,7 +3,9 @@ import prisma from "~/other/db";
 type UserRating = {
   userId: number;
   username: string;
-  score: number;
+  score7days: number;
+  score24hours: number;
+  score1hour: number;
   gamesPlayed: number;
   wins: number;
   kills: number;
@@ -36,13 +38,17 @@ export default defineEventHandler(async () => {
   });
 
   const rawUserRatings: Record<number, RawUserRating> = {};
+  const rawUserRatings24hours: Record<number, Omit<RawUserRating, "score7days" | "score24hours" | "score1hour">> = {};
+  const rawUserRatings1hour: Record<number, Omit<RawUserRating, "score7days" | "score24hours" | "score1hour">> = {};
 
   for (const game of games) {
     for (const stat of game.game_stats) {
       const userRating = rawUserRatings[stat.user_id] || (rawUserRatings[stat.user_id] = {
         userId: stat.user_id,
         username: users.find(user => user.id === stat.user_id)?.username ?? "Mysterious Stranger",
-        score: 0,
+        score7days: 0,
+        score24hours: 0,
+        score1hour: 0,
         gamesPlayed: 0,
         wins: 0,
         kills: 0,
@@ -67,10 +73,10 @@ export default defineEventHandler(async () => {
       avgEndgameSize: userRating.endgameSizes.reduce((acc, size) => acc + size, 0) / userRating.endgameSizes.length,
     };
 
-    finalRating.score = computeScore(finalRating);
+    finalRating.score7days = computeScore(finalRating);
 
     return finalRating;
-  }).sort((a, b) => b.score - a.score);
+  }).sort((a, b) => b.score7days - a.score7days);
 
   return userRatings;
 });

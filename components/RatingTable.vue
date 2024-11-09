@@ -97,7 +97,7 @@ const { data: rating, status } = await useFetch("/api/rating");
                 {{ userRating.username }}
               </th>
               <td class="px-6 py-4">
-                {{ userRating.score }}
+                {{ userRating.score7days }}
               </td>
               <td class="px-6 py-4 bg-gray-50 dark:bg-gray-800">
                 {{ userRating.wins }}
