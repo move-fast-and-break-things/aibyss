@@ -5,7 +5,7 @@ exports[`correctly saves values for a different previous state 1`] = `
 global._player = {"x":0,"y":0,"radius":5,"username":"yurij"};
 global._otherPlayers = [{"x":10,"y":10,"radius":5,"username":"danil"},{"x":20,"y":20,"radius":5,"username":"andrey"}];
 global._food = [{"x":30,"y":30,"radius":5},{"x":40,"y":40,"radius":5}];
-global._previousState = {"me":{"x":2,"y":4,"radius":3},"otherPlayers":[{"x":11,"y":12,"radius":4,"username":"danil"},{"x":22,"y":40,"radius":5,"username":"andrey"}],"food":[{"x":3,"y":3,"radius":2},{"x":30,"y":30,"radius":5},{"x":40,"y":40,"radius":5}]};
+global._previousOtherPlayersState = [{"x":11,"y":12,"radius":4,"username":"danil"},{"x":22,"y":40,"radius":5,"username":"andrey"}];
 global._worldWidth = 100;
 global._worldHeight = 100;
 
@@ -15,12 +15,12 @@ console.log('hello bot api');
 "
 `;
 
-exports[`handles the case when the bot was not in the previous state 1`] = `
+exports[`handles the case when the bot was not in the previous bot state 1`] = `
 "
 global._player = {"x":0,"y":0,"radius":5,"username":"yurij"};
 global._otherPlayers = [{"x":10,"y":10,"radius":5,"username":"danil"},{"x":20,"y":20,"radius":5,"username":"andrey"}];
 global._food = [{"x":30,"y":30,"radius":5},{"x":40,"y":40,"radius":5}];
-global._previousState = {"me":{"x":0,"y":0,"radius":5,"username":"yurij"},"otherPlayers":[],"food":[]};
+global._previousOtherPlayersState = [];
 global._worldWidth = 100;
 global._worldHeight = 100;
 
@@ -35,7 +35,7 @@ exports[`prepares bot code correctly when there are three bots and some food in 
 global._player = {"x":0,"y":0,"radius":5,"username":"yurij"};
 global._otherPlayers = [{"x":10,"y":10,"radius":5,"username":"danil"},{"x":20,"y":20,"radius":5,"username":"andrey"}];
 global._food = [{"x":30,"y":30,"radius":5},{"x":40,"y":40,"radius":5}];
-global._previousState = {"me":{"x":0,"y":0,"radius":5},"otherPlayers":[{"x":10,"y":10,"radius":5,"username":"danil"},{"x":20,"y":20,"radius":5,"username":"andrey"}],"food":[{"x":30,"y":30,"radius":5},{"x":40,"y":40,"radius":5}]};
+global._previousOtherPlayersState = [{"x":10,"y":10,"radius":5,"username":"danil"},{"x":20,"y":20,"radius":5,"username":"andrey"}];
 global._worldWidth = 100;
 global._worldHeight = 100;
 
@@ -50,7 +50,7 @@ exports[`prepares bot code correctly when there are two bots in the world 1`] = 
 global._player = {"x":0,"y":0,"radius":5,"username":"yurij"};
 global._otherPlayers = [{"x":10,"y":10,"radius":5,"username":"danil"}];
 global._food = [];
-global._previousState = {"me":{"x":0,"y":0,"radius":5},"otherPlayers":[{"x":10,"y":10,"radius":5,"username":"danil"}],"food":[]};
+global._previousOtherPlayersState = [{"x":10,"y":10,"radius":5,"username":"danil"}];
 global._worldWidth = 100;
 global._worldHeight = 100;
 
@@ -65,7 +65,7 @@ exports[`prepares bot code correctly when there is one bot in the world 1`] = `
 global._player = {"x":0,"y":0,"radius":5,"username":"yurij"};
 global._otherPlayers = [];
 global._food = [];
-global._previousState = {"me":{"x":0,"y":0,"radius":5},"otherPlayers":[],"food":[]};
+global._previousOtherPlayersState = [];
 global._worldWidth = 100;
 global._worldHeight = 100;
 

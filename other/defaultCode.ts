@@ -6,10 +6,10 @@ export const jsdoc = `/**
  *   Information about your player.
  * @property {Player[]} otherPlayers
  *   Information about other players.
+ * @property {Player[]} previousOtherPlayersState
+ *   Information about the other players in the previous frame.
  * @property {Food[]} food
  *   Information about the not yet eaten food.
- * @property {PreviousState} previousState
- *   Information about the previous state of the game.
  * @property {MoveTowards} moveTowards
  *   A method to move your player towards another
  *   player or food.
@@ -20,15 +20,6 @@ export const jsdoc = `/**
  *   The height of the game world.
  * @property {number} worldWidth
  *   The width of the game world.
- */
-
-/**
- * The previous state object.
- * 
- * @typedef {object} PreviousState
- * @property {Player} me
- * @property {Player[]} otherPlayers
- * @property {Food[]} food
  */
 
 /**

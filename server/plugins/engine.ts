@@ -24,11 +24,11 @@ async function runBot(code: string) {
 type RunBotArgs = {
   bots: botCodeStore.BotCodes;
   world: World;
-  prevWorldState: WorldState;
+  prevBotState: WorldState["bots"];
   botApi: string;
 };
 
-async function runBots({ bots, world, prevWorldState, botApi }: RunBotArgs) {
+async function runBots({ bots, world, prevBotState, botApi }: RunBotArgs) {
   for (const bot of Object.values(bots)) {
     if (!world.hasBot(bot.id)) {
       world.addBot(bot.id);
@@ -45,7 +45,7 @@ async function runBots({ bots, world, prevWorldState, botApi }: RunBotArgs) {
         bot,
         botInfo: bots,
         state,
-        prevState: prevWorldState,
+        prevBotState,
         botApi,
       });
       const actions = await runBot(preparedCode);
@@ -90,7 +90,7 @@ function startEngine({ botApi }: StartEngineArgs) {
   let prevWorldState = WORLD_REF.world.getState();
   setInterval(async () => {
     const newPrevWorldState = WORLD_REF.world.getState();
-    await runBots({ bots, world: WORLD_REF.world, prevWorldState, botApi });
+    await runBots({ bots, world: WORLD_REF.world, prevBotState: prevWorldState.bots, botApi });
     prevWorldState = newPrevWorldState;
 
     const worldState = WORLD_REF.world.getState();
