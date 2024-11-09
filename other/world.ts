@@ -236,13 +236,9 @@ export default class World {
         if (otherBotSpawnId === bot.spawnId) {
           continue;
         }
-
         const distance = World.distance(bot, otherBot);
         if (distance < bot.radius && bot.radius > otherBot.radius) {
           botIdsToRemove.push(otherBotSpawnId);
-
-          this.incrementStat({ botId: bot.botId, stat: "kills" });
-          this.incrementStat({ botId: otherBot.botId, stat: "deaths" });
         }
       }
 
@@ -257,8 +253,6 @@ export default class World {
         const distance = World.distance(bot, foodElement);
         if (distance < bot.radius) {
           foodIdxToRemove.push(i);
-
-          this.incrementStat({ botId: bot.botId, stat: "foodEaten" });
         }
       }
 
@@ -269,8 +263,12 @@ export default class World {
           continue;
         }
         bot.radius += botToRemove.radius;
+
         this.botIdToSpawnId.delete(botToRemove.botId);
         this.botSpawns.delete(botSpawnIdToRemove);
+
+        this.incrementStat({ botId: bot.botId, stat: "kills" });
+        this.incrementStat({ botId: botToRemove.botId, stat: "deaths" });
       }
 
       // sort in descending order to avoid index shifting when removing elements
@@ -279,6 +277,8 @@ export default class World {
         // it's safe to cast to Sprite because we know that `foodIdx` is within the bounds of the array
         bot.radius += (food[foodIdx] as Sprite).radius;
         food.splice(foodIdx, 1);
+
+        this.incrementStat({ botId: bot.botId, stat: "foodEaten" });
       }
 
       hasCollisions = hasCollisions || botIdsToRemove.length > 0 || foodIdxToRemove.length > 0;
