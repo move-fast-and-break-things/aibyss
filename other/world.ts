@@ -230,31 +230,8 @@ export default class World {
         continue;
       }
 
-      // check if bot eats other bots
-      const botIdsToRemove: string[] = [];
-      for (const [otherBotSpawnId, otherBot] of this.botSpawns.entries()) {
-        if (otherBotSpawnId === bot.spawnId) {
-          continue;
-        }
-        const distance = World.distance(bot, otherBot);
-        if (distance < bot.radius && bot.radius > otherBot.radius) {
-          botIdsToRemove.push(otherBotSpawnId);
-        }
-      }
-
-      // check if bot eats food
-      const food = this.food;
-      const foodIdxToRemove: number[] = [];
-      for (let i = 0; i < food.length; ++i) {
-        const foodElement = food[i];
-        if (!foodElement) {
-          throw new Error("unexpected: food element is undefined");
-        }
-        const distance = World.distance(bot, foodElement);
-        if (distance < bot.radius) {
-          foodIdxToRemove.push(i);
-        }
-      }
+      const botIdsToRemove: string[] = this.getBotIdsKilledByBot(bot);
+      const foodIdxToRemove: number[] = this.getFoodIdsEatenByBot(bot);
 
       // remove food and bots
       for (const botSpawnIdToRemove of botIdsToRemove) {
@@ -274,9 +251,12 @@ export default class World {
       // sort in descending order to avoid index shifting when removing elements
       foodIdxToRemove.sort((a, b) => b - a);
       for (const foodIdx of foodIdxToRemove) {
-        // it's safe to cast to Sprite because we know that `foodIdx` is within the bounds of the array
-        bot.radius += (food[foodIdx] as Sprite).radius;
-        food.splice(foodIdx, 1);
+        const foodItem = this.food[foodIdx];
+        if (!foodItem) {
+          throw new Error("unexpected: food element is undefined");
+        }
+        bot.radius += foodItem.radius;
+        this.food.splice(foodIdx, 1);
 
         this.incrementStat({ botId: bot.botId, stat: "foodEaten" });
       }
@@ -285,6 +265,35 @@ export default class World {
     }
 
     return hasCollisions;
+  }
+
+  getBotIdsKilledByBot(bot: BotSprite): string[] {
+    const killedBotIds: string[] = [];
+    for (const [otherBotSpawnId, otherBot] of this.botSpawns.entries()) {
+      if (otherBotSpawnId === bot.spawnId) {
+        continue;
+      }
+      const distance = World.distance(bot, otherBot);
+      if (distance < bot.radius && bot.radius > otherBot.radius) {
+        killedBotIds.push(otherBotSpawnId);
+      }
+    }
+    return killedBotIds;
+  }
+
+  getFoodIdsEatenByBot(bot: BotSprite): number[] {
+    const foodEatenIds: number[] = [];
+    for (let i = 0; i < this.food.length; ++i) {
+      const foodElement = this.food[i];
+      if (!foodElement) {
+        throw new Error("unexpected: food element is undefined");
+      }
+      const distance = World.distance(bot, foodElement);
+      if (distance < bot.radius) {
+        foodEatenIds.push(i);
+      }
+    }
+    return foodEatenIds;
   }
 
   incrementStat({ botId, stat }: { botId: string; stat: keyof Stats }) {
