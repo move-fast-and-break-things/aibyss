@@ -1,7 +1,7 @@
 import ivm from "isolated-vm";
 import prepareBotCode from "~/other/prepareBotCode";
 import * as botCodeStore from "~/other/botCodeStore";
-import World from "~/other/world";
+import World, { type WorldState } from "~/other/world";
 import { recordGameEnd, type GameStat } from "~/other/recordGamedb";
 
 const MEMORY_LIMIT_MB = 64;
@@ -24,10 +24,11 @@ async function runBot(code: string) {
 type RunBotArgs = {
   bots: botCodeStore.BotCodes;
   world: World;
+  prevWorldState: WorldState;
   botApi: string;
 };
 
-async function runBots({ bots, world, botApi }: RunBotArgs) {
+async function runBots({ bots, world, prevWorldState, botApi }: RunBotArgs) {
   for (const bot of Object.values(bots)) {
     if (!world.hasBot(bot.id)) {
       world.addBot(bot.id);
@@ -40,7 +41,13 @@ async function runBots({ bots, world, botApi }: RunBotArgs) {
   const botActions = [];
   for (const bot of botArray) {
     try {
-      const preparedCode = prepareBotCode({ bot, botInfo: bots, state, botApi });
+      const preparedCode = prepareBotCode({
+        bot,
+        botInfo: bots,
+        state,
+        previousState: prevWorldState,
+        botApi,
+      });
       const actions = await runBot(preparedCode);
       botActions.push(actions);
     } catch (err) {
@@ -78,11 +85,13 @@ function startEngine({ botApi }: StartEngineArgs) {
     console.debug(`The World was restarted after ${MAX_ROUND_TIME_MS} ms`);
   }, MAX_ROUND_TIME_MS);
 
-  setInterval(() => {
-    runBots({ bots, world: WORLD_REF.world, botApi });
-    const worldState = WORLD_REF.world.getState();
-    for (const bot of worldState.bots.values()) {
-      if (bot.radius > worldState.height / 4) {
+  // at the very start of the game, `prevWorldState` equals to the current world state
+  let prevWorldState = WORLD_REF.world.getState();
+  setInterval(async () => {
+    await runBots({ bots, world: WORLD_REF.world, prevWorldState, botApi });
+    prevWorldState = WORLD_REF.world.getState();
+    for (const bot of prevWorldState.bots.values()) {
+      if (bot.radius > prevWorldState.height / 4) {
         endGame("Player overdominating");
         console.debug(`The World was restarted cus ${bot.botId} was oversized`);
         gameTimeoutInterval.refresh();
