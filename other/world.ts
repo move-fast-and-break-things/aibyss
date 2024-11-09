@@ -241,20 +241,8 @@ export default class World {
         if (distance < bot.radius && bot.radius > otherBot.radius) {
           botIdsToRemove.push(otherBotSpawnId);
 
-          // update stats
-          const botStats = this.stats.get(bot.botId);
-          if (!botStats) {
-            console.error(new Error("can't find bot stats; check if they were created in `.addBot`"));
-            continue;
-          }
-          botStats.kills += 1;
-
-          const otherBotStats = this.stats.get(otherBot.botId);
-          if (!otherBotStats) {
-            console.error(new Error("can't find other bot stats; check if they were created in `.addBot`"));
-            continue;
-          }
-          otherBotStats.deaths += 1;
+          this.incrementStat({ botId: bot.botId, stat: "kills" });
+          this.incrementStat({ botId: otherBot.botId, stat: "deaths" });
         }
       }
 
@@ -270,13 +258,7 @@ export default class World {
         if (distance < bot.radius) {
           foodIdxToRemove.push(i);
 
-          // update stats
-          const botStats = this.stats.get(bot.botId);
-          if (!botStats) {
-            console.error(new Error("can't find bot stats; check if they were created in `.addBot`"));
-            continue;
-          }
-          botStats.foodEaten += 1;
+          this.incrementStat({ botId: bot.botId, stat: "foodEaten" });
         }
       }
 
@@ -303,6 +285,15 @@ export default class World {
     }
 
     return hasCollisions;
+  }
+
+  incrementStat({ botId, stat }: { botId: string; stat: keyof Stats }) {
+    const botStats = this.stats.get(botId);
+    if (!botStats) {
+      console.error(new Error(`can't find bot stats for botId=${botId}`));
+      return;
+    }
+    botStats[stat] += 1;
   }
 
   getSpawnId(botId: string) {
