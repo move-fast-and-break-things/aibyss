@@ -68,7 +68,7 @@ const onCloseAboutModal = () => {
   <ModalDialog
     :open="aboutModalOpen"
     :on-close="onCloseAboutModal"
-    extra-modal-class="h-[400px]"
+    extra-modal-class="h-[400px] max-h-[400px]"
   >
     <div class="flex flex-grow flex-col justify-between">
       <div class="flex flex-col gap-2">
