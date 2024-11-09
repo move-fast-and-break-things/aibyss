@@ -68,15 +68,14 @@ const onCloseAboutModal = () => {
   <ModalDialog
     :open="aboutModalOpen"
     :on-close="onCloseAboutModal"
+    extra-modal-class="h-[400px]"
   >
     <div class="flex flex-grow flex-col justify-between">
       <div class="flex flex-col gap-2">
         <p>Aibyss is a survival game where you compete by coding your AI in <span class="font-semibold">JavaScript</span>.</p>
 
         <p>
-          The game is played in real time, and you can see how your AI performs against other players' AIs. It is played in a 2D grid, and your AI can move around, attack other AIs, and collect resources. The game is written in TypeScript. If you want to contribute, check out the list of open issues and the contributing guide <AnchorLink href="https://github.com/move-fast-and-break-things/aibyss">
-            here
-          </AnchorLink>.
+          The game is played in real time, and you can see how your AI performs against other players' AIs. It is played in a 2D grid, and your AI can move around, attack other AIs, and collect resources. The game is written in TypeScript. If you want to contribute, check out the list of open issues and the contributing guide <AnchorLink href="https://github.com/move-fast-and-break-things/aibyss">here</AnchorLink>.
         </p>
 
         <p>Good luck, and have fun!</p>
@@ -87,27 +86,19 @@ const onCloseAboutModal = () => {
           The logo and the art for the social preview image created by <AnchorLink
             href="https://github.com/Bee133"
             rel="nofollow noreferrer"
-          >
-            Ivan Pchelka
-          </AnchorLink>.
+          >Ivan Pchelka</AnchorLink>.
         </p>
         <p>
           The <AnchorLink
             href="https://fontstruct.com/fontstructions/show/1716995"
             rel="nofollow noreferrer"
-          >
-            FontStruction "RetroPix"
-          </AnchorLink> by <AnchorLink
+          >FontStruction "RetroPix"</AnchorLink> by <AnchorLink
             href="https://brandonkleeman.com/"
             rel="nofollow noreferrer"
-          >
-            Brandon Kleeman
-          </AnchorLink> is licensed under a <AnchorLink
+          >Brandon Kleeman</AnchorLink> is licensed under a <AnchorLink
             href="http://creativecommons.org/licenses/by/3.0/"
             rel="nofollow noreferrer"
-          >
-            Creative Commons Attribution license
-          </AnchorLink>.
+          >Creative Commons Attribution license</AnchorLink>.
         </p>
       </div>
     </div>
