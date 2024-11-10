@@ -44,10 +44,10 @@ export default defineEventHandler(async () => {
     include: { game_stats: true },
   });
 
-  const date24hoursAgo = new Date();
+  const date24hoursAgo = new Date(now);
   date24hoursAgo.setHours(date24hoursAgo.getHours() - 24);
 
-  const date1hourAgo = new Date();
+  const date1hourAgo = new Date(now);
   date1hourAgo.setHours(date1hourAgo.getHours() - 1);
 
   const rawUserStats: Record<number, RawUserStats> = {};
