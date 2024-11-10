@@ -1,3 +1,4 @@
+import { type GameStats } from "@prisma/client";
 import prisma from "~/other/db";
 
 type UserStats = {
@@ -22,23 +23,12 @@ type RawStats = Omit<UserStats, "avgEndgameSize" | "maxEndgameSize"> & {
   endgameSizes: number[];
 };
 
-function getEmptyRawStats() {
-  return {
-    gamesPlayed: 0,
-    wins: 0,
-    kills: 0,
-    deaths: 0,
-    foodEaten: 0,
-    endgameSizes: [],
-  };
-}
-
 type RawUserStats = {
   userId: number;
   username: string;
   stats7days: RawStats;
   stats24hours: RawStats;
-  stats7hours: RawStats;
+  stats1hour: RawStats;
 };
 
 export default defineEventHandler(async () => {
@@ -57,8 +47,8 @@ export default defineEventHandler(async () => {
   const date24hoursAgo = new Date();
   date24hoursAgo.setHours(date24hoursAgo.getHours() - 24);
 
-  const date7hoursAgo = new Date();
-  date7hoursAgo.setHours(date7hoursAgo.getHours() - 7);
+  const date1hourAgo = new Date();
+  date1hourAgo.setHours(date1hourAgo.getHours() - 1);
 
   const rawUserStats: Record<number, RawUserStats> = {};
 
@@ -79,32 +69,29 @@ export default defineEventHandler(async () => {
         username: user.username,
         stats7days: getEmptyRawStats(),
         stats24hours: getEmptyRawStats(),
-        stats7hours: getEmptyRawStats(),
+        stats1hour: getEmptyRawStats(),
       });
 
-      rawUserStat.stats7days.gamesPlayed += 1;
-      rawUserStat.stats7days.kills += stat.kills;
-      rawUserStat.stats7days.deaths += stat.deaths;
-      rawUserStat.stats7days.foodEaten += stat.food_eaten;
-      rawUserStat.stats7days.endgameSizes.push(stat.size);
-      rawUserStat.stats7days.wins += stat.user_id === winnerUserId ? 1 : 0;
+      rawUserStat.stats7days = bumpRawStats({
+        rawStats: rawUserStat.stats7days,
+        stats: stat,
+        winnerUserId,
+      });
 
-      if (game.start_time >= date24hoursAgo) {
-        rawUserStat.stats24hours.gamesPlayed += 1;
-        rawUserStat.stats24hours.kills += stat.kills;
-        rawUserStat.stats24hours.deaths += stat.deaths;
-        rawUserStat.stats24hours.foodEaten += stat.food_eaten;
-        rawUserStat.stats24hours.endgameSizes.push(stat.size);
-        rawUserStat.stats24hours.wins += stat.user_id === winnerUserId ? 1 : 0;
+      if (game.start_time > date24hoursAgo) {
+        rawUserStat.stats24hours = bumpRawStats({
+          rawStats: rawUserStat.stats24hours,
+          stats: stat,
+          winnerUserId,
+        });
       }
 
-      if (game.start_time >= date7hoursAgo) {
-        rawUserStat.stats7hours.gamesPlayed += 1;
-        rawUserStat.stats7hours.kills += stat.kills;
-        rawUserStat.stats7hours.deaths += stat.deaths;
-        rawUserStat.stats7hours.foodEaten += stat.food_eaten;
-        rawUserStat.stats7hours.endgameSizes.push(stat.size);
-        rawUserStat.stats7hours.wins += stat.user_id === winnerUserId ? 1 : 0;
+      if (game.start_time > date1hourAgo) {
+        rawUserStat.stats1hour = bumpRawStats({
+          rawStats: rawUserStat.stats1hour,
+          stats: stat,
+          winnerUserId,
+        });
       }
     }
   }
@@ -121,7 +108,7 @@ export default defineEventHandler(async () => {
       ),
       score7days: computeScore(rawUserStat.stats7days),
       score24hours: computeScore(rawUserStat.stats24hours),
-      score1hour: computeScore(rawUserStat.stats7hours),
+      score1hour: computeScore(rawUserStat.stats1hour),
     };
   }).sort((a, b) => b.score7days - a.score7days);
 
@@ -134,4 +121,30 @@ function computeScore(userRating: RawStats) {
     + userRating.kills * 10
     + userRating.foodEaten
   );
+}
+
+function getEmptyRawStats(): RawStats {
+  return {
+    gamesPlayed: 0,
+    wins: 0,
+    kills: 0,
+    deaths: 0,
+    foodEaten: 0,
+    endgameSizes: [],
+  };
+}
+
+function bumpRawStats({ rawStats, stats, winnerUserId }: {
+  rawStats: RawStats;
+  stats: GameStats;
+  winnerUserId: number | undefined;
+}): RawStats {
+  return {
+    gamesPlayed: rawStats.gamesPlayed + 1,
+    wins: rawStats.wins + (stats.user_id === winnerUserId ? 1 : 0),
+    kills: rawStats.kills + stats.kills,
+    deaths: rawStats.deaths + stats.deaths,
+    foodEaten: rawStats.foodEaten + stats.food_eaten,
+    endgameSizes: [...rawStats.endgameSizes, stats.size],
+  };
 }
