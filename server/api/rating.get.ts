@@ -114,6 +114,8 @@ export default defineEventHandler(async () => {
           winnerUserId,
         });
       } else {
+        // create new dynamic stats for earlier hours until we reach an hour
+        // that covers the current game
         let matchingStat = lastDynamicStat;
         do {
           matchingStat = {
@@ -122,6 +124,7 @@ export default defineEventHandler(async () => {
           };
           rawUserStat.scoreDynamic1hour.push(matchingStat);
         } while (matchingStat.intervalEnd.getTime() - game.end_time.getTime() >= ONE_HOUR_MS);
+
         matchingStat.stats = getUpdatedRawStats({
           rawStats: matchingStat.stats,
           stats: stat,
@@ -137,6 +140,9 @@ export default defineEventHandler(async () => {
     const dynamicScores = rawUserStat.scoreDynamic1hour
       .map(dynamicStat => computeScore(dynamicStat.stats))
       .reverse();
+
+    // pad the array with zeros to ensure they are all the same length
+    // and we can graph them easily
     const scoreDynamic1hour = frontPadArrayWithZeros({
       array: dynamicScores,
       targetLength: expectedDynamicStatCount,
