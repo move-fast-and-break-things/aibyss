@@ -1,14 +1,16 @@
 <script setup lang="ts">
 const { data: rating, status } = await useFetch("/api/rating");
+
+const isModalOpen = ref(false);
 </script>
 
 <template>
-  <div class="flex flex-col mx-auto items-center max-w-full">
+  <div class="flex flex-col mx-auto items-center max-w-full gap-8">
     <div class="text-lg font-semibold">
       Player rating for the last 7 days
     </div>
 
-    <div class="flex mx-auto relative overflow-x-auto shadow-md mt-8 max-w-full">
+    <div class="flex mx-auto relative overflow-x-auto shadow-md max-w-full">
       <div v-if="status === 'pending'">
         Loading...
       </div>
@@ -44,7 +46,12 @@ const { data: rating, status } = await useFetch("/api/rating");
                 scope="col"
                 class="px-6 py-3"
               >
-                1h score
+                <ButtonLink
+                  class="uppercase text-left"
+                  @click="isModalOpen = true"
+                >
+                  1h score
+                </ButtonLink>
               </th>
               <th
                 scope="col"
@@ -146,5 +153,16 @@ const { data: rating, status } = await useFetch("/api/rating");
         </div>
       </div>
     </div>
+
+    <ModalDialog
+      :open="isModalOpen"
+      :on-close="() => (isModalOpen = false)"
+      extra-modal-class="max-w-[800px] min-h-0 h-auto w-[800px]"
+    >
+      <RatingChart
+        v-if="rating"
+        :rating="rating"
+      />
+    </ModalDialog>
   </div>
 </template>
