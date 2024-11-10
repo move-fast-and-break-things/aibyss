@@ -72,14 +72,14 @@ export default defineEventHandler(async () => {
         stats1hour: getEmptyRawStats(),
       });
 
-      rawUserStat.stats7days = updateRawStats({
+      rawUserStat.stats7days = getUpdatedRawStats({
         rawStats: rawUserStat.stats7days,
         stats: stat,
         winnerUserId,
       });
 
       if (game.start_time > date24hoursAgo) {
-        rawUserStat.stats24hours = updateRawStats({
+        rawUserStat.stats24hours = getUpdatedRawStats({
           rawStats: rawUserStat.stats24hours,
           stats: stat,
           winnerUserId,
@@ -87,7 +87,7 @@ export default defineEventHandler(async () => {
       }
 
       if (game.start_time > date1hourAgo) {
-        rawUserStat.stats1hour = updateRawStats({
+        rawUserStat.stats1hour = getUpdatedRawStats({
           rawStats: rawUserStat.stats1hour,
           stats: stat,
           winnerUserId,
@@ -134,7 +134,7 @@ function getEmptyRawStats(): RawStats {
   };
 }
 
-function updateRawStats({ rawStats, stats, winnerUserId }: {
+function getUpdatedRawStats({ rawStats, stats, winnerUserId }: {
   rawStats: RawStats;
   stats: GameStats;
   winnerUserId: number | undefined;
