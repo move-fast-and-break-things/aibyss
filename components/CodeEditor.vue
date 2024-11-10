@@ -111,6 +111,7 @@ function onCloseAPIReferenceModal() {
   <ModalDialog
     :open="state.showAPIReference"
     :on-close="onCloseAPIReferenceModal"
+    extra-modal-class="w-[540px]"
   >
     <MonacoEditor
       v-model="jsdoc"
