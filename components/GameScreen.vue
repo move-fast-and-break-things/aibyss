@@ -11,21 +11,33 @@ const fishRef2 = ref<Texture | null>(null);
 const fishRef3 = ref<Texture | null>(null);
 const fishRef4 = ref<Texture | null>(null);
 const fishRef5 = ref<Texture | null>(null);
-const masRef = Array.from({ length: 5 }, () => ref<Texture | null>(null));;
- 
+const fishRef6 = ref<Texture | null>(null);
+const fishRef7 = ref<Texture | null>(null);
+const fishRef8 = ref<Texture | null>(null);
+const fishRef9 = ref<Texture | null>(null);
+const masRef = Array.from({ length: 9 }, () => ref<Texture | null>(null));
+
 onMounted(async () => {
   intervalRef.value = window.setInterval(refresh, refreshIntervalMs);
 
   fishRef1.value = await Assets.load("/sprites/FishVer1Short.png");
-  masRef.push(fishRef1);
+  masRef[0] = fishRef1;
   fishRef2.value = await Assets.load("/sprites/FishVer2Short.png");
-  masRef.push(fishRef2);
+  masRef[1] = fishRef2;
   fishRef3.value = await Assets.load("/sprites/FishVer3Short.png");
-  masRef.push(fishRef3);
+  masRef[2] = fishRef3;
   fishRef4.value = await Assets.load("/sprites/FishVer4Short.png");
-  masRef.push(fishRef4);
+  masRef[3] = fishRef4;
   fishRef5.value = await Assets.load("/sprites/FishVer5Short.png");
-  masRef.push(fishRef5);
+  masRef[4] = fishRef5;
+  fishRef6.value = await Assets.load("/sprites/FishVer6Short.png");
+  masRef[5] = fishRef6;
+  fishRef7.value = await Assets.load("/sprites/FishVer7Short.png");
+  masRef[6] = fishRef7;
+  fishRef8.value = await Assets.load("/sprites/FishVer8Short.png");
+  masRef[6] = fishRef8;
+  fishRef9.value = await Assets.load("/sprites/FishVer9Short.png");
+  masRef[6] = fishRef9;
 
 });
 
@@ -59,6 +71,20 @@ type DrawBotArgs = {
 function getDirectionAngle(previousPosition: { x: number; y: number }, newPosition: { x: number; y: number }): number {
   return Math.atan2(newPosition.y - previousPosition.y, newPosition.x - previousPosition.x);
 }
+function isFlipX1(previousPosition: { x: number;}, newPosition: { x: number;}): boolean{
+  if (newPosition.x <= previousPosition.x) {
+    return true;
+  } else {
+    return false;
+  }
+}
+function isFlipX2(previousPosition: { x: number;}, newPosition: { x: number;}): boolean{
+  if (newPosition.x > previousPosition.x) {
+    return true;
+  } else {
+    return false;
+  }
+}
 let i = 1;
 async function drawBot({ bot, graphics, previousPosition }: DrawBotArgs) {
   for (const child of graphics.children) {
@@ -68,67 +94,29 @@ async function drawBot({ bot, graphics, previousPosition }: DrawBotArgs) {
 
   // draw bot
   const usernameHash = bot.username.charCodeAt(0) + bot.username.charCodeAt(1) + bot.username.charCodeAt(2);
-  let numOfSprite = usernameHash % masRef.length;
+  const numOfSprite = usernameHash % (masRef.length);
+  if (!masRef[numOfSprite]) {
+    throw new Error("Fish sprite is not loaded");
+  }
+  const fishTexture = masRef[numOfSprite].value;
   
-  const fishTexture = masRef[numOfSprite]?.value;
-  /*if (!fishTexture) {
+  if (!fishTexture) {
     throw new Error("Fish sprite is not loaded");
   }
-  let sprite = new Sprite(fishTexture);*/
-  if (!fishRef1.value) {
-    throw new Error("Fish sprite is not loaded");
-  }
-  let sprite = new Sprite(fishRef1.value);
-  switch (numOfSprite) {
-    case 0: {
-      if (!fishRef1.value) {
-        throw new Error("Fish sprite is not loaded");
-      }
-      sprite = new Sprite(fishRef1.value);
-    } break;
-    case 1: {
-      if (!fishRef2.value) {
-        throw new Error("Fish sprite is not loaded");
-      }
-      sprite = new Sprite(fishRef2.value);
-    } break;
-    case 2: {
-      if (!fishRef3.value) {
-        throw new Error("Fish sprite is not loaded");
-      }
-      sprite = new Sprite(fishRef3.value);
-    } break;
-    case 3: {
-      if (!fishRef4.value) {
-        throw new Error("Fish sprite is not loaded");
-      }
-      sprite = new Sprite(fishRef4.value);
-    } break;
-    case 4: {
-      if (!fishRef5.value) {
-        throw new Error("Fish sprite is not loaded");
-      }
-      sprite = new Sprite(fishRef5.value);
-    } break;
-    default: {
-      if (!fishRef3.value) {
-        throw new Error("Fish sprite is not loaded");
-      }
-      sprite = new Sprite(fishRef3.value);
-    } break;
-  }
+  let sprite = new Sprite(fishTexture);
   sprite.anchor.set(0.5);
   sprite.width = bot.radius * 2;
   sprite.height = bot.radius * 2;
   sprite.x = bot.x;
   sprite.y = bot.y;
-  let botRot = getDirectionAngle(previousPosition,bot);
-  if (botRot > Math.PI/2) {
+  //let botRot = getDirectionAngle(previousPosition,bot);
+  let botFlip1 = isFlipX1(previousPosition,bot);
+  let botFlip2 = isFlipX2(previousPosition,bot);
+  //debugger;
+  if (botFlip1 && (sprite.scale.x >= 0)) {
     sprite.scale.x *= -1;
-    sprite.angle = botRot;
-  } else {
-    sprite.scale.x *= 1;
-    sprite.angle = botRot;
+  } else if (botFlip2 && (sprite.scale.x <= 0)) {
+    sprite.scale.x *= -1;
   }
   graphics.addChild(sprite);
   const existingUsername = graphics.children.find(child => child instanceof Text);
