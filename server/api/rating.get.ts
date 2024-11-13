@@ -11,12 +11,16 @@ type UserStats = {
   avgEndgameSize: number;
 };
 
-type UserRating = UserStats & {
+export type UserRating = UserStats & {
   userId: number;
   username: string;
   score7days: number;
   score24hours: number;
   score1hour: number;
+  /**
+   * Contains the last 7 days of `score1hour` values.
+   */
+  scoreDynamic1hour: number[];
 };
 
 type RawStats = Omit<UserStats, "avgEndgameSize" | "maxEndgameSize"> & {
@@ -29,7 +33,10 @@ type RawUserStats = {
   stats7days: RawStats;
   stats24hours: RawStats;
   stats1hour: RawStats;
+  scoreDynamic1hour: { intervalEnd: Date; stats: RawStats }[];
 };
+
+const ONE_HOUR_MS = 60 * 60 * 1000;
 
 export default defineEventHandler(async () => {
   const now = new Date();
@@ -52,7 +59,8 @@ export default defineEventHandler(async () => {
 
   const rawUserStats: Record<number, RawUserStats> = {};
 
-  for (const game of games) {
+  const sortedGames = [...games].sort((a, b) => b.start_time.getTime() - a.start_time.getTime());
+  for (const game of sortedGames) {
     const usersBySize = [...game.game_stats].sort((a, b) => b.size - a.size);
     // the winner is the largest user by the end of the game
     // but they shouldn't share the win with other users, otherwise it's a draw
@@ -70,6 +78,7 @@ export default defineEventHandler(async () => {
         stats7days: getEmptyRawStats(),
         stats24hours: getEmptyRawStats(),
         stats1hour: getEmptyRawStats(),
+        scoreDynamic1hour: [{ intervalEnd: now, stats: getEmptyRawStats() }],
       });
 
       rawUserStat.stats7days = getUpdatedRawStats({
@@ -93,10 +102,52 @@ export default defineEventHandler(async () => {
           winnerUserId,
         });
       }
+
+      const lastDynamicStat = rawUserStat.scoreDynamic1hour[rawUserStat.scoreDynamic1hour.length - 1];
+      if (!lastDynamicStat) {
+        throw new Error("lastDynamicStat is undefined");
+      }
+      if (lastDynamicStat.intervalEnd.getTime() - game.end_time.getTime() < ONE_HOUR_MS) {
+        lastDynamicStat.stats = getUpdatedRawStats({
+          rawStats: lastDynamicStat.stats,
+          stats: stat,
+          winnerUserId,
+        });
+      } else {
+        // create new dynamic stats for earlier hours until we reach an hour
+        // that covers the current game
+        let matchingStat = lastDynamicStat;
+        do {
+          matchingStat = {
+            intervalEnd: new Date(matchingStat.intervalEnd.getTime() - ONE_HOUR_MS),
+            stats: getEmptyRawStats(),
+          };
+          rawUserStat.scoreDynamic1hour.push(matchingStat);
+        } while (matchingStat.intervalEnd.getTime() - game.end_time.getTime() >= ONE_HOUR_MS);
+
+        matchingStat.stats = getUpdatedRawStats({
+          rawStats: matchingStat.stats,
+          stats: stat,
+          winnerUserId,
+        });
+      }
     }
   }
 
+  const expectedDynamicStatCount = Math.ceil((now.getTime() - oneWeekAgo.getTime()) / ONE_HOUR_MS);
+
   const userRatings: UserRating[] = Object.values(rawUserStats).map((rawUserStat) => {
+    const dynamicScores = rawUserStat.scoreDynamic1hour
+      .map(dynamicStat => computeScore(dynamicStat.stats))
+      .reverse();
+
+    // pad the array with zeros to ensure they are all the same length
+    // and we can graph them easily
+    const scoreDynamic1hour = frontPadArrayWithZeros({
+      array: dynamicScores,
+      targetLength: expectedDynamicStatCount,
+    });
+
     return {
       ...rawUserStat.stats7days,
       userId: rawUserStat.userId,
@@ -109,6 +160,7 @@ export default defineEventHandler(async () => {
       score7days: computeScore(rawUserStat.stats7days),
       score24hours: computeScore(rawUserStat.stats24hours),
       score1hour: computeScore(rawUserStat.stats1hour),
+      scoreDynamic1hour,
     };
   }).sort((a, b) => b.score7days - a.score7days);
 
@@ -147,4 +199,14 @@ function getUpdatedRawStats({ rawStats, stats, winnerUserId }: {
     foodEaten: rawStats.foodEaten + stats.food_eaten,
     endgameSizes: [...rawStats.endgameSizes, stats.size],
   };
+}
+
+function frontPadArrayWithZeros({ array, targetLength }: {
+  array: number[];
+  targetLength: number;
+}) {
+  if (array.length > targetLength) {
+    throw new Error("array.length > targetLength");
+  }
+  return [...new Array(targetLength - array.length).fill(0), ...array];
 }
