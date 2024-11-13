@@ -38,6 +38,18 @@ const { data: rating, status } = await useFetch("/api/rating");
                 scope="col"
                 class="px-6 py-3 bg-gray-50 dark:bg-gray-800"
               >
+                24h score
+              </th>
+              <th
+                scope="col"
+                class="px-6 py-3"
+              >
+                1h score
+              </th>
+              <th
+                scope="col"
+                class="px-6 py-3 bg-gray-50 dark:bg-gray-800"
+              >
                 wins
               </th>
               <th
@@ -97,7 +109,13 @@ const { data: rating, status } = await useFetch("/api/rating");
                 {{ userRating.username }}
               </th>
               <td class="px-6 py-4">
-                {{ userRating.score }}
+                {{ userRating.score7days }}
+              </td>
+              <td class="px-6 py-4 bg-gray-50 dark:bg-gray-800">
+                {{ userRating.score24hours }}
+              </td>
+              <td class="px-6 py-4">
+                {{ userRating.score1hour }}
               </td>
               <td class="px-6 py-4 bg-gray-50 dark:bg-gray-800">
                 {{ userRating.wins }}
