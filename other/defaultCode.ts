@@ -6,6 +6,8 @@ export const jsdoc = `/**
  *   Information about your player.
  * @property {Player[]} otherPlayers
  *   Information about other players.
+ * @property {Player[]} previousOtherPlayersState
+ *   Information about the other players in the previous frame.
  * @property {Food[]} food
  *   Information about the not yet eaten food.
  * @property {MoveTowards} moveTowards

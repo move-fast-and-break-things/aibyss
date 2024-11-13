@@ -1,12 +1,13 @@
 import ivm from "isolated-vm";
 import prepareBotCode from "~/other/prepareBotCode";
 import * as botCodeStore from "~/other/botCodeStore";
-import World from "~/other/world";
+import World, { type WorldState } from "~/other/world";
 import { recordGameEnd, type GameStat } from "~/other/recordGamedb";
 
 const MEMORY_LIMIT_MB = 64;
 const TIME_LIMIT_MS = 75;
 const MAX_ROUND_TIME_MS = 15 * 1000 * 60;
+const GAME_STEP_INTERVAL_MS = 250;
 
 export const WORLD_REF = { world: new World ({ width: 600, height: 600 }) };
 
@@ -23,35 +24,49 @@ async function runBot(code: string) {
 type RunBotArgs = {
   bots: botCodeStore.BotCodes;
   world: World;
+  prevBotState: WorldState["bots"];
   botApi: string;
 };
 
-async function runBots({ bots, world, botApi }: RunBotArgs) {
-  const state = world.getState();
-  const botIds = Object.keys(bots);
-
-  for (const botId of botIds) {
-    if (!world.hasBot(botId)) {
-      world.addBot(botId);
+async function runBots({ bots, world, prevBotState, botApi }: RunBotArgs) {
+  for (const bot of Object.values(bots)) {
+    if (!world.hasBot(bot.id)) {
+      world.addBot(bot.id);
     }
   }
 
-  for (const bot of Object.values(bots)) {
-    try {
-      const preparedCode = prepareBotCode({ bot, botCodes: bots, state, botApi });
-      if (!preparedCode) {
-        console.error(`Failed to prepare code for bot ${bot.id}`);
-        continue;
-      }
+  const state = world.getState();
+  const botArray = Object.values(bots);
 
+  const botActions = [];
+  for (const bot of botArray) {
+    try {
+      const preparedCode = prepareBotCode({
+        bot,
+        botInfo: bots,
+        state,
+        prevBotState,
+        botApi,
+      });
       const actions = await runBot(preparedCode);
-      if (actions?.[0]?.type === "move") {
-        world.moveBot(bot.id, actions[0].x, actions[0].y);
-      }
+      botActions.push(actions);
     } catch (err) {
       // TODO(yurij): notify user that their bot crashed
-      console.log(err);
+      console.error(err);
+      botActions.push([]);
     }
+  };
+
+  for (const [i, actions] of botActions.entries()) {
+    const botId = botArray[i]?.id;
+    if (botId && actions?.[0]?.type === "move") {
+      world.moveBot(botId, actions[0].x, actions[0].y);
+    }
+  }
+
+  let collisionCheckLimit = 5;
+  while (world.checkCollisions() && --collisionCheckLimit) {
+    continue;
   }
 }
 
@@ -71,8 +86,13 @@ function startEngine({ botApi }: StartEngineArgs) {
     console.debug(`The World was restarted after ${MAX_ROUND_TIME_MS} ms`);
   }, MAX_ROUND_TIME_MS);
 
-  setInterval(() => {
-    runBots({ bots, world: WORLD_REF.world, botApi });
+  // at the very start of the game, `prevWorldState` equals to the current world state
+  let prevWorldState = WORLD_REF.world.getState();
+  setInterval(async () => {
+    const newPrevWorldState = WORLD_REF.world.getState();
+    await runBots({ bots, world: WORLD_REF.world, prevBotState: prevWorldState.bots, botApi });
+    prevWorldState = newPrevWorldState;
+
     const worldState = WORLD_REF.world.getState();
     for (const bot of worldState.bots.values()) {
       if (bot.radius > worldState.height / 4) {
@@ -81,17 +101,18 @@ function startEngine({ botApi }: StartEngineArgs) {
         gameTimeoutInterval.refresh();
       }
     }
-  }, 250);
+  }, GAME_STEP_INTERVAL_MS);
 }
 
 function endGame(reason: string) {
   const endTime = new Date();
   const worldState = WORLD_REF.world.getState();
+  const worldStats = WORLD_REF.world.getStats();
   recordGameEnd({
-    startTime: worldState.startTime,
+    startTime: worldStats.startTime,
     endTime: endTime,
     endReason: reason,
-    stats: Array.from(worldState.stats.entries()).map(([botId, stat]) => {
+    stats: Array.from(worldStats.stats.entries()).map(([botId, stat]) => {
       return {
         userId: botCodeStore.getBots()[botId]?.userId,
         size: worldState.bots.get(WORLD_REF.world.getSpawnId(botId))?.radius ?? 0,
