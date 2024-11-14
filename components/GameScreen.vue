@@ -67,10 +67,6 @@ type DrawBotArgs = {
   };
   graphics: Graphics;
 };
-
-function getDirectionAngle(previousPosition: { x: number; y: number }, newPosition: { x: number; y: number }): number {
-  return Math.atan2(newPosition.y - previousPosition.y, newPosition.x - previousPosition.x);
-}
 function isFlipX1(previousPosition: { x: number;}, newPosition: { x: number;}): boolean{
   if (newPosition.x <= previousPosition.x) {
     return true;
@@ -85,7 +81,7 @@ function isFlipX2(previousPosition: { x: number;}, newPosition: { x: number;}): 
     return false;
   }
 }
-let i = 1;
+
 async function drawBot({ bot, graphics, previousPosition }: DrawBotArgs) {
   for (const child of graphics.children) {
     graphics.removeChild(child);
@@ -109,10 +105,8 @@ async function drawBot({ bot, graphics, previousPosition }: DrawBotArgs) {
   sprite.height = bot.radius * 2;
   sprite.x = bot.x;
   sprite.y = bot.y;
-  //let botRot = getDirectionAngle(previousPosition,bot);
   let botFlip1 = isFlipX1(previousPosition,bot);
   let botFlip2 = isFlipX2(previousPosition,bot);
-  //debugger;
   if (botFlip1 && (sprite.scale.x >= 0)) {
     sprite.scale.x *= -1;
   } else if (botFlip2 && (sprite.scale.x <= 0)) {
