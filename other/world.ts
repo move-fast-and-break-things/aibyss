@@ -59,20 +59,36 @@ export default class World {
   private minSpawnDistance = 10;
   private maxMoveDistance = 2;
   private newBotRadius = 5;
+  private maxFoodRadius = 3;
+  private initialFoodCount = 200;
+  private maxFoodCount = 250;
+  private foodSpawnProbability = 0.005;
+  private foodSpawnCount = 25;
   private startTime = new Date();
 
   constructor({ width, height }: WorldArgs) {
     this.width = width;
     this.height = height;
-    this.generateFood();
+    this.generateFood(this.initialFoodCount);
   }
 
-  generateFood() {
-    for (let i = 0; i < 100; i++) {
-      const newX = Math.floor(Math.random() * this.width);
-      const newY = Math.floor(Math.random() * this.height);
-      const newRadius = 1;
-      this.food.push({ x: newX, y: newY, radius: newRadius });
+  generateFood(count: number) {
+    const availablePositions = this.getAvailableSpawnPositions(this.maxFoodRadius);
+    const foodToSpawn = Math.min(count, this.maxFoodCount - this.food.length);
+    for (let i = 0; i < foodToSpawn; i++) {
+      if (!availablePositions.length) {
+        break;
+      }
+      const { element: randomPosition, idx } = getRandomElement(availablePositions);
+      availablePositions.splice(idx, 1);
+      const newRadius = Math.floor(Math.random() * this.maxFoodRadius) + 1;
+      this.food.push({ ...randomPosition, radius: newRadius });
+    }
+  }
+
+  spawnFood() {
+    if (Math.random() < this.foodSpawnProbability) {
+      this.generateFood(this.foodSpawnCount);
     }
   }
 
@@ -80,14 +96,14 @@ export default class World {
     return `${x}-${y}`;
   }
 
-  private getAvailableBotPositions(newBotRadius: number): { x: number; y: number }[] {
+  private getAvailableSpawnPositions(newEntityRadius: number): { x: number; y: number }[] {
     const availablePositions: { x: number; y: number }[] = [];
     const takenPositions: Set<string> = new Set();
 
     // to avoid computing distances between points when spawning new bots, assume that bots are square
     for (const bot of this.botSpawns.values()) {
       const { x, y, radius } = bot;
-      const safeRadius = radius + this.minSpawnDistance + newBotRadius;
+      const safeRadius = radius + this.minSpawnDistance + newEntityRadius;
 
       const minX = Math.max(x - safeRadius, 0);
       const maxX = Math.min(x + safeRadius, this.width);
@@ -101,10 +117,10 @@ export default class World {
       }
     }
 
-    const minX = newBotRadius;
-    const maxX = this.width - newBotRadius;
-    const minY = newBotRadius;
-    const maxY = this.height - newBotRadius;
+    const minX = newEntityRadius;
+    const maxX = this.width - newEntityRadius;
+    const minY = newEntityRadius;
+    const maxY = this.height - newEntityRadius;
 
     for (let i = minX; i < maxX; i++) {
       for (let j = minY; j < maxY; j++) {
@@ -124,14 +140,14 @@ export default class World {
   }
 
   addBot(botId: string): BotSprite {
-    const availablePositions = this.getAvailableBotPositions(this.newBotRadius);
+    const availablePositions = this.getAvailableSpawnPositions(this.newBotRadius);
 
     if (availablePositions.length === 0) {
       throw new Error("No available positions to spawn bot");
     }
 
-    const randomPosition = getRandomElement(availablePositions);
-    const color = getRandomElement(BOT_COLORS);
+    const { element: randomPosition } = getRandomElement(availablePositions);
+    const { element: color } = getRandomElement(BOT_COLORS);
 
     // spawnId is unique per bot live
     // useful to track respawns on the UI
@@ -239,7 +255,7 @@ export default class World {
         if (!botToRemove) {
           continue;
         }
-        bot.radius += botToRemove.radius;
+        bot.radius = World.getNewEaterRadius(bot.radius, botToRemove.radius);
 
         this.botIdToSpawnId.delete(botToRemove.botId);
         this.botSpawns.delete(botSpawnIdToRemove);
@@ -255,7 +271,7 @@ export default class World {
         if (!foodItem) {
           throw new Error("unexpected: food element is undefined");
         }
-        bot.radius += foodItem.radius;
+        bot.radius = World.getNewEaterRadius(bot.radius, foodItem.radius);
         this.food.splice(foodIdx, 1);
 
         this.incrementStat({ botId: bot.botId, stat: "foodEaten" });
@@ -265,6 +281,14 @@ export default class World {
     }
 
     return hasCollisions;
+  }
+
+  static getNewEaterRadius(eaterRadius: number, eatenRadius: number) {
+    // area of a circle = PI * r^2
+    const eaterArea = Math.PI * Math.pow(eaterRadius, 2);
+    const eatenArea = Math.PI * Math.pow(eatenRadius, 2);
+    const newArea = eaterArea + eatenArea;
+    return Math.sqrt(newArea / Math.PI);
   }
 
   getBotIdsKilledByBot(bot: BotSprite): string[] {
