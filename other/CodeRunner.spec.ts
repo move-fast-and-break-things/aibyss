@@ -50,4 +50,13 @@ describe("CodeRunner", () => {
       .rejects
       .toThrow("Script execution timed out");
   });
+
+  it("code can't access variables created by previously executed code", async () => {
+    const codeRunner = new CodeRunner();
+    const result = await codeRunner.runCode("const a = 39; a");
+    expect(result).toEqual(39);
+    expect(() => codeRunner.runCode("a"))
+      .rejects
+      .toThrow("a is not defined");
+  });
 });
