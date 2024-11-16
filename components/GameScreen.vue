@@ -169,6 +169,19 @@ watch(gameState, async (newState, prevState) => {
         botSpawnsRef.value[bot.spawnId] = graphics;
       }
     }
+
+    // ensure that larger bots are rendered above the smaller ones
+    // this maps better to the metaphor of eating compared to when a smaller
+    // bot is rendered above the larger one
+    const botsSortedByIncreasingRadius = Object.values(prevState.bots)
+      .sort((a, b) => a.radius - b.radius);
+    for (const [index, bot] of botsSortedByIncreasingRadius.entries()) {
+      const existingBot = botSpawnsRef.value[bot.spawnId];
+      if (existingBot) {
+        existingBot.zIndex = index;
+      }
+    }
+    appRef.value.stage.sortChildren();
   }
 
   // slowly move the bots from prevState to newState during the refresh interval
