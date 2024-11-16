@@ -8,8 +8,9 @@ const MEMORY_LIMIT_MB = 64;
 const TIME_LIMIT_MS = 75;
 const MAX_ROUND_TIME_MS = 15 * 1000 * 60;
 const GAME_STEP_INTERVAL_MS = 250;
+const WORLD_SIZE = 600;
 
-export const WORLD_REF = { world: new World ({ width: 600, height: 600 }) };
+export const WORLD_REF = { world: new World ({ width: WORLD_SIZE, height: WORLD_SIZE }) };
 
 async function runBot(code: string) {
   const isolate = new ivm.Isolate({ memoryLimit: MEMORY_LIMIT_MB });
@@ -68,6 +69,8 @@ async function runBots({ bots, world, prevBotState, botApi }: RunBotArgs) {
   while (world.checkCollisions() && --collisionCheckLimit) {
     continue;
   }
+
+  world.spawnFood();
 }
 
 type StartEngineArgs = {
@@ -122,7 +125,7 @@ function endGame(reason: string) {
       };
     }).filter((entry): entry is GameStat => entry.userId !== undefined && entry.size !== undefined),
   });
-  WORLD_REF.world = new World ({ width: 600, height: 600 });
+  WORLD_REF.world = new World ({ width: WORLD_SIZE, height: WORLD_SIZE });
 }
 
 export default defineNitroPlugin(async () => {
