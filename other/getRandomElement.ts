@@ -1,4 +1,4 @@
-export default function getRandomElement<T>(array: T[]): T {
+export default function getRandomElement<T>(array: T[]): { element: T; idx: number } {
   if (!array.length) {
     throw new Error("Array is empty");
   }
@@ -10,5 +10,5 @@ export default function getRandomElement<T>(array: T[]): T {
   // to generate the random index
   const randomElement = array[randomIndex] as T;
 
-  return randomElement;
+  return { element: randomElement, idx: randomIndex };
 }

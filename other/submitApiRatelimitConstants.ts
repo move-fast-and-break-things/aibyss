@@ -1,2 +1,1 @@
-export const SUBMIT_COOLDOWN_SEC = 10;
-export const SUBMIT_COOLDOWN_MS = SUBMIT_COOLDOWN_SEC * 1000;
+export const SUBMIT_COOLDOWN_MS = 200;
