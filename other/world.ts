@@ -62,7 +62,7 @@ export default class World {
   private maxFoodRadius = 3;
   private initialFoodCount = 200;
   private maxFoodCount = 250;
-  private foodSpawnProbability = 0.005;
+  private foodSpawnProbability = 0.008;
   private foodSpawnCount = 25;
   private startTime = new Date();
 
