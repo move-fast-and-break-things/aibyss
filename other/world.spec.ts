@@ -34,7 +34,7 @@ it("correctly removes food when the bot eats it", () => {
   bot.y = 10;
 
   // @ts-expect-error - world.food is private
-  expect(world.food.length).toBe(100);
+  expect(world.food.length).toBe(200);
 
   // @ts-expect-error - world.food is private
   const food = world.food[0] as Sprite;
@@ -44,7 +44,7 @@ it("correctly removes food when the bot eats it", () => {
   world.checkCollisions();
 
   // @ts-expect-error - world.food is private
-  expect(world.food.length).toBeLessThan(100);
+  expect(world.food.length).toBeLessThan(200);
 });
 
 it("shouldn't crash when bot eats two food items and one of them with the last index", () => {
@@ -57,7 +57,7 @@ it("shouldn't crash when bot eats two food items and one of them with the last i
   bot.y = 10;
 
   // @ts-expect-error - world.food is private
-  expect(world.food.length).toBe(100);
+  expect(world.food.length).toBe(200);
 
   // @ts-expect-error - world.food is private
   const food1 = world.food[0] as Sprite;
@@ -72,7 +72,7 @@ it("shouldn't crash when bot eats two food items and one of them with the last i
   world.checkCollisions();
 
   // @ts-expect-error - world.food is private
-  expect(world.food.length).toBeLessThan(100);
+  expect(world.food.length).toBeLessThan(200);
 });
 
 it("doesn't allow the bot to go outside the world with large x and y", () => {
