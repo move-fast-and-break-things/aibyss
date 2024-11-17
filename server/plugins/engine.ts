@@ -37,11 +37,12 @@ async function runBots({ bots, world, prevBotState, botApi }: RunBotArgs) {
   }));
 
   const botActions = await Promise.all(preparedBotCodes.map(async (preparedCode, i) => {
+    const codeRunner = codeRunners[i % codeRunners.length];
+    if (!codeRunner) {
+      throw new Error("unexpected: codeRunner is undefined");
+    }
+
     try {
-      const codeRunner = codeRunners[i % codeRunners.length];
-      if (!codeRunner) {
-        throw new Error("unexpected: codeRunner is undefined");
-      }
       const result = await codeRunner.runCode(preparedCode);
       return JSON.parse(result);
     } catch (err) {
