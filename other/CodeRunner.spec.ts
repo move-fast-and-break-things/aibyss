@@ -76,4 +76,14 @@ describe("CodeRunner", () => {
     // @ts-expect-error - we're testing a property that doesn't exist on the Array prototype
     expect([].foo).toBeUndefined();
   });
+
+  it("can run multiple scripts in parallel", async () => {
+    const scripts: string[] = [];
+    for (let i = 0; i < 10; i++) {
+      scripts.push(`for (let i = 0; i < 10_000_000; ++i) {}; 1 + ${i}`);
+    }
+    const codeRunner = new CodeRunner();
+    const results = await Promise.all(scripts.map(script => codeRunner.runCode(script)));
+    expect(results).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  });
 });

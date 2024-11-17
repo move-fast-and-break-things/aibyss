@@ -9,12 +9,7 @@ const GAME_STEP_INTERVAL_MS = 250;
 const WORLD_SIZE = 600;
 
 export const WORLD_REF = { world: new World ({ width: WORLD_SIZE, height: WORLD_SIZE }) };
-const codeRunner = new CodeRunner();
-
-async function runBot(code: string) {
-  const result = await codeRunner.runCode(code);
-  return JSON.parse(result);
-}
+const codeRunners = new Array(10).fill(0).map(() => new CodeRunner());
 
 type RunBotArgs = {
   bots: botCodeStore.BotCodes;
@@ -33,24 +28,29 @@ async function runBots({ bots, world, prevBotState, botApi }: RunBotArgs) {
   const state = world.getState();
   const botArray = Object.values(bots);
 
-  const botActions = [];
-  for (const bot of botArray) {
+  const preparedBotCodes = botArray.map(bot => prepareBotCode({
+    bot,
+    botInfo: bots,
+    state,
+    prevBotState,
+    botApi,
+  }));
+
+  const botActions = await Promise.all(preparedBotCodes.map(async (preparedCode, i) => {
+    const codeRunner = codeRunners[i % codeRunners.length];
+    if (!codeRunner) {
+      throw new Error("unexpected: codeRunner is undefined");
+    }
+
     try {
-      const preparedCode = prepareBotCode({
-        bot,
-        botInfo: bots,
-        state,
-        prevBotState,
-        botApi,
-      });
-      const actions = await runBot(preparedCode);
-      botActions.push(actions);
+      const result = await codeRunner.runCode(preparedCode);
+      return JSON.parse(result);
     } catch (err) {
       // TODO(yurij): notify user that their bot crashed
       console.error(err);
-      botActions.push([]);
+      return [];
     }
-  };
+  }));
 
   for (const [i, actions] of botActions.entries()) {
     const botId = botArray[i]?.id;
