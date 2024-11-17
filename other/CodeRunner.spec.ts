@@ -59,4 +59,21 @@ describe("CodeRunner", () => {
       .rejects
       .toThrow("a is not defined");
   });
+
+  it("can't call `fetch`", async () => {
+    const codeRunner = new CodeRunner();
+    expect(() => codeRunner.runCode("fetch('https://example.com')"))
+      .rejects
+      .toThrow("fetch is not defined");
+  });
+
+  it("modifications to the `Array` prototype don't leak between runs and outside of an isolate", async () => {
+    const codeRunner = new CodeRunner();
+    const result1 = await codeRunner.runCode("Array.prototype.foo = 42; [].foo");
+    expect(result1).toBe(42);
+    const result2 = await codeRunner.runCode("[].foo");
+    expect(result2).toBeUndefined();
+    // @ts-expect-error - we're testing a property that doesn't exist on the Array prototype
+    expect([].foo).toBeUndefined();
+  });
 });
