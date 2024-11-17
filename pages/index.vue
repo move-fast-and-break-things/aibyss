@@ -5,11 +5,11 @@
       class="flex flex-grow p-4"
       style="height: 90%;"
     >
-      <div class="flex min-w-[300px] flex-grow resize-x overflow-auto">
+      <div class="flex h-full min-w-[300px] flex-grow w-1/2 mr-2">
         <CodeEditor />
       </div>
-      <div class="separator" />
-      <div class="flex min-w-[300px] resize-x overflow-auto">
+      <div class="w-1 bg-gray-300 cursor-ew-resize" /> <!-- Seperator bar -->
+      <div class="flex h-full min-w-[300px] w-1/2 overflow-auto">
         <GameScreen />
       </div>
     </div>
@@ -73,20 +73,3 @@ export default defineComponent({
   },
 });
 </script>
-
-<style scoped>
-.separator {
-  width: 5px;
-  background-color: #ccc;
-  cursor: ew-resize;
-}
-
-.resize-x {
-  width: 50%;
-}
-
-.flex-grow {
-  display: flex;
-  height: calc(100% - 2 * 2.5px); /* Adjust for separator height */
-}
-</style>

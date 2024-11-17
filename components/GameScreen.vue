@@ -212,7 +212,7 @@ watch(gameState, async (newState, prevState) => {
     data-testid="game-screen"
   >
     <div
-      class="flex flex-col shadow ml-4"
+      class="flex flex-col shadow ml-2"
       :style="{ maxWidth: gameState?.width + 'px' }"
     >
       <div class="flex flex-row justify-end mb-2 mt-1 mx-4 gap-6">
