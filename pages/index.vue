@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col h-screen w-screen">
     <GlobalHeader />
-    <div class="flex p-1 h-[90%]">
+    <div class="flex flex-grow p-1 h-[90%]">
       <div
         ref="resizeEditorElement"
         class="flex min-w-[300px] h-full w-1/2 mr-2"
