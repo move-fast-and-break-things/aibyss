@@ -1,23 +1,20 @@
 <template>
   <div class="flex flex-col h-screen w-screen">
     <GlobalHeader />
-    <div
-      class="flex flex-grow p-4"
-      style="height: 90%;"
-    >
+    <div class="flex h-full p-2 h-[90%]">
       <div
         ref="resizeEditorElement"
-        class="flex min-w-[300px] flex-grow resize-x mr-2"
+        class="flex min-w-[300px] h-full w-1/2 mr-2"
       >
         <CodeEditor />
       </div>
       <div
         ref="separator"
-        class="separator"
+        class="w-1 bg-gray-300 cursor-ew-resize"
       />
       <div
         ref="resizeGameElement"
-        class="flex min-w-[300px] resize-x overflow-auto"
+        class="flex min-w-[300px] w-1/2 overflow-auto"
       >
         <GameScreen />
       </div>
@@ -39,16 +36,26 @@ export default defineComponent({
     const separator = ref<HTMLDivElement | null>(null);
 
     const startResize = (e: MouseEvent) => {
-      if (resizeEditorElement.value && resizeGameElement.value) {
-        isResizing.value = true;
-        initialX.value = e.clientX;
-        initialWidthEditor.value = resizeEditorElement.value.offsetWidth;
-        initialWidthGame.value = resizeGameElement.value.offsetWidth;
+      if (!resizeEditorElement.value) {
+        throw new Error("unexpected: no resizeEditorElement");
       }
+      if (!resizeGameElement.value) {
+        throw new Error("unexpected: no resizeGameElement");
+      }
+      isResizing.value = true;
+      initialX.value = e.clientX;
+      initialWidthEditor.value = resizeEditorElement.value.offsetWidth;
+      initialWidthGame.value = resizeGameElement.value.offsetWidth;
     };
 
     const handleResize = (e: MouseEvent) => {
-      if (isResizing.value && resizeEditorElement.value && resizeGameElement.value) {
+      if (!resizeEditorElement.value) {
+        throw new Error("unexpected: no resizeEditorElement");
+      }
+      if (!resizeGameElement.value) {
+        throw new Error("unexpected: no resizeGameElement");
+      }
+      if (isResizing.value) {
         const dx = e.clientX - initialX.value;
         const newWidthEditor = initialWidthEditor.value + dx;
         const newWidthGame = initialWidthGame.value - dx;
@@ -62,17 +69,19 @@ export default defineComponent({
     };
 
     onMounted(() => {
-      if (separator.value) {
-        separator.value.addEventListener("mousedown", startResize);
+      if (!separator.value) {
+        throw new Error("unexpected: no separator");
       }
+      separator.value.addEventListener("mousedown", startResize);
       document.addEventListener("mousemove", handleResize);
       document.addEventListener("mouseup", stopResize);
     });
 
     onUnmounted(() => {
-      if (separator.value) {
-        separator.value.removeEventListener("mousedown", startResize);
+      if (!separator.value) {
+        throw new Error("unexpected: no separator");
       }
+      separator.value.removeEventListener("mousedown", startResize);
       document.removeEventListener("mousemove", handleResize);
       document.removeEventListener("mouseup", stopResize);
     });
@@ -84,17 +93,3 @@ export default defineComponent({
   },
 });
 </script>
-
-<style scoped>
- .separator {
-    @apply w-1 bg-gray-300 cursor-ew-resize;
-  }
-  .resize-x:first-of-type {
-    @apply w-1/2;
-  }
-  .resize-x:last-of-type {
-    @apply w-1/2;
-  } .flex-grow {
-    @apply flex h-full;
-  }
-</style>
