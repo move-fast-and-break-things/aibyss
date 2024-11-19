@@ -71,7 +71,7 @@ type StartEngineArgs = {
   botApi: string;
 };
 
-function startEngine({ botApi }: StartEngineArgs) {
+async function startEngine({ botApi }: StartEngineArgs) {
   let bots = botCodeStore.getBots();
 
   botCodeStore.subscribeToBotsUpdate((newBots) => {
@@ -85,9 +85,16 @@ function startEngine({ botApi }: StartEngineArgs) {
 
   // at the very start of the game, `prevWorldState` equals to the current world state
   let prevWorldState = WORLD_REF.world.getState();
-  setInterval(async () => {
+  // eslint-disable-next-line no-constant-condition -- we want to run the game loop forever
+  while (true) {
+    const startTs = Date.now();
+
     const newPrevWorldState = WORLD_REF.world.getState();
-    await runBots({ bots, world: WORLD_REF.world, prevBotState: prevWorldState.bots, botApi });
+    try {
+      await runBots({ bots, world: WORLD_REF.world, prevBotState: prevWorldState.bots, botApi });
+    } catch (err) {
+      console.error("run bots crashed", err);
+    }
     prevWorldState = newPrevWorldState;
 
     const worldState = WORLD_REF.world.getState();
@@ -98,7 +105,16 @@ function startEngine({ botApi }: StartEngineArgs) {
         gameTimeoutInterval.refresh();
       }
     }
-  }, GAME_STEP_INTERVAL_MS);
+
+    const endTs = Date.now();
+
+    const timeSpentMs = endTs - startTs;
+    if (timeSpentMs < GAME_STEP_INTERVAL_MS) {
+      await new Promise(resolve => setTimeout(resolve, GAME_STEP_INTERVAL_MS - timeSpentMs));
+    } else {
+      console.warn(`Game step took too long: ${timeSpentMs}ms (expected ${GAME_STEP_INTERVAL_MS}ms)`);
+    }
+  }
 }
 
 function endGame(reason: string) {
@@ -118,7 +134,7 @@ function endGame(reason: string) {
         deaths: stat.deaths,
       };
     }).filter((entry): entry is GameStat => entry.userId !== undefined && entry.size !== undefined),
-  });
+  }).catch(console.error);
   WORLD_REF.world = new World ({ width: WORLD_SIZE, height: WORLD_SIZE });
 }
 
@@ -129,5 +145,6 @@ export default defineNitroPlugin(async () => {
     throw new Error("Could not load level01.js");
   }
 
-  startEngine({ botApi: level01Api });
+  startEngine({ botApi: level01Api })
+    .catch(console.error);
 });
