@@ -2,6 +2,9 @@
 import { Application, Graphics, Text, FillGradient } from "pixi.js";
 
 const refreshIntervalMs = 1000;
+const zoomSpeed = 0.05;
+const minZoom = 1;
+const maxZoom = 3;
 
 const { data: gameState, refresh } = await useFetch("/api/state");
 const intervalRef = ref<number | null>(null);
@@ -104,6 +107,58 @@ watch(gameState, async (newState, prevState) => {
       antialias: true,
       resolution: 4,
       autoDensity: true,
+    });
+
+    // Add zoom functionality
+    canvas.value.addEventListener("wheel", (event) => {
+      event.preventDefault();
+      const mousePos = { x: event.offsetX, y: event.offsetY };
+      const zoomFactor = event.deltaY * -zoomSpeed;
+      const newScale = Math.max(minZoom, Math.min(maxZoom, app.stage.scale.x + zoomFactor));
+      // Translate the stage to zoom at the mouse position
+
+      const worldPos = {
+        x: (mousePos.x - app.stage.position.x) / app.stage.scale.x,
+        y: (mousePos.y - app.stage.position.y) / app.stage.scale.y,
+      };
+
+      app.stage.scale.set(newScale);
+
+      const newScreenPos = {
+        x: worldPos.x * newScale + app.stage.position.x,
+        y: worldPos.y * newScale + app.stage.position.y,
+      };
+
+      app.stage.position.set(
+        app.stage.position.x - (newScreenPos.x - mousePos.x),
+        app.stage.position.y - (newScreenPos.y - mousePos.y),
+      );
+    });
+    // Panning functionality
+    let isDragging = false;
+    let startDragPos = { x: 0, y: 0 };
+
+    canvas.value.addEventListener("mousedown", (event) => {
+      isDragging = true;
+      startDragPos = { x: event.offsetX, y: event.offsetY };
+    });
+
+    canvas.value.addEventListener("mousemove", (event) => {
+      if (isDragging) {
+        const dx = event.offsetX - startDragPos.x;
+        const dy = event.offsetY - startDragPos.y;
+        app.stage.position.x += dx;
+        app.stage.position.y += dy;
+        startDragPos = { x: event.offsetX, y: event.offsetY };
+      }
+    });
+
+    canvas.value.addEventListener("mouseup", () => {
+      isDragging = false;
+    });
+
+    canvas.value.addEventListener("mouseleave", () => {
+      isDragging = false;
     });
 
     // render food
