@@ -67,21 +67,24 @@ type DrawBotArgs = {
   };
   graphics: Graphics;
 };
-function isFlipX1(previousPosition: { x: number;}, newPosition: { x: number;}): boolean{
-  if (newPosition.x <= previousPosition.x) {
-    return true;
-  } else {
+function isFlipX0(previousPosition: { x: number;}, newPosition: { x: number;}): boolean{
+  if (newPosition.x == previousPosition.x) {
     return false;
   }
+  return true;
+}
+function isFlipX1(previousPosition: { x: number;}, newPosition: { x: number;}): boolean{
+  if (newPosition.x < previousPosition.x) {
+    console.log(previousPosition.x + ", " + newPosition.x);
+    return true;
+  }
+  return false;
 }
 function isFlipX2(previousPosition: { x: number;}, newPosition: { x: number;}): boolean{
-  if (newPosition.x > previousPosition.x) {
-    return true;
-  } else {
-    return false;
-  }
+  if (newPosition.x > previousPosition.x) return true;
+  return false;
 }
-
+let isFlip;
 async function drawBot({ bot, graphics, previousPosition }: DrawBotArgs) {
   for (const child of graphics.children) {
     graphics.removeChild(child);
@@ -99,19 +102,23 @@ async function drawBot({ bot, graphics, previousPosition }: DrawBotArgs) {
   if (!fishTexture) {
     throw new Error("Fish sprite is not loaded");
   }
-  let sprite = new Sprite(fishTexture);
+  const sprite = new Sprite(fishTexture);
   sprite.anchor.set(0.5);
   sprite.width = bot.radius * 2;
   sprite.height = bot.radius * 2;
   sprite.x = bot.x;
   sprite.y = bot.y;
+  let botFlip0 = isFlipX0(previousPosition,bot);
   let botFlip1 = isFlipX1(previousPosition,bot);
+  //console.log(botFlip1);
   let botFlip2 = isFlipX2(previousPosition,bot);
-  if (botFlip1 && (sprite.scale.x >= 0)) {
-    sprite.scale.x *= -1;
-  } else if (botFlip2 && (sprite.scale.x <= 0)) {
-    sprite.scale.x *= -1;
-  }
+
+  if (botFlip1) {
+    sprite.scale.x = -Math.abs(sprite.scale.x);
+  } /*else {
+    sprite.scale.x *= 1; //Math.abs(sprite.scale.x);
+  }*/
+
   graphics.addChild(sprite);
   const existingUsername = graphics.children.find(child => child instanceof Text);
   if (existingUsername) {
