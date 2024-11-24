@@ -109,31 +109,89 @@ watch(gameState, async (newState, prevState) => {
       autoDensity: true,
     });
 
-    // Add zoom functionality
-    canvas.value.addEventListener("wheel", (event) => {
-      event.preventDefault();
-      const mousePos = { x: event.offsetX, y: event.offsetY };
-      const zoomFactor = event.deltaY * -zoomSpeed;
-      const newScale = Math.max(minZoom, Math.min(maxZoom, app.stage.scale.x + zoomFactor));
-      // Translate the stage to zoom at the mouse position
+    let isZoomingOut = false;
+    const zoomDuration = 500; // Duration of the zoom-out effect in milliseconds
+    let startZoomTime: number | null = null;
+    let startMousePos = { x: 0, y: 0 };
+
+    // Functions to handle smooth zoom out
+    function smoothZoomOut(mousePos: { x: number; y: number }) {
+      if (!appRef.value) {
+        return;
+      }
+
+      isZoomingOut = true;
+      startZoomTime = performance.now();
+      startMousePos = mousePos;
+      requestAnimationFrame(animateZoomOut);
+    }
+
+    function animateZoomOut(currentTime: number) {
+      if (!appRef.value || !startZoomTime) {
+        return;
+      };
+
+      const elapsedTime = currentTime - startZoomTime;
+      const progress = Math.min(elapsedTime / zoomDuration, 1);
+      const newScale = minZoom + (appRef.value.stage.scale.x - minZoom) * (1 - progress);
 
       const worldPos = {
-        x: (mousePos.x - app.stage.position.x) / app.stage.scale.x,
-        y: (mousePos.y - app.stage.position.y) / app.stage.scale.y,
+        x: (startMousePos.x - appRef.value.stage.position.x) / appRef.value.stage.scale.x,
+        y: (startMousePos.y - appRef.value.stage.position.y) / appRef.value.stage.scale.y,
       };
 
-      app.stage.scale.set(newScale);
+      appRef.value.stage.scale.set(newScale);
 
       const newScreenPos = {
-        x: worldPos.x * newScale + app.stage.position.x,
-        y: worldPos.y * newScale + app.stage.position.y,
+        x: worldPos.x * newScale + appRef.value.stage.position.x,
+        y: worldPos.y * newScale + appRef.value.stage.position.y,
       };
 
-      app.stage.position.set(
-        app.stage.position.x - (newScreenPos.x - mousePos.x),
-        app.stage.position.y - (newScreenPos.y - mousePos.y),
+      appRef.value.stage.position.set(
+        appRef.value.stage.position.x - (newScreenPos.x - startMousePos.x),
+        appRef.value.stage.position.y - (newScreenPos.y - startMousePos.y),
       );
+
+      if (progress < 1) {
+        requestAnimationFrame(animateZoomOut);
+      } else {
+        isZoomingOut = false;
+      }
+    }
+
+    // Update the mouse wheel event listener
+    canvas.value?.addEventListener("wheel", (event) => {
+      event.preventDefault();
+      const mousePos = { x: event.offsetX, y: event.offsetY };
+      if (event.deltaY > 0) {
+        // Zoom out when scrolling down
+        if (!isZoomingOut) {
+          smoothZoomOut(mousePos);
+        }
+      } else {
+        // Existing zoom-in functionality
+        const zoomFactor = event.deltaY * -zoomSpeed;
+        const newScale = Math.max(minZoom, Math.min(maxZoom, app.stage.scale.x + zoomFactor));
+
+        const worldPos = {
+          x: (mousePos.x - app.stage.position.x) / app.stage.scale.x,
+          y: (mousePos.y - app.stage.position.y) / app.stage.scale.y,
+        };
+
+        app.stage.scale.set(newScale);
+
+        const newScreenPos = {
+          x: worldPos.x * newScale + app.stage.position.x,
+          y: worldPos.y * newScale + app.stage.position.y,
+        };
+
+        app.stage.position.set(
+          app.stage.position.x - (newScreenPos.x - mousePos.x),
+          app.stage.position.y - (newScreenPos.y - mousePos.y),
+        );
+      }
     });
+
     // Panning functionality
     let isDragging = false;
     let startDragPos = { x: 0, y: 0 };
