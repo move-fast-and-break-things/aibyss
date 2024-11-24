@@ -138,26 +138,34 @@ watch(gameState, async (newState, prevState) => {
     let isDragging = false;
     let startDragPos = { x: 0, y: 0 };
 
-    canvas.value.addEventListener("mousedown", (event) => {
+    const mapWidth = 1000; // Replace with actual map width
+    const mapHeight = 1000; // Replace with actual map height
+
+    canvas.value?.addEventListener("mousedown", (event) => {
       isDragging = true;
       startDragPos = { x: event.offsetX, y: event.offsetY };
     });
 
-    canvas.value.addEventListener("mousemove", (event) => {
-      if (isDragging) {
+    canvas.value?.addEventListener("mousemove", (event) => {
+      if (isDragging && canvas.value) {
         const dx = event.offsetX - startDragPos.x;
         const dy = event.offsetY - startDragPos.y;
-        app.stage.position.x += dx;
-        app.stage.position.y += dy;
+        const newPosX = app.stage.position.x + dx;
+        const newPosY = app.stage.position.y + dy;
+
+        // Constrain the new position to within map boundaries
+        app.stage.position.x = Math.min(0, Math.max(newPosX, canvas.value.width - mapWidth * app.stage.scale.x));
+        app.stage.position.y = Math.min(0, Math.max(newPosY, canvas.value.height - mapHeight * app.stage.scale.y));
+
         startDragPos = { x: event.offsetX, y: event.offsetY };
       }
     });
 
-    canvas.value.addEventListener("mouseup", () => {
+    canvas.value?.addEventListener("mouseup", () => {
       isDragging = false;
     });
 
-    canvas.value.addEventListener("mouseleave", () => {
+    canvas.value?.addEventListener("mouseleave", () => {
       isDragging = false;
     });
 
