@@ -159,7 +159,7 @@ watch(gameState, async (newState, prevState) => {
       }
     }
 
-    // Update the mouse wheel event listener
+    // Mouse wheel event listener
     canvas.value?.addEventListener("wheel", (event) => {
       event.preventDefault();
       const mousePos = { x: event.offsetX, y: event.offsetY };
