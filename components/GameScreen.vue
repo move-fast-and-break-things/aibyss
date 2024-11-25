@@ -196,9 +196,6 @@ watch(gameState, async (newState, prevState) => {
     let isDragging = false;
     let startDragPos = { x: 0, y: 0 };
 
-    const mapWidth = 1000; // Replace with actual map width
-    const mapHeight = 1000; // Replace with actual map height
-
     canvas.value?.addEventListener("mousedown", (event) => {
       isDragging = true;
       startDragPos = { x: event.offsetX, y: event.offsetY };
@@ -212,8 +209,8 @@ watch(gameState, async (newState, prevState) => {
         const newPosY = app.stage.position.y + dy;
 
         // Constrain the new position to within map boundaries
-        app.stage.position.x = Math.min(0, Math.max(newPosX, canvas.value.width - mapWidth * app.stage.scale.x));
-        app.stage.position.y = Math.min(0, Math.max(newPosY, canvas.value.height - mapHeight * app.stage.scale.y));
+        app.stage.position.x = Math.min(0, Math.max(newPosX, app.screen.width - app.screen.width * app.stage.scale.x));
+        app.stage.position.y = Math.min(0, Math.max(newPosY, app.screen.height - app.screen.height * app.stage.scale.y));
 
         startDragPos = { x: event.offsetX, y: event.offsetY };
       }
