@@ -23,6 +23,7 @@ const canvas = ref<HTMLCanvasElement | null>(null);
 const appRef = ref<Application | null>(null);
 const foodRef = ref<{ x: number; y: number; graphics: Graphics }[]>([]);
 const botSpawnsRef = ref<Record<string, Graphics>>({});
+const gameScreen = ref<HTMLDivElement | null>(null);
 
 const tickFnRef = ref<() => void>();
 
@@ -188,6 +189,11 @@ watch(gameState, async (newState, prevState) => {
           Math.min(0, Math.max(app.stage.position.x - (newScreenPos.x - mousePos.x), app.screen.width - app.screen.width * newScale)),
           Math.min(0, Math.max(app.stage.position.y - (newScreenPos.y - mousePos.y), app.screen.height - app.screen.height * newScale)),
         );
+        if (newScale > 1) {
+          gameScreen.value?.classList.add("cursor-grab");
+        } else {
+          gameScreen.value?.classList.remove("cursor-grab");
+        }
       }
     });
 
@@ -196,6 +202,9 @@ watch(gameState, async (newState, prevState) => {
     let startDragPos = { x: 0, y: 0 };
 
     canvas.value?.addEventListener("mousedown", (event) => {
+      if (app.stage.scale.x > 1) {
+        gameScreen.value?.classList.add("cursor-grabbing");
+      }
       isDragging = true;
       startDragPos = { x: event.offsetX, y: event.offsetY };
     });
@@ -216,10 +225,12 @@ watch(gameState, async (newState, prevState) => {
     });
 
     canvas.value?.addEventListener("mouseup", () => {
+      gameScreen.value?.classList.remove("cursor-grabbing");
       isDragging = false;
     });
 
     canvas.value?.addEventListener("mouseleave", () => {
+      gameScreen.value?.classList.remove("cursor-grabbing");
       isDragging = false;
     });
 
@@ -329,6 +340,7 @@ watch(gameState, async (newState, prevState) => {
     data-testid="game-screen"
   >
     <div
+      ref="gameScreen"
       class="flex flex-col shadow ml-2"
       :style="{ maxWidth: gameState?.width + 'px' }"
     >
