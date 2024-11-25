@@ -148,10 +148,9 @@ watch(gameState, async (newState, prevState) => {
       };
 
       appRef.value.stage.position.set(
-        appRef.value.stage.position.x - (newScreenPos.x - startMousePos.x),
-        appRef.value.stage.position.y - (newScreenPos.y - startMousePos.y),
+        Math.min(0, Math.max(appRef.value.stage.position.x - (newScreenPos.x - startMousePos.x), appRef.value.screen.width - appRef.value.screen.width * newScale)),
+        Math.min(0, Math.max(appRef.value.stage.position.y - (newScreenPos.y - startMousePos.y), appRef.value.screen.height - appRef.value.screen.height * newScale)),
       );
-
       if (progress < 1) {
         requestAnimationFrame(animateZoomOut);
       } else {
@@ -186,8 +185,8 @@ watch(gameState, async (newState, prevState) => {
         };
 
         app.stage.position.set(
-          app.stage.position.x - (newScreenPos.x - mousePos.x),
-          app.stage.position.y - (newScreenPos.y - mousePos.y),
+          Math.min(0, Math.max(app.stage.position.x - (newScreenPos.x - mousePos.x), app.screen.width - app.screen.width * newScale)),
+          Math.min(0, Math.max(app.stage.position.y - (newScreenPos.y - mousePos.y), app.screen.height - app.screen.height * newScale)),
         );
       }
     });
