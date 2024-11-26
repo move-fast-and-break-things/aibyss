@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Application, Graphics, Text, FillGradient, Assets, type Texture, Sprite, Color } from "pixi.js";
+import { Application, Graphics, Text, FillGradient, Assets, type Texture, Sprite } from "pixi.js";
 
 const refreshIntervalMs = 1000;
 
@@ -33,7 +33,7 @@ onBeforeUnmount(() => {
 const canvas = ref<HTMLCanvasElement | null>(null);
 const appRef = ref<Application | null>(null);
 const foodRef = ref<{ x: number; y: number; graphics: Graphics }[]>([]);
-const botSpawnsRef = ref<Record<string, Graphics>>({})
+const botSpawnsRef = ref<Record<string, Graphics>>({});
 const tickFnRef = ref<() => void>();
 
 type DrawBotArgs = {
@@ -50,21 +50,12 @@ type DrawBotArgs = {
   };
   graphics: Graphics;
 };
-function isFlipX0(previousPosition: { x: number;}, newPosition: { x: number;}): boolean{
-  if (newPosition.x == previousPosition.x) {
-    return false;
-  }
-  return true;
-}
-function isFlipX1(previousPosition: { x: number;}, newPosition: { x: number;}): boolean{
+
+function isFlipX1(previousPosition: { x: number }, newPosition: { x: number }): boolean {
   if (newPosition.x < previousPosition.x) {
     console.log(previousPosition.x + ", " + newPosition.x);
     return true;
   }
-  return false;
-}
-function isFlipX2(previousPosition: { x: number;}, newPosition: { x: number;}): boolean{
-  if (newPosition.x > previousPosition.x) return true;
   return false;
 }
 
@@ -78,7 +69,7 @@ async function drawBot({ bot, graphics, previousPosition }: DrawBotArgs) {
   const usernameHash = bot.username.charCodeAt(0) + bot.username.charCodeAt(1) + bot.username.charCodeAt(2);
   const numOfSprite = usernameHash % (fishTexturesRef.value.length);
   const fishTexture = fishTexturesRef.value[numOfSprite];
-  
+
   if (!fishTexture) {
     throw new Error("Fish sprite is not loaded");
   }
@@ -88,16 +79,13 @@ async function drawBot({ bot, graphics, previousPosition }: DrawBotArgs) {
   sprite.height = bot.radius * 2;
   sprite.x = bot.x;
   sprite.y = bot.y;
-  let botFlip0 = isFlipX0(previousPosition,bot);
-  let botFlip1 = isFlipX1(previousPosition,bot);
-  //console.log(botFlip1);
-  let botFlip2 = isFlipX2(previousPosition,bot);
+  const botFlip1 = isFlipX1(previousPosition, bot);
 
   if (botFlip1) {
     sprite.scale.x = -Math.abs(sprite.scale.x);
-  } /*else {
+  } /* else {
     sprite.scale.x *= 1; //Math.abs(sprite.scale.x);
-  }*/
+  } */
 
   graphics.addChild(sprite);
   const existingUsername = graphics.children.find(child => child instanceof Text);
