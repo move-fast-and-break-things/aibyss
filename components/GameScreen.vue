@@ -44,21 +44,14 @@ type DrawBotArgs = {
     color: string;
     username: string;
   };
-  previousPosition: {
-    x: number;
-    y: number;
-  };
+  /**
+   * Bot direction in radians.
+   */
+  botDirection: number;
   graphics: Graphics;
 };
 
-function shouldFlipByX(
-  previousPosition: { x: number },
-  newPosition: { x: number },
-): boolean {
-  return newPosition.x < previousPosition.x;
-}
-
-async function drawBot({ bot, graphics, previousPosition }: DrawBotArgs) {
+async function drawBot({ bot, graphics, botDirection }: DrawBotArgs) {
   for (const child of graphics.children) {
     graphics.removeChild(child);
   }
@@ -79,7 +72,7 @@ async function drawBot({ bot, graphics, previousPosition }: DrawBotArgs) {
   sprite.x = bot.x;
   sprite.y = bot.y;
 
-  const shouldFlipBot = shouldFlipByX(previousPosition, bot);
+  const shouldFlipBot = botDirection > Math.PI / 2 || botDirection < -Math.PI / 2;
   if (shouldFlipBot) {
     sprite.scale.x = -Math.abs(sprite.scale.x);
   }
@@ -118,6 +111,13 @@ async function drawBot({ bot, graphics, previousPosition }: DrawBotArgs) {
 
     graphics.addChild(username);
   }
+}
+
+function getDirection(
+  positionA: { x: number; y: number },
+  positionB: { x: number; y: number },
+): number {
+  return Math.atan2(positionB.y - positionA.y, positionB.x - positionA.x);
 }
 
 watch(gameState, async (newState, prevState) => {
@@ -161,9 +161,15 @@ watch(gameState, async (newState, prevState) => {
 
     // render bots
     for (const bot of Object.values(prevState.bots)) {
+      const newBotState = newState.bots[bot.spawnId];
+      if (!newBotState) {
+        continue;
+      }
+
       const graphics = new Graphics();
       app.stage.addChild(graphics);
-      drawBot({ bot, graphics, previousPosition: bot });
+      const botDirection = getDirection(bot, newBotState);
+      drawBot({ bot, graphics, botDirection });
       botSpawnsRef.value[bot.spawnId] = graphics;
     }
   } else {
@@ -198,18 +204,20 @@ watch(gameState, async (newState, prevState) => {
 
     // move or add bots
     for (const bot of Object.values(prevState.bots)) {
-      if (!newState.bots[bot.spawnId]) {
+      const newBotState = newState.bots[bot.spawnId];
+      if (!newBotState) {
         continue;
       }
 
       const existingBot = botSpawnsRef.value[bot.spawnId];
+      const botDirection = getDirection(bot, newBotState);
 
       if (existingBot) {
-        drawBot({ bot, graphics: existingBot, previousPosition: bot });
+        drawBot({ bot, graphics: existingBot, botDirection });
       } else {
         const graphics = new Graphics();
         appRef.value.stage.addChild(graphics);
-        drawBot({ bot, graphics, previousPosition: bot });
+        drawBot({ bot, graphics, botDirection });
         botSpawnsRef.value[bot.spawnId] = graphics;
       }
     }
@@ -241,8 +249,9 @@ watch(gameState, async (newState, prevState) => {
       if (existingBot && prevBot) {
         const x = prevBot.x + (bot.x - prevBot.x) * progress;
         const y = prevBot.y + (bot.y - prevBot.y) * progress;
+        const botDirection = getDirection(prevBot, bot);
 
-        drawBot({ bot: { ...bot, x, y }, graphics: existingBot, previousPosition: prevBot });
+        drawBot({ bot: { ...bot, x, y }, graphics: existingBot, botDirection });
       }
     }
   };
