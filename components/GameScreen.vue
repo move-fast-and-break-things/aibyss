@@ -6,39 +6,22 @@ const refreshIntervalMs = 1000;
 const { data: gameState, refresh } = await useFetch("/api/state");
 const intervalRef = ref<number | null>(null);
 
-const fishRef1 = ref<Texture | null>(null);
-const fishRef2 = ref<Texture | null>(null);
-const fishRef3 = ref<Texture | null>(null);
-const fishRef4 = ref<Texture | null>(null);
-const fishRef5 = ref<Texture | null>(null);
-const fishRef6 = ref<Texture | null>(null);
-const fishRef7 = ref<Texture | null>(null);
-const fishRef8 = ref<Texture | null>(null);
-const fishRef9 = ref<Texture | null>(null);
-const masRef = Array.from({ length: 9 }, () => ref<Texture | null>(null));
+const fishTexturesRef = ref<Texture[]>([]);
 
 onMounted(async () => {
   intervalRef.value = window.setInterval(refresh, refreshIntervalMs);
 
-  fishRef1.value = await Assets.load("/sprites/FishVer1Short.png");
-  masRef[0] = fishRef1;
-  fishRef2.value = await Assets.load("/sprites/FishVer2Short.png");
-  masRef[1] = fishRef2;
-  fishRef3.value = await Assets.load("/sprites/FishVer3Short.png");
-  masRef[2] = fishRef3;
-  fishRef4.value = await Assets.load("/sprites/FishVer4Short.png");
-  masRef[3] = fishRef4;
-  fishRef5.value = await Assets.load("/sprites/FishVer5Short.png");
-  masRef[4] = fishRef5;
-  fishRef6.value = await Assets.load("/sprites/FishVer6Short.png");
-  masRef[5] = fishRef6;
-  fishRef7.value = await Assets.load("/sprites/FishVer7Short.png");
-  masRef[6] = fishRef7;
-  fishRef8.value = await Assets.load("/sprites/FishVer8Short.png");
-  masRef[6] = fishRef8;
-  fishRef9.value = await Assets.load("/sprites/FishVer9Short.png");
-  masRef[6] = fishRef9;
-
+  fishTexturesRef.value = [
+    await Assets.load("/sprites/FishVer1Short.png"),
+    await Assets.load("/sprites/FishVer2Short.png"),
+    await Assets.load("/sprites/FishVer3Short.png"),
+    await Assets.load("/sprites/FishVer4Short.png"),
+    await Assets.load("/sprites/FishVer5Short.png"),
+    await Assets.load("/sprites/FishVer6Short.png"),
+    await Assets.load("/sprites/FishVer7Short.png"),
+    await Assets.load("/sprites/FishVer8Short.png"),
+    await Assets.load("/sprites/FishVer9Short.png"),
+  ];
 });
 
 onBeforeUnmount(() => {
@@ -84,7 +67,7 @@ function isFlipX2(previousPosition: { x: number;}, newPosition: { x: number;}): 
   if (newPosition.x > previousPosition.x) return true;
   return false;
 }
-let isFlip;
+
 async function drawBot({ bot, graphics, previousPosition }: DrawBotArgs) {
   for (const child of graphics.children) {
     graphics.removeChild(child);
@@ -93,11 +76,8 @@ async function drawBot({ bot, graphics, previousPosition }: DrawBotArgs) {
 
   // draw bot
   const usernameHash = bot.username.charCodeAt(0) + bot.username.charCodeAt(1) + bot.username.charCodeAt(2);
-  const numOfSprite = usernameHash % (masRef.length);
-  if (!masRef[numOfSprite]) {
-    throw new Error("Fish sprite is not loaded");
-  }
-  const fishTexture = masRef[numOfSprite].value;
+  const numOfSprite = usernameHash % (fishTexturesRef.value.length);
+  const fishTexture = fishTexturesRef.value[numOfSprite];
   
   if (!fishTexture) {
     throw new Error("Fish sprite is not loaded");
