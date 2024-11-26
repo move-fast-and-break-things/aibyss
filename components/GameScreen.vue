@@ -65,7 +65,7 @@ async function drawBot({ bot, graphics, previousPosition }: DrawBotArgs) {
   graphics.clear();
 
   // draw bot
-  const usernameHash = bot.username.charCodeAt(0) + bot.username.charCodeAt(1) + bot.username.charCodeAt(2);
+  const usernameHash = bot.username.charCodeAt(0) + (bot.username.charCodeAt(1) || 0) + (bot.username.charCodeAt(2) || 0);
   const numOfSprite = usernameHash % (fishTexturesRef.value.length);
   const fishTexture = fishTexturesRef.value[numOfSprite];
 
