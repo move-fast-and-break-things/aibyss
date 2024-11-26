@@ -1,7 +1,7 @@
 import readline from "readline";
 import { Writable } from "stream";
 import { ArgumentParser } from "argparse";
-import createUser from "../utils/createUser";
+import createUser from "../other/createUser";
 
 async function main() {
   const parser = new ArgumentParser({

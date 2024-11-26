@@ -5,7 +5,7 @@ it("returns a random element from the array", () => {
   const array = [1, 2, 3, 4, 5];
   const randomElement = getRandomElement(array);
 
-  expect(array).toContain(randomElement);
+  expect(array).toContain(randomElement.element);
 });
 
 it("throws an error if the array is empty", () => {

@@ -11,6 +11,7 @@ function getBotApiV1() {
     food: global._food || [],
     moveTowards: moveTo,
     moveTo,
+    previousOtherPlayersState: global._previousOtherPlayersState,
     worldHeight: global._worldHeight,
     worldWidth: global._worldWidth,
   };

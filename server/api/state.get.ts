@@ -1,5 +1,5 @@
 import { WORLD_REF } from "../plugins/engine";
-import * as botCodeStore from "~/utils/botCodeStore";
+import * as botCodeStore from "~/other/botCodeStore";
 
 export default defineEventHandler(async () => {
   const gameState = WORLD_REF.world.getState();

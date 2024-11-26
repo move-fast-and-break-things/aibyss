@@ -248,6 +248,19 @@ watch(gameState, async (newState, prevState) => {
         botSpawnsRef.value[bot.spawnId] = graphics;
       }
     }
+
+    // ensure that larger bots are rendered above the smaller ones
+    // this maps better to the metaphor of eating compared to when a smaller
+    // bot is rendered above the larger one
+    const botsSortedByIncreasingRadius = Object.values(prevState.bots)
+      .sort((a, b) => a.radius - b.radius);
+    for (const [index, bot] of botsSortedByIncreasingRadius.entries()) {
+      const existingBot = botSpawnsRef.value[bot.spawnId];
+      if (existingBot) {
+        existingBot.zIndex = index;
+      }
+    }
+    appRef.value.stage.sortChildren();
   }
 
   // slowly move the bots from prevState to newState during the refresh interval
@@ -277,9 +290,16 @@ watch(gameState, async (newState, prevState) => {
     class="h-full w-full"
     data-testid="game-screen"
   >
-    <canvas
-      ref="canvas"
-      class="shadow m-4 mt-0"
-    />
+    <div
+      class="flex flex-col shadow ml-2"
+      :style="{ maxWidth: gameState?.width + 'px' }"
+    >
+      <div class="flex flex-row justify-end mb-2 mt-1 mx-4 gap-6">
+        <AnchorLink href="/rating">
+          rating
+        </AnchorLink>
+      </div>
+      <canvas ref="canvas" />
+    </div>
   </div>
 </template>

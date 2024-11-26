@@ -1,0 +1,26 @@
+name: deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency: deploy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_KEY }}
+      - name: Deploy
+        env:
+          DEPLOY_HOST: '${{ secrets.DEPLOY_HOST }}'
+        run: |
+          echo "${DEPLOY_HOST} ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK7gL3O9UrX6EJ/fDVqB5wlh7e25OxdPlWkIHkNtAdf8" >> ~/.ssh/known_hosts
+          docker context create --docker "host=ssh://root@${DEPLOY_HOST}" --description "deploy server" "mfabt.club"
+          docker --context "mfabt.club" compose up --build -d

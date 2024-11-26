@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defaultCode, jsdoc } from "~/utils/defaultCode.js";
+import { defaultCode, jsdoc } from "~/other/defaultCode.js";
 
 if (import.meta.client) {
   // configure monaco editor on client side
@@ -20,18 +20,23 @@ if (import.meta.client) {
 
   // add JSDoc so the autocompletion always works
   monaco.languages.typescript.javascriptDefaults.addExtraLib(jsdoc);
+
+  monaco.editor.onDidChangeMarkers(() => {
+    const modelMarkers = monaco.editor.getModelMarkers({});
+    state.codeHasErrors = modelMarkers.some(marker => marker.severity === monaco.MarkerSeverity.Error);
+  });
 }
 
 const { data: user } = await useFetch("/api/auth/user");
 
 const state = reactive({
   code: user.value?.body.code || defaultCode,
+  codeHasErrors: false,
   showAPIReference: false,
 });
 
 function onSubmit(event: Event) {
   event.preventDefault();
-
   fetch("/api/bot/submit", {
     method: "POST",
     headers: {
@@ -84,37 +89,32 @@ function onCloseAPIReferenceModal() {
       <div class="flex justify-end">
         <button
           type="submit"
-          class="h-10 px-6 font-semibold shadow bg-black text-white hover:bg-gray-800 transition"
+          class="h-10 px-6 font-semibold shadow bg-black text-white hover:bg-gray-800 transition disabled:opacity-50 disabled:bg-black disabled:cursor-not-allowed"
+          :title="state.codeHasErrors ? 'Fix errors in the code to submit' : undefined"
+          :disabled="state.codeHasErrors"
         >
           Submit
         </button>
       </div>
     </form>
   </div>
-  <div
-    v-if="state.showAPIReference"
-    class="absolute z-10 w-full h-full top-0 left-0 bg-slate-400 bg-opacity-20"
-    @click.self="onCloseAPIReferenceModal"
+  <ModalDialog
+    :open="state.showAPIReference"
+    :on-close="onCloseAPIReferenceModal"
+    extra-modal-class="w-[540px]"
   >
-    <div class="bg-white z-10 flex flex-col max-w-xl max-h-[calc(100vh-140px)] h-[600px] shadow p-4 pt-2 mx-auto mt-[110px]">
-      <div class="flex flex-row justify-end mb-2">
-        <ButtonLink @click="onCloseAPIReferenceModal">
-          close
-        </ButtonLink>
-      </div>
-      <MonacoEditor
-        v-model="jsdoc"
-        lang="javascript"
-        :options="{
-          readOnly: true,
-          readOnlyMessage: { value: 'Cannot edit API reference' },
-          lineNumbers: 'off',
-          smoothScrolling: true,
-          scrollBeyondLastLine: false,
-          minimap: { enabled: false },
-        }"
-        class="flex-grow"
-      />
-    </div>
-  </div>
+    <MonacoEditor
+      v-model="jsdoc"
+      lang="javascript"
+      :options="{
+        readOnly: true,
+        readOnlyMessage: { value: 'Cannot edit API reference' },
+        lineNumbers: 'off',
+        smoothScrolling: true,
+        scrollBeyondLastLine: false,
+        minimap: { enabled: false },
+      }"
+      class="flex-grow"
+    />
+  </ModalDialog>
 </template>
