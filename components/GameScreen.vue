@@ -51,12 +51,11 @@ type DrawBotArgs = {
   graphics: Graphics;
 };
 
-function isFlipX1(previousPosition: { x: number }, newPosition: { x: number }): boolean {
-  if (newPosition.x < previousPosition.x) {
-    console.log(previousPosition.x + ", " + newPosition.x);
-    return true;
-  }
-  return false;
+function shouldFlipByX(
+  previousPosition: { x: number },
+  newPosition: { x: number },
+): boolean {
+  return newPosition.x < previousPosition.x;
 }
 
 async function drawBot({ bot, graphics, previousPosition }: DrawBotArgs) {
@@ -79,13 +78,11 @@ async function drawBot({ bot, graphics, previousPosition }: DrawBotArgs) {
   sprite.height = bot.radius * 2;
   sprite.x = bot.x;
   sprite.y = bot.y;
-  const botFlip1 = isFlipX1(previousPosition, bot);
 
-  if (botFlip1) {
+  const shouldFlipBot = shouldFlipByX(previousPosition, bot);
+  if (shouldFlipBot) {
     sprite.scale.x = -Math.abs(sprite.scale.x);
-  } /* else {
-    sprite.scale.x *= 1; //Math.abs(sprite.scale.x);
-  } */
+  }
 
   graphics.addChild(sprite);
   const existingUsername = graphics.children.find(child => child instanceof Text);
