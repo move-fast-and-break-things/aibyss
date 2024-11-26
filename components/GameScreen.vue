@@ -160,6 +160,8 @@ watch(gameState, async (newState, prevState) => {
     }
 
     // Mouse wheel event listener
+    // Event listeners can be potentially called multiple times.
+    // TODO: add .removeEventListener later for refactoring.
     canvas.value?.addEventListener("wheel", (event) => {
       event.preventDefault();
       const mousePos = { x: event.offsetX, y: event.offsetY };
