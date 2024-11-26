@@ -143,7 +143,7 @@ const isModalOpen = ref(false);
                 {{ userRating.deaths }}
               </td>
               <td class="px-6 py-4 bg-gray-50 dark:bg-gray-800">
-                {{ (userRating.kills / userRating.deaths || userRating.kills).toFixed(2) }}
+                {{ userRating.deaths ? (userRating.kills / userRating.deaths).toFixed(2) : "n/a" }}
               </td>
               <td class="px-6 py-4">
                 {{ userRating.foodEaten }}
