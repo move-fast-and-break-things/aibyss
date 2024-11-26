@@ -11,17 +11,17 @@ const fishTexturesRef = ref<Texture[]>([]);
 onMounted(async () => {
   intervalRef.value = window.setInterval(refresh, refreshIntervalMs);
 
-  fishTexturesRef.value = [
-    await Assets.load("/sprites/FishVer1Short.png"),
-    await Assets.load("/sprites/FishVer2Short.png"),
-    await Assets.load("/sprites/FishVer3Short.png"),
-    await Assets.load("/sprites/FishVer4Short.png"),
-    await Assets.load("/sprites/FishVer5Short.png"),
-    await Assets.load("/sprites/FishVer6Short.png"),
-    await Assets.load("/sprites/FishVer7Short.png"),
-    await Assets.load("/sprites/FishVer8Short.png"),
-    await Assets.load("/sprites/FishVer9Short.png"),
-  ];
+  fishTexturesRef.value = await Promise.all([
+    Assets.load("/sprites/FishVer1Short.png"),
+    Assets.load("/sprites/FishVer2Short.png"),
+    Assets.load("/sprites/FishVer3Short.png"),
+    Assets.load("/sprites/FishVer4Short.png"),
+    Assets.load("/sprites/FishVer5Short.png"),
+    Assets.load("/sprites/FishVer6Short.png"),
+    Assets.load("/sprites/FishVer7Short.png"),
+    Assets.load("/sprites/FishVer8Short.png"),
+    Assets.load("/sprites/FishVer9Short.png"),
+  ]);
 });
 
 onBeforeUnmount(() => {
