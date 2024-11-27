@@ -2,6 +2,9 @@
 import { Application, Graphics, Text, FillGradient } from "pixi.js";
 
 const refreshIntervalMs = 1000;
+const zoomSpeed = 0.05;
+const minZoom = 1;
+const maxZoom = 3;
 
 const { data: gameState, refresh } = await useFetch("/api/state");
 const intervalRef = ref<number | null>(null);
@@ -20,6 +23,7 @@ const canvas = ref<HTMLCanvasElement | null>(null);
 const appRef = ref<Application | null>(null);
 const foodRef = ref<{ x: number; y: number; graphics: Graphics }[]>([]);
 const botSpawnsRef = ref<Record<string, Graphics>>({});
+const gameScreen = ref<HTMLDivElement | null>(null);
 
 const tickFnRef = ref<() => void>();
 
@@ -104,6 +108,132 @@ watch(gameState, async (newState, prevState) => {
       antialias: true,
       resolution: 4,
       autoDensity: true,
+    });
+
+    let isZoomingOut = false;
+    const zoomDuration = 500; // Duration of the zoom-out effect in milliseconds
+    let startZoomTime: number | null = null;
+    let startMousePos = { x: 0, y: 0 };
+
+    // Functions to handle smooth zoom out
+    function smoothZoomOut(mousePos: { x: number; y: number }) {
+      if (!appRef.value) {
+        return;
+      }
+
+      isZoomingOut = true;
+      startZoomTime = performance.now();
+      startMousePos = mousePos;
+      requestAnimationFrame(animateZoomOut);
+    }
+
+    function animateZoomOut(currentTime: number) {
+      if (!appRef.value || !startZoomTime) {
+        return;
+      };
+
+      const elapsedTime = currentTime - startZoomTime;
+      const progress = Math.min(elapsedTime / zoomDuration, 1);
+      const newScale = minZoom + (appRef.value.stage.scale.x - minZoom) * (1 - progress);
+
+      const worldPos = {
+        x: (startMousePos.x - appRef.value.stage.position.x) / appRef.value.stage.scale.x,
+        y: (startMousePos.y - appRef.value.stage.position.y) / appRef.value.stage.scale.y,
+      };
+
+      appRef.value.stage.scale.set(newScale);
+
+      const newScreenPos = {
+        x: worldPos.x * newScale + appRef.value.stage.position.x,
+        y: worldPos.y * newScale + appRef.value.stage.position.y,
+      };
+
+      appRef.value.stage.position.set(
+        Math.min(0, Math.max(appRef.value.stage.position.x - (newScreenPos.x - startMousePos.x), appRef.value.screen.width - appRef.value.screen.width * newScale)),
+        Math.min(0, Math.max(appRef.value.stage.position.y - (newScreenPos.y - startMousePos.y), appRef.value.screen.height - appRef.value.screen.height * newScale)),
+      );
+      if (progress < 1) {
+        requestAnimationFrame(animateZoomOut);
+      } else {
+        isZoomingOut = false;
+      }
+    }
+
+    // Mouse wheel event listener
+    // Event listeners can be potentially called multiple times.
+    // TODO: add .removeEventListener later for refactoring.
+    canvas.value?.addEventListener("wheel", (event) => {
+      event.preventDefault();
+      const mousePos = { x: event.offsetX, y: event.offsetY };
+      if (event.deltaY > 0) {
+        // Zoom out when scrolling down
+        if (!isZoomingOut) {
+          smoothZoomOut(mousePos);
+        }
+      } else {
+        // Existing zoom-in functionality
+        const zoomFactor = event.deltaY * -zoomSpeed;
+        const newScale = Math.max(minZoom, Math.min(maxZoom, app.stage.scale.x + zoomFactor));
+
+        const worldPos = {
+          x: (mousePos.x - app.stage.position.x) / app.stage.scale.x,
+          y: (mousePos.y - app.stage.position.y) / app.stage.scale.y,
+        };
+
+        app.stage.scale.set(newScale);
+
+        const newScreenPos = {
+          x: worldPos.x * newScale + app.stage.position.x,
+          y: worldPos.y * newScale + app.stage.position.y,
+        };
+
+        app.stage.position.set(
+          Math.min(0, Math.max(app.stage.position.x - (newScreenPos.x - mousePos.x), app.screen.width - app.screen.width * newScale)),
+          Math.min(0, Math.max(app.stage.position.y - (newScreenPos.y - mousePos.y), app.screen.height - app.screen.height * newScale)),
+        );
+        if (newScale > 1) {
+          gameScreen.value?.classList.add("cursor-grab");
+        } else {
+          gameScreen.value?.classList.remove("cursor-grab");
+        }
+      }
+    });
+
+    // Panning functionality
+    let isDragging = false;
+    let startDragPos = { x: 0, y: 0 };
+
+    canvas.value?.addEventListener("mousedown", (event) => {
+      if (app.stage.scale.x > 1) {
+        gameScreen.value?.classList.add("cursor-grabbing");
+      }
+      isDragging = true;
+      startDragPos = { x: event.offsetX, y: event.offsetY };
+    });
+
+    canvas.value?.addEventListener("mousemove", (event) => {
+      if (isDragging && canvas.value) {
+        const dx = event.offsetX - startDragPos.x;
+        const dy = event.offsetY - startDragPos.y;
+        const newPosX = app.stage.position.x + dx;
+        const newPosY = app.stage.position.y + dy;
+
+        // Constrain the new position to within map boundaries
+        app.stage.position.x = Math.min(0, Math.max(newPosX, app.screen.width - app.screen.width * app.stage.scale.x));
+        app.stage.position.y = Math.min(0, Math.max(newPosY, app.screen.height - app.screen.height * app.stage.scale.y));
+
+        startDragPos = { x: event.offsetX, y: event.offsetY };
+      }
+    });
+
+    canvas.value?.addEventListener("mouseup", () => {
+      gameScreen.value?.classList.remove("cursor-grabbing");
+      isDragging = false;
+    });
+
+    canvas.value?.addEventListener("mouseleave", () => {
+      gameScreen.value?.classList.remove("cursor-grabbing");
+      isDragging = false;
     });
 
     // render food
@@ -212,6 +342,7 @@ watch(gameState, async (newState, prevState) => {
     data-testid="game-screen"
   >
     <div
+      ref="gameScreen"
       class="flex flex-col shadow ml-2"
       :style="{ maxWidth: gameState?.width + 'px' }"
     >
