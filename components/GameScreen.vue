@@ -6,6 +6,8 @@ const zoomSpeed = 0.05;
 const minZoom = 1;
 const maxZoom = 3;
 
+let isFollowing = false;
+
 const { data: gameState, refresh } = await useFetch("/api/state");
 const intervalRef = ref<number | null>(null);
 
@@ -38,8 +40,39 @@ type DrawBotArgs = {
   graphics: Graphics;
 };
 
+function follow() {
+  isFollowing = !isFollowing;
+}
+
+function followFirstBot(botx: number, boty: number, username: string) {
+  if (!appRef.value || !gameState.value) {
+    console.error("App or game state not initialized.");
+    return;
+  }
+
+  const firstBot = Object.values(gameState.value.bots)?.[0];
+  if (!firstBot) {
+    console.warn("No bots available to follow.");
+    return;
+  }
+  if (username == firstBot.username) {
+    const currentPos = appRef.value.stage.position;
+    const targetPos = {
+      x: -botx * appRef.value.stage.scale.x + appRef.value.screen.width / 2,
+      y: -boty * appRef.value.stage.scale.y + appRef.value.screen.height / 2,
+    };
+    const newPosX = currentPos.x + (targetPos.x - currentPos.x) * 0.1;
+    const newPosY = currentPos.y + (targetPos.y - currentPos.y) * 0.1;
+    appRef.value.stage.position.set(newPosX, newPosY);
+  }
+}
+
 async function drawBot({ bot, graphics }: DrawBotArgs) {
   graphics.clear();
+  // follow bot
+  if (isFollowing) {
+    followFirstBot(bot.x, bot.y, bot.username);
+  }
 
   // draw bot
   graphics.circle(bot.x, bot.y, bot.radius);
@@ -350,6 +383,12 @@ watch(gameState, async (newState, prevState) => {
         <AnchorLink href="/rating">
           rating
         </AnchorLink>
+        <button
+          class="px-4 py-2 bg-blue-500 text-white rounded"
+          @click="follow"
+        >
+          Follow Bot
+        </button>
       </div>
       <canvas ref="canvas" />
     </div>
