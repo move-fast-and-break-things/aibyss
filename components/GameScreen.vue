@@ -69,10 +69,6 @@ function followFirstBot(botx: number, boty: number, username: string) {
 
 async function drawBot({ bot, graphics }: DrawBotArgs) {
   graphics.clear();
-  // follow bot
-  if (isFollowing) {
-    followFirstBot(bot.x, bot.y, bot.username);
-  }
 
   // draw bot
   graphics.circle(bot.x, bot.y, bot.radius);
@@ -146,17 +142,17 @@ watch(gameState, async (newState, prevState) => {
     let isZoomingOut = false;
     const zoomDuration = 500; // Duration of the zoom-out effect in milliseconds
     let startZoomTime: number | null = null;
-    let startMousePos = { x: 0, y: 0 };
+    let startZoomPos = { x: 0, y: 0 };
 
     // Functions to handle smooth zoom out
-    function smoothZoomOut(mousePos: { x: number; y: number }) {
+    function smoothZoomOut(Pos: { x: number; y: number }) {
       if (!appRef.value) {
         return;
       }
 
       isZoomingOut = true;
       startZoomTime = performance.now();
-      startMousePos = mousePos;
+      startZoomPos = Pos;
       requestAnimationFrame(animateZoomOut);
     }
 
@@ -170,8 +166,8 @@ watch(gameState, async (newState, prevState) => {
       const newScale = minZoom + (appRef.value.stage.scale.x - minZoom) * (1 - progress);
 
       const worldPos = {
-        x: (startMousePos.x - appRef.value.stage.position.x) / appRef.value.stage.scale.x,
-        y: (startMousePos.y - appRef.value.stage.position.y) / appRef.value.stage.scale.y,
+        x: (startZoomPos.x - appRef.value.stage.position.x) / appRef.value.stage.scale.x,
+        y: (startZoomPos.y - appRef.value.stage.position.y) / appRef.value.stage.scale.y,
       };
 
       appRef.value.stage.scale.set(newScale);
@@ -182,8 +178,8 @@ watch(gameState, async (newState, prevState) => {
       };
 
       appRef.value.stage.position.set(
-        Math.min(0, Math.max(appRef.value.stage.position.x - (newScreenPos.x - startMousePos.x), appRef.value.screen.width - appRef.value.screen.width * newScale)),
-        Math.min(0, Math.max(appRef.value.stage.position.y - (newScreenPos.y - startMousePos.y), appRef.value.screen.height - appRef.value.screen.height * newScale)),
+        Math.min(0, Math.max(appRef.value.stage.position.x - (newScreenPos.x - startZoomPos.x), appRef.value.screen.width - appRef.value.screen.width * newScale)),
+        Math.min(0, Math.max(appRef.value.stage.position.y - (newScreenPos.y - startZoomPos.y), appRef.value.screen.height - appRef.value.screen.height * newScale)),
       );
       if (progress < 1) {
         requestAnimationFrame(animateZoomOut);
@@ -204,7 +200,7 @@ watch(gameState, async (newState, prevState) => {
           smoothZoomOut(mousePos);
         }
       } else {
-        // Existing zoom-in functionality
+        // Zoom-in functionality
         const zoomFactor = event.deltaY * -zoomSpeed;
         const newScale = Math.max(minZoom, Math.min(maxZoom, app.stage.scale.x + zoomFactor));
 
@@ -360,6 +356,10 @@ watch(gameState, async (newState, prevState) => {
       if (existingBot && prevBot) {
         const x = prevBot.x + (bot.x - prevBot.x) * progress;
         const y = prevBot.y + (bot.y - prevBot.y) * progress;
+        // follow bot
+        if (isFollowing) {
+          followFirstBot(x, y, bot.username);
+        }
 
         drawBot({ bot: { ...bot, x, y }, graphics: existingBot });
       }
