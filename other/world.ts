@@ -130,15 +130,22 @@ export default class World {
     const minY = newEntityRadius;
     const maxY = this.height - newEntityRadius;
 
-    const availablePositions: number[] = [];
+    const availablePositions: number[] = new Array(this.height * this.width - takenPositions.size);
+    let availablePositionsIdx = 0;
     for (let i = minX; i < maxX; i++) {
       for (let j = minY; j < maxY; j++) {
         const serializedPosition = World.serializePosition({ x: i, y: j });
         if (!takenPositions.has(serializedPosition)) {
-          availablePositions.push(serializedPosition);
+          availablePositions[availablePositionsIdx++] = serializedPosition;
         }
       }
     }
+
+    // trim any undefined elements at the end
+    // we may have them because when preallocating the array we subtracted the `takenPosition.size`,
+    // but not the border padding of `newEntityRadius`
+    const lastNumberIdx = availablePositions.findLastIndex(pos => pos !== undefined);
+    availablePositions.length = lastNumberIdx + 1;
 
     return availablePositions;
   }
