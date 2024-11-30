@@ -195,6 +195,18 @@ describe(".deserializePosition", () => {
 });
 
 describe(".getAvailableSpawnPositions", () => {
+  it("returns all available positions if there are no bots", () => {
+    const worldSize = 100;
+
+    const world = new World({ width: worldSize, height: worldSize });
+
+    const newEntityRadius = 1;
+    // @ts-expect-error - world.getAvailableSpawnPositions is private
+    const availablePositions = world.getAvailableSpawnPositions(newEntityRadius);
+    // we step away from the walls by the radius of the new entity
+    expect(availablePositions.length).toEqual((worldSize - newEntityRadius * 2) * (worldSize - newEntityRadius * 2));
+  });
+
   it("returns fewer positions than there are on the grid because bot occupy some", () => {
     const worldSize = 100;
 
@@ -205,10 +217,10 @@ describe(".getAvailableSpawnPositions", () => {
     // @ts-expect-error - world.getAvailableSpawnPositions is private
     const availablePositions = world.getAvailableSpawnPositions(newEntityRadius);
     // we step away from the walls by the radius of the new entity
-    expect(availablePositions.length).toBeLessThan((worldSize - newEntityRadius) * (worldSize - newEntityRadius));
+    expect(availablePositions.length).toBeLessThan((worldSize - newEntityRadius * 2) * (worldSize - newEntityRadius * 2));
   });
 
-  it("doesn't return nullish elements", () => {
+  it("doesn't return nullish elements when there is a bot", () => {
     const worldSize = 100;
 
     const world = new World({ width: worldSize, height: worldSize });
@@ -217,6 +229,14 @@ describe(".getAvailableSpawnPositions", () => {
     const newEntityRadius = 1;
     // @ts-expect-error - world.getAvailableSpawnPositions is private
     const availablePositions = world.getAvailableSpawnPositions(newEntityRadius);
-    expect(availablePositions.every(Boolean)).toBe(true);
+    expect([...availablePositions].every(Boolean)).toBe(true);
+  });
+
+  it("doesn't return nullish elements when there are no bots", () => {
+    const world = new World({ width: 100, height: 100 });
+    const newEntityRadius = 1;
+    // @ts-expect-error - world.getAvailableSpawnPositions is private
+    const availablePositions = world.getAvailableSpawnPositions(newEntityRadius);
+    expect([...availablePositions].every(Boolean)).toBe(true);
   });
 });

@@ -130,13 +130,12 @@ export default class World {
     const minY = newEntityRadius;
     const maxY = this.height - newEntityRadius;
 
-    const availablePositions: number[] = new Array(this.height * this.width - takenPositions.size);
-    let availablePositionsIdx = 0;
+    const availablePositions: number[] = [];
     for (let i = minX; i < maxX; i++) {
       for (let j = minY; j < maxY; j++) {
         const serializedPosition = World.serializePosition({ x: i, y: j });
         if (!takenPositions.has(serializedPosition)) {
-          availablePositions[availablePositionsIdx++] = serializedPosition;
+          availablePositions.push(serializedPosition);
         }
       }
     }
