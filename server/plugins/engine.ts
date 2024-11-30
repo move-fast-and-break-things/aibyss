@@ -37,7 +37,7 @@ async function runBots({ bots, world, prevBotState, botApi }: RunBotArgs) {
     botApi,
   }));
 
-  const stopAllBotCodeRuntimeTimer = gameStepCodeRunTimeMs.startTimer();
+  const allBotCodeRuntimeStartTs = Date.now();
   const botActions = await Promise.all(preparedBotCodes.map(async (preparedCode, i) => {
     const codeRunner = codeRunners[i % codeRunners.length];
     if (!codeRunner) {
@@ -49,9 +49,7 @@ async function runBots({ bots, world, prevBotState, botApi }: RunBotArgs) {
       throw new Error("unexpected: bot is undefined");
     }
 
-    const stopBotCodeRuntimeTimer = botCodeRunTimeMs.startTimer({
-      username: bot.username,
-    });
+    const botCodeRuntimeStartTs = Date.now();
     try {
       const result = await codeRunner.runCode(preparedCode);
       return JSON.parse(result);
@@ -60,30 +58,30 @@ async function runBots({ bots, world, prevBotState, botApi }: RunBotArgs) {
       console.error(err);
       return [];
     } finally {
-      stopBotCodeRuntimeTimer();
+      botCodeRunTimeMs.observe({ username: bot.username }, Date.now() - botCodeRuntimeStartTs);
     }
   }));
-  stopAllBotCodeRuntimeTimer();
+  gameStepCodeRunTimeMs.observe(Date.now() - allBotCodeRuntimeStartTs);
 
-  const stopMoveBotTimeTimer = gameStepMoveBotTimeMs.startTimer();
+  const moveBotStartTs = Date.now();
   for (const [i, actions] of botActions.entries()) {
     const botId = botArray[i]?.id;
     if (botId && actions?.[0]?.type === "move") {
       world.moveBot(botId, actions[0].x, actions[0].y);
     }
   }
-  stopMoveBotTimeTimer();
+  gameStepMoveBotTimeMs.observe(Date.now() - moveBotStartTs);
 
-  const stopCollisionCheckTimeTimer = gameStepCollisionCheckTimeMs.startTimer();
+  const collisionCheckStartTs = Date.now();
   let collisionCheckLimit = 5;
   while (world.checkCollisions() && --collisionCheckLimit) {
     continue;
   }
-  stopCollisionCheckTimeTimer();
+  gameStepCollisionCheckTimeMs.observe(Date.now() - collisionCheckStartTs);
 
-  const stopSpawnFoodTimeTimer = gameStepFoodSpawnTimeMs.startTimer();
+  const foodSpawnStartTs = Date.now();
   world.spawnFood();
-  stopSpawnFoodTimeTimer();
+  gameStepFoodSpawnTimeMs.observe(Date.now() - foodSpawnStartTs);
 }
 
 type StartEngineArgs = {
