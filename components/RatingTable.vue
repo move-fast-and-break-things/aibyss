@@ -149,7 +149,7 @@ const isModalOpen = ref(false);
                 {{ userRating.foodEaten }}
               </td>
               <td class="px-6 py-4 bg-gray-50 dark:bg-gray-800">
-                {{ userRating.maxEndgameSize }}
+                {{ userRating.maxEndgameSize.toFixed(2) }}
               </td>
               <td class="px-6 py-4">
                 {{ userRating.avgEndgameSize.toFixed(2) }}
