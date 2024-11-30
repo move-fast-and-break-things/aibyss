@@ -1,3 +1,4 @@
+import { gameStepCodeRunTimeMs, botCodeRunTimeMs, gameStepTimeMs, gameStepMoveBotTimeMs, gameStepCollisionCheckTimeMs, gameStepFoodSpawnTimeMs } from "../other/engineMetrics";
 import prepareBotCode from "~/other/prepareBotCode";
 import * as botCodeStore from "~/other/botCodeStore";
 import World, { type WorldState } from "~/other/world";
@@ -36,12 +37,21 @@ async function runBots({ bots, world, prevBotState, botApi }: RunBotArgs) {
     botApi,
   }));
 
+  const stopAllBotCodeRuntimeTimer = gameStepCodeRunTimeMs.startTimer();
   const botActions = await Promise.all(preparedBotCodes.map(async (preparedCode, i) => {
     const codeRunner = codeRunners[i % codeRunners.length];
     if (!codeRunner) {
       throw new Error("unexpected: codeRunner is undefined");
     }
 
+    const bot = botArray[i];
+    if (!bot) {
+      throw new Error("unexpected: bot is undefined");
+    }
+
+    const stopBotCodeRuntimeTimer = botCodeRunTimeMs.startTimer({
+      username: bot.username,
+    });
     try {
       const result = await codeRunner.runCode(preparedCode);
       return JSON.parse(result);
@@ -49,22 +59,31 @@ async function runBots({ bots, world, prevBotState, botApi }: RunBotArgs) {
       // TODO(yurij): notify user that their bot crashed
       console.error(err);
       return [];
+    } finally {
+      stopBotCodeRuntimeTimer();
     }
   }));
+  stopAllBotCodeRuntimeTimer();
 
+  const stopMoveBotTimeTimer = gameStepMoveBotTimeMs.startTimer();
   for (const [i, actions] of botActions.entries()) {
     const botId = botArray[i]?.id;
     if (botId && actions?.[0]?.type === "move") {
       world.moveBot(botId, actions[0].x, actions[0].y);
     }
   }
+  stopMoveBotTimeTimer();
 
+  const stopCollisionCheckTimeTimer = gameStepCollisionCheckTimeMs.startTimer();
   let collisionCheckLimit = 5;
   while (world.checkCollisions() && --collisionCheckLimit) {
     continue;
   }
+  stopCollisionCheckTimeTimer();
 
+  const stopSpawnFoodTimeTimer = gameStepFoodSpawnTimeMs.startTimer();
   world.spawnFood();
+  stopSpawnFoodTimeTimer();
 }
 
 type StartEngineArgs = {
@@ -107,8 +126,9 @@ async function startEngine({ botApi }: StartEngineArgs) {
     }
 
     const endTs = Date.now();
-
     const timeSpentMs = endTs - startTs;
+    gameStepTimeMs.observe(timeSpentMs);
+
     if (timeSpentMs < GAME_STEP_INTERVAL_MS) {
       await new Promise(resolve => setTimeout(resolve, GAME_STEP_INTERVAL_MS - timeSpentMs));
     } else {

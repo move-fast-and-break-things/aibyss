@@ -1,8 +1,13 @@
 import prisma from "~/other/db";
 import { SESSION_COOKIE_NAME, SESSION_STORAGE } from "~/other/sessionStorage";
 
+const PUBLIC_PATHS = [
+  "/login",
+  "/metrics",
+];
+
 export default defineEventHandler(async (event) => {
-  if (event.path.includes("login")) {
+  if (PUBLIC_PATHS.includes(event.path)) {
     return;
   }
 
