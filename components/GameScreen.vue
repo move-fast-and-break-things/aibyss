@@ -124,8 +124,8 @@ async function drawBot({ bot, graphics, botDirection }: DrawBotArgs) {
     },
     text: bot.username,
     style: {
-      fontFamily: "Verdana",
-      fontSize: 12,
+      fontFamily: "Retropix",
+      fontSize: 14,
       fontWeight: "100",
       fill: fillGradient,
     },
