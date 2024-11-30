@@ -81,17 +81,23 @@ const isModalOpen = ref(false);
                 scope="col"
                 class="px-6 py-3 bg-gray-50 dark:bg-gray-800"
               >
-                food eaten
+                k/d
               </th>
               <th
                 scope="col"
                 class="px-6 py-3"
               >
-                max endgame size
+                food eaten
               </th>
               <th
                 scope="col"
                 class="px-6 py-3 bg-gray-50 dark:bg-gray-800"
+              >
+                max endgame size
+              </th>
+              <th
+                scope="col"
+                class="px-6 py-3"
               >
                 avg endgame size
               </th>
@@ -137,12 +143,15 @@ const isModalOpen = ref(false);
                 {{ userRating.deaths }}
               </td>
               <td class="px-6 py-4 bg-gray-50 dark:bg-gray-800">
-                {{ userRating.foodEaten }}
+                {{ userRating.deaths ? (userRating.kills / userRating.deaths).toFixed(2) : "n/a" }}
               </td>
               <td class="px-6 py-4">
-                {{ userRating.maxEndgameSize }}
+                {{ userRating.foodEaten }}
               </td>
               <td class="px-6 py-4 bg-gray-50 dark:bg-gray-800">
+                {{ userRating.maxEndgameSize }}
+              </td>
+              <td class="px-6 py-4">
                 {{ userRating.avgEndgameSize.toFixed(2) }}
               </td>
             </tr>
