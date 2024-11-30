@@ -82,7 +82,7 @@ export default class World {
       const { element: randomPosition, idx } = getRandomElement(availablePositions);
       availablePositions.splice(idx, 1);
       const newRadius = Math.floor(Math.random() * this.maxFoodRadius) + 1;
-      this.food.push({ ...randomPosition, radius: newRadius });
+      this.food.push({ ...World.deserializePosition(randomPosition), radius: newRadius });
     }
   }
 
@@ -92,13 +92,21 @@ export default class World {
     }
   }
 
-  private positionStringify({ x, y }: { x: number; y: number }): string {
-    return `${x}-${y}`;
+  /**
+   * Expects that both x and y are integers between 0 and 65535
+   */
+  private static serializePosition({ x, y }: { x: number; y: number }): number {
+    return ((y & 0xFFFF) << 16) | (x & 0xFFFF);
   }
 
-  private getAvailableSpawnPositions(newEntityRadius: number): { x: number; y: number }[] {
-    const availablePositions: { x: number; y: number }[] = [];
-    const takenPositions: Set<string> = new Set();
+  private static deserializePosition(serializedPosition: number): { x: number; y: number } {
+    const x = serializedPosition & 0xFFFF;
+    const y = (serializedPosition >> 16) & 0xFFFF;
+    return { x, y };
+  }
+
+  private getAvailableSpawnPositions(newEntityRadius: number): number[] {
+    const takenPositions: Set<number> = new Set();
 
     // to avoid computing distances between points when spawning new bots, assume that bots are square
     for (const bot of this.botSpawns.values()) {
@@ -112,7 +120,7 @@ export default class World {
 
       for (let i = minX; i < maxX; i++) {
         for (let j = minY; j < maxY; j++) {
-          takenPositions.add(this.positionStringify({ x: i, y: j }));
+          takenPositions.add(World.serializePosition({ x: i, y: j }));
         }
       }
     }
@@ -122,12 +130,13 @@ export default class World {
     const minY = newEntityRadius;
     const maxY = this.height - newEntityRadius;
 
+    const availablePositions: number[] = new Array(this.height * this.width - takenPositions.size);
+    let availablePositionsIdx = 0;
     for (let i = minX; i < maxX; i++) {
       for (let j = minY; j < maxY; j++) {
-        const position = { x: i, y: j };
-        const positionStr = this.positionStringify(position);
-        if (!takenPositions.has(positionStr)) {
-          availablePositions.push(position);
+        const serializedPosition = World.serializePosition({ x: i, y: j });
+        if (!takenPositions.has(serializedPosition)) {
+          availablePositions[availablePositionsIdx++] = serializedPosition;
         }
       }
     }
@@ -154,7 +163,7 @@ export default class World {
     const spawnId = Math.random().toString(36).substring(5);
 
     const newBot = {
-      ...randomPosition,
+      ...World.deserializePosition(randomPosition),
       botId,
       radius: this.newBotRadius,
       color,
