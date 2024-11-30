@@ -42,6 +42,18 @@ type DrawBotArgs = {
 
 function follow() {
   isFollowing = !isFollowing;
+  if (isFollowing && gameState.value) {
+    const firstBot = Object.values(gameState.value.bots)[0];
+
+    if (firstBot) {
+      const botPos = { x: firstBot.x, y: firstBot.y };
+      smoothZoomIn(botPos, 3);
+    } else {
+      console.warn("No bots available to follow.");
+    }
+  } else {
+    console.error("Game state is not available.");
+  }
 }
 
 let isZoomingOut = false;
@@ -133,7 +145,11 @@ function followFirstBot(botx: number, boty: number, username: string) {
     };
     const newPosX = currentPos.x + (targetPos.x - currentPos.x) * 0.1;
     const newPosY = currentPos.y + (targetPos.y - currentPos.y) * 0.1;
-    appRef.value.stage.position.set(newPosX, newPosY);
+
+    appRef.value.stage.position.set(
+      Math.min(0, Math.max(newPosX, appRef.value.screen.width - appRef.value.screen.width * appRef.value.stage.scale.x)),
+      Math.min(0, Math.max(newPosY, appRef.value.screen.height - appRef.value.screen.height * appRef.value.stage.scale.y)),
+    );
   }
 }
 
@@ -176,6 +192,10 @@ async function drawBot({ bot, graphics }: DrawBotArgs) {
     username.y = bot.y - bot.radius - 10;
 
     graphics.addChild(username);
+
+    // Adjust username text scale to prevent zooming effect
+    const stageScale = appRef.value?.stage.scale.x ?? 1;
+    username.scale.set(1 / stageScale, 1 / stageScale);
   }
 }
 
