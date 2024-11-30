@@ -56,66 +56,90 @@ type DrawBotArgs = {
   graphics: Graphics;
 };
 
+function setSpritePositionAndSize({
+  sprite,
+  bot: { x, y, radius },
+  botDirection,
+}: {
+  sprite: Sprite;
+  bot: { x: number; y: number; radius: number };
+  botDirection: number;
+}) {
+  sprite.x = x;
+  sprite.y = y;
+  sprite.width = radius * 2;
+  sprite.height = radius * 2;
+  const shouldFlipBot = botDirection > Math.PI / 2 || botDirection < -Math.PI / 2;
+  sprite.scale.x = (shouldFlipBot ? -1 : 1) * Math.abs(sprite.scale.x);
+}
+
+function setUsernamePosition({
+  username,
+  bot: { x, y, radius },
+}: {
+  username: Text;
+  bot: { x: number; y: number; radius: number };
+}) {
+  username.x = x;
+  username.y = y - radius - 10;
+}
+
 async function drawBot({ bot, graphics, botDirection }: DrawBotArgs) {
-  for (const child of graphics.children) {
-    graphics.removeChild(child);
+  if (graphics.children.length > 0) {
+    const sprite = graphics.children.find(child => child instanceof Sprite);
+    const username = graphics.children.find(child => child instanceof Text);
+    if (!sprite || !username) {
+      throw new Error("unexpected: sprite or text not found when redrawing the bot");
+    }
+    setSpritePositionAndSize({ sprite, bot, botDirection });
+    setUsernamePosition({ username, bot });
+    return;
   }
-  graphics.clear();
 
   // draw bot
   const usernameHash = bot.username.charCodeAt(0) + (bot.username.charCodeAt(1) || 0) + (bot.username.charCodeAt(2) || 0);
   const numOfSprite = usernameHash % (fishTexturesRef.value.length);
   const fishTexture = fishTexturesRef.value[numOfSprite];
-
   if (!fishTexture) {
     throw new Error("Fish sprite is not loaded");
   }
   const sprite = new Sprite(fishTexture);
   sprite.anchor.set(0.5);
-  sprite.width = bot.radius * 2;
-  sprite.height = bot.radius * 2;
-  sprite.x = bot.x;
-  sprite.y = bot.y;
-
-  const shouldFlipBot = botDirection > Math.PI / 2 || botDirection < -Math.PI / 2;
-  if (shouldFlipBot) {
-    sprite.scale.x = -Math.abs(sprite.scale.x);
-  }
-
+  setSpritePositionAndSize({ sprite, bot, botDirection });
   graphics.addChild(sprite);
-  const existingUsername = graphics.children.find(child => child instanceof Text);
-  if (existingUsername) {
-    // avoid recreating username if it already exists
-    existingUsername.x = bot.x;
-    existingUsername.y = bot.y - bot.radius - 10;
-  } else {
-    // draw username
 
-    // we have to use FillGradient because
-    // using color as a fill doesn't work with pixi.js, vue.js, and Text
-    // https://github.com/pixijs/pixijs/discussions/10444
-    const fillGradient = new FillGradient(0, 0, 1, 1);
-    fillGradient.addColorStop(0, bot.color);
-    fillGradient.addColorStop(1, bot.color);
+  // draw username
 
-    const username = new Text({
-      anchor: {
-        x: 0.5,
-        y: 0.5,
-      },
-      text: bot.username,
-      style: {
-        fontFamily: "Verdana",
-        fontSize: 12,
-        fontWeight: "100",
-        fill: fillGradient,
-      },
-    });
-    username.x = bot.x;
-    username.y = bot.y - bot.radius - 10;
+  // we have to use FillGradient because
+  // using color as a fill doesn't work with pixi.js, vue.js, and Text
+  // https://github.com/pixijs/pixijs/discussions/10444
+  const fillGradient = new FillGradient(0, 0, 1, 1);
+  fillGradient.addColorStop(0, bot.color);
+  fillGradient.addColorStop(1, bot.color);
 
-    graphics.addChild(username);
+  const username = new Text({
+    anchor: {
+      x: 0.5,
+      y: 0.5,
+    },
+    text: bot.username,
+    style: {
+      fontFamily: "Verdana",
+      fontSize: 12,
+      fontWeight: "100",
+      fill: fillGradient,
+    },
+  });
+  setUsernamePosition({ username, bot });
+
+  graphics.addChild(username);
+}
+
+function destroyGraphics(graphics: Graphics) {
+  for (const child of graphics.children) {
+    child.destroy();
   }
+  graphics.destroy();
 }
 
 function getDirection(
@@ -305,11 +329,22 @@ watch(gameState, async (newState, prevState) => {
     }
   } else {
     // remove eaten food
-    for (const food of foodRef.value) {
+    const foodIdxToRemove: number[] = [];
+    for (const [foodIdx, food] of foodRef.value.entries()) {
       if (!prevState.food.find(f => f.x === food.x && f.y === food.y)) {
-        // @ts-expect-error - food.graphics has some weird type
-        appRef.value.stage.removeChild(food.graphics);
+        foodIdxToRemove.push(foodIdx);
       }
+    }
+    foodIdxToRemove.reverse();
+    for (const idx of foodIdxToRemove) {
+      const food = foodRef.value[idx];
+      if (!food) {
+        throw new Error("unexpected: food to remove not found");
+      }
+      // `food.graphics` has some weird type
+      appRef.value.stage.removeChild(food.graphics as Graphics);
+      destroyGraphics(food.graphics as Graphics);
+      foodRef.value.splice(idx, 1);
     }
 
     // add new food
@@ -330,6 +365,7 @@ watch(gameState, async (newState, prevState) => {
         appRef.value.stage.removeChild(existingBotGraphics);
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
         delete botSpawnsRef.value[spawnId];
+        destroyGraphics(existingBotGraphics);
       }
     }
 
