@@ -1,4 +1,4 @@
-import { it, expect } from "vitest";
+import { describe, it, expect } from "vitest";
 import World, { type BotSprite, type Sprite } from "./world";
 
 it("correctly removes the smaller bot when the bigger bot eats it", () => {
@@ -135,4 +135,88 @@ it("doesn't allow the bot to go outside the world with negative x and y", () => 
   }
   expect(botFromStateAfterMove.x).toBe(0);
   expect(botFromStateAfterMove.y).toBe(0);
+});
+
+describe(".serializePosition", () => {
+  it("returns the same value for the same position", () => {
+    // @ts-expect-error - world.serializePosition is private
+    expect(World.serializePosition({ x: 1, y: 1 })).toBe(World.serializePosition({ x: 1, y: 1 }));
+    // @ts-expect-error - world.serializePosition is private
+    expect(World.serializePosition({ x: 15212, y: 102 })).toBe(World.serializePosition({ x: 15212, y: 102 }));
+  });
+
+  it("returns a unique value for each position on a 1000x1000 grid", () => {
+    const positions = new Set<number>();
+    for (let x = 0; x < 1000; ++x) {
+      for (let y = 0; y < 1000; ++y) {
+        // @ts-expect-error - world.serializePosition is private
+        positions.add(World.serializePosition({ x, y }));
+      }
+    }
+    expect(positions.size).toBe(1000 * 1000);
+  });
+
+  it("returns unique values for large coordinates, just below 65535", () => {
+    // @ts-expect-error - world.serializePosition is private
+    expect(World.serializePosition({ x: 65534, y: 65534 })).toBe(-65538);
+    // @ts-expect-error - world.serializePosition is private
+    expect(World.serializePosition({ x: 65534, y: 65535 })).toBe(-2);
+    // @ts-expect-error - world.serializePosition is private
+    expect(World.serializePosition({ x: 65535, y: 65534 })).toBe(-65537);
+    // @ts-expect-error - world.serializePosition is private
+    expect(World.serializePosition({ x: 65535, y: 65535 })).toBe(-1);
+  });
+});
+
+describe(".deserializePosition", () => {
+  it("can deserialize every serialized position on a 1000x1000 grid", () => {
+    const position = { x: 0, y: 0 };
+    for (; position.x < 1000; ++position.x) {
+      for (; position.y < 1000; ++position.y) {
+        // @ts-expect-error - world.deserializePosition is private
+        const serializedPosition = World.serializePosition(position);
+        // @ts-expect-error - world.deserializePosition is private
+        const deserializedPosition = World.deserializePosition(serializedPosition);
+        expect(deserializedPosition).toStrictEqual(position);
+      }
+    }
+  });
+
+  it("can deserialize large coordinates, just below 65535", () => {
+    // @ts-expect-error - world.deserializePosition is private
+    expect(World.deserializePosition(World.serializePosition({ x: 65534, y: 65534 }))).toEqual({ x: 65534, y: 65534 });
+    // @ts-expect-error - world.deserializePosition is private
+    expect(World.deserializePosition(World.serializePosition({ x: 65534, y: 65535 }))).toEqual({ x: 65534, y: 65535 });
+    // @ts-expect-error - world.deserializePosition is private
+    expect(World.deserializePosition(World.serializePosition({ x: 65535, y: 65534 }))).toEqual({ x: 65535, y: 65534 });
+    // @ts-expect-error - world.deserializePosition is private
+    expect(World.deserializePosition(World.serializePosition({ x: 65535, y: 65535 }))).toEqual({ x: 65535, y: 65535 });
+  });
+});
+
+describe(".getAvailableSpawnPositions", () => {
+  it("returns fewer positions than there are on the grid because bot occupy some", () => {
+    const worldSize = 100;
+
+    const world = new World({ width: worldSize, height: worldSize });
+    world.addBot("1");
+
+    const newEntityRadius = 1;
+    // @ts-expect-error - world.getAvailableSpawnPositions is private
+    const availablePositions = world.getAvailableSpawnPositions(newEntityRadius);
+    // we step away from the walls by the radius of the new entity
+    expect(availablePositions.length).toBeLessThan((worldSize - newEntityRadius) * (worldSize - newEntityRadius));
+  });
+
+  it("doesn't return nullish elements", () => {
+    const worldSize = 100;
+
+    const world = new World({ width: worldSize, height: worldSize });
+    world.addBot("1");
+
+    const newEntityRadius = 1;
+    // @ts-expect-error - world.getAvailableSpawnPositions is private
+    const availablePositions = world.getAvailableSpawnPositions(newEntityRadius);
+    expect(availablePositions.every(Boolean)).toBe(true);
+  });
 });
