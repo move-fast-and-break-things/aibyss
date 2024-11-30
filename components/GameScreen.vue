@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Application, Graphics, Text, FillGradient } from "pixi.js";
+import { Application, Graphics, Text, FillGradient, Assets, type Texture, Sprite } from "pixi.js";
 
 const refreshIntervalMs = 1000;
 const zoomSpeed = 0.05;
@@ -9,8 +9,22 @@ const maxZoom = 3;
 const { data: gameState, refresh } = await useFetch("/api/state");
 const intervalRef = ref<number | null>(null);
 
+const fishTexturesRef = ref<Texture[]>([]);
+
 onMounted(async () => {
   intervalRef.value = window.setInterval(refresh, refreshIntervalMs);
+
+  fishTexturesRef.value = await Promise.all([
+    Assets.load("/sprites/FishVer1Short.png"),
+    Assets.load("/sprites/FishVer2Short.png"),
+    Assets.load("/sprites/FishVer3Short.png"),
+    Assets.load("/sprites/FishVer4Short.png"),
+    Assets.load("/sprites/FishVer5Short.png"),
+    Assets.load("/sprites/FishVer6Short.png"),
+    Assets.load("/sprites/FishVer7Short.png"),
+    Assets.load("/sprites/FishVer8Short.png"),
+    Assets.load("/sprites/FishVer9Short.png"),
+  ]);
 });
 
 onBeforeUnmount(() => {
@@ -35,16 +49,40 @@ type DrawBotArgs = {
     color: string;
     username: string;
   };
+  /**
+   * Bot direction in radians.
+   */
+  botDirection: number;
   graphics: Graphics;
 };
 
-async function drawBot({ bot, graphics }: DrawBotArgs) {
+async function drawBot({ bot, graphics, botDirection }: DrawBotArgs) {
+  for (const child of graphics.children) {
+    graphics.removeChild(child);
+  }
   graphics.clear();
 
   // draw bot
-  graphics.circle(bot.x, bot.y, bot.radius);
-  graphics.fill(bot.color);
+  const usernameHash = bot.username.charCodeAt(0) + (bot.username.charCodeAt(1) || 0) + (bot.username.charCodeAt(2) || 0);
+  const numOfSprite = usernameHash % (fishTexturesRef.value.length);
+  const fishTexture = fishTexturesRef.value[numOfSprite];
 
+  if (!fishTexture) {
+    throw new Error("Fish sprite is not loaded");
+  }
+  const sprite = new Sprite(fishTexture);
+  sprite.anchor.set(0.5);
+  sprite.width = bot.radius * 2;
+  sprite.height = bot.radius * 2;
+  sprite.x = bot.x;
+  sprite.y = bot.y;
+
+  const shouldFlipBot = botDirection > Math.PI / 2 || botDirection < -Math.PI / 2;
+  if (shouldFlipBot) {
+    sprite.scale.x = -Math.abs(sprite.scale.x);
+  }
+
+  graphics.addChild(sprite);
   const existingUsername = graphics.children.find(child => child instanceof Text);
   if (existingUsername) {
     // avoid recreating username if it already exists
@@ -78,6 +116,13 @@ async function drawBot({ bot, graphics }: DrawBotArgs) {
 
     graphics.addChild(username);
   }
+}
+
+function getDirection(
+  positionA: { x: number; y: number },
+  positionB: { x: number; y: number },
+): number {
+  return Math.atan2(positionB.y - positionA.y, positionB.x - positionA.x);
 }
 
 watch(gameState, async (newState, prevState) => {
@@ -247,9 +292,15 @@ watch(gameState, async (newState, prevState) => {
 
     // render bots
     for (const bot of Object.values(prevState.bots)) {
+      const newBotState = newState.bots[bot.spawnId];
+      if (!newBotState) {
+        continue;
+      }
+
       const graphics = new Graphics();
       app.stage.addChild(graphics);
-      drawBot({ bot, graphics });
+      const botDirection = getDirection(bot, newBotState);
+      drawBot({ bot, graphics, botDirection });
       botSpawnsRef.value[bot.spawnId] = graphics;
     }
   } else {
@@ -284,18 +335,20 @@ watch(gameState, async (newState, prevState) => {
 
     // move or add bots
     for (const bot of Object.values(prevState.bots)) {
-      if (!newState.bots[bot.spawnId]) {
+      const newBotState = newState.bots[bot.spawnId];
+      if (!newBotState) {
         continue;
       }
 
       const existingBot = botSpawnsRef.value[bot.spawnId];
+      const botDirection = getDirection(bot, newBotState);
 
       if (existingBot) {
-        drawBot({ bot, graphics: existingBot });
+        drawBot({ bot, graphics: existingBot, botDirection });
       } else {
         const graphics = new Graphics();
         appRef.value.stage.addChild(graphics);
-        drawBot({ bot, graphics });
+        drawBot({ bot, graphics, botDirection });
         botSpawnsRef.value[bot.spawnId] = graphics;
       }
     }
@@ -327,8 +380,9 @@ watch(gameState, async (newState, prevState) => {
       if (existingBot && prevBot) {
         const x = prevBot.x + (bot.x - prevBot.x) * progress;
         const y = prevBot.y + (bot.y - prevBot.y) * progress;
+        const botDirection = getDirection(prevBot, bot);
 
-        drawBot({ bot: { ...bot, x, y }, graphics: existingBot });
+        drawBot({ bot: { ...bot, x, y }, graphics: existingBot, botDirection });
       }
     }
   };
