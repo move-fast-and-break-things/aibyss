@@ -59,6 +59,7 @@ type DrawBotArgs = {
 async function drawBot({ bot, graphics, botDirection }: DrawBotArgs) {
   for (const child of graphics.children) {
     graphics.removeChild(child);
+    child.destroy();
   }
   graphics.clear();
 
@@ -305,11 +306,23 @@ watch(gameState, async (newState, prevState) => {
     }
   } else {
     // remove eaten food
-    for (const food of foodRef.value) {
+    const foodIdxToRemove: number[] = [];
+    for (const [foodIdx, food] of foodRef.value.entries()) {
       if (!prevState.food.find(f => f.x === food.x && f.y === food.y)) {
-        // @ts-expect-error - food.graphics has some weird type
-        appRef.value.stage.removeChild(food.graphics);
+        foodIdxToRemove.push(foodIdx);
       }
+    }
+    for (const idx of foodIdxToRemove) {
+      const food = foodRef.value[idx];
+      if (!food) {
+        throw new Error("unexpected: food to remove not found");
+      }
+      // @ts-expect-error -- food.graphics has some weird type
+      appRef.value.stage.removeChild(food.graphics);
+      for (const child of food.graphics.children) {
+        child.destroy();
+      }
+      food.graphics.destroy();
     }
 
     // add new food
@@ -330,6 +343,10 @@ watch(gameState, async (newState, prevState) => {
         appRef.value.stage.removeChild(existingBotGraphics);
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
         delete botSpawnsRef.value[spawnId];
+        for (const child of existingBotGraphics.children) {
+          child.destroy();
+        }
+        existingBotGraphics.destroy();
       }
     }
 
