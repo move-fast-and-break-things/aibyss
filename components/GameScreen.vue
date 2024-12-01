@@ -407,7 +407,7 @@ watch(gameState, async (newState, prevState) => {
   const updateTime = Date.now();
   tickFnRef.value = () => {
     const now = Date.now();
-    const progress = (now - updateTime) / refreshIntervalMs;
+    const progress = Math.min((now - updateTime) / refreshIntervalMs, 1);
 
     for (const bot of Object.values(newState.bots)) {
       const existingBot = botSpawnsRef.value[bot.spawnId];
