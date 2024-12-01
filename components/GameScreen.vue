@@ -5,7 +5,11 @@ const refreshIntervalMs = 1000;
 const zoomSpeed = 0.1;
 const minZoom = 1;
 const maxZoom = 3;
-
+let startZoomTime: number;
+const zoomDuration = 500;
+let targetScale: number;
+let targetPos: { x: number; y: number };
+let isZooming = false;
 let isFollowing = false;
 
 const { data: gameState, refresh } = await useFetch("/api/state");
@@ -56,12 +60,6 @@ function follow() {
   }
 }
 
-let startZoomTime: number;
-const zoomDuration = 500;
-let targetScale: number;
-let targetPos: { x: number; y: number };
-let isZooming = false;
-
 function smoothZoom(Pos: { x: number; y: number }, scale: number) {
   if (!appRef.value) {
     return;
@@ -79,7 +77,7 @@ function smoothZoom(Pos: { x: number; y: number }, scale: number) {
 }
 
 function animateZoom(currentTime: number) {
-  if (!appRef.value || !startZoomTime) {
+  if (!appRef.value || !startZoomTime || !appRef.value.stage) {
     return;
   }
 
@@ -227,11 +225,12 @@ watch(gameState, async (newState, prevState) => {
       const zoomFactor = (event.deltaY * -zoomSpeed) * 100;
       const newScale = Math.max(minZoom, Math.min(maxZoom, app.stage.scale.x + zoomFactor));
       smoothZoom(mousePos, newScale);
-
-      if (newScale > 1) {
-        gameScreen.value?.classList.add("cursor-grab");
-      } else {
-        gameScreen.value?.classList.remove("cursor-grab");
+      if (!isFollowing) {
+        if (newScale > 1) {
+          gameScreen.value?.classList.add("cursor-grab");
+        } else {
+          gameScreen.value?.classList.remove("cursor-grab");
+        }
       }
     });
 
@@ -240,15 +239,17 @@ watch(gameState, async (newState, prevState) => {
     let startDragPos = { x: 0, y: 0 };
 
     canvas.value?.addEventListener("mousedown", (event) => {
-      if (app.stage.scale.x > 1) {
-        gameScreen.value?.classList.add("cursor-grabbing");
+      if (!isFollowing) {
+        if (app.stage.scale.x > 1) {
+          gameScreen.value?.classList.add("cursor-grabbing");
+        }
+        isDragging = true;
+        startDragPos = { x: event.offsetX, y: event.offsetY };
       }
-      isDragging = true;
-      startDragPos = { x: event.offsetX, y: event.offsetY };
     });
 
     canvas.value?.addEventListener("mousemove", (event) => {
-      if (isDragging && canvas.value) {
+      if (isDragging && canvas.value && !isFollowing) {
         const dx = event.offsetX - startDragPos.x;
         const dy = event.offsetY - startDragPos.y;
         const newPosX = app.stage.position.x + dx;
@@ -387,15 +388,14 @@ watch(gameState, async (newState, prevState) => {
       :style="{ maxWidth: gameState?.width + 'px' }"
     >
       <div class="flex flex-row justify-end mb-2 mt-1 mx-4 gap-6">
-        <AnchorLink href="/rating">
-          rating
-        </AnchorLink>
-        <button
-          class="px-4 py-2 bg-blue-500 text-white rounded"
+        <ButtonLink
           @click="follow"
         >
           Follow Bot
-        </button>
+        </ButtonLink>
+        <AnchorLink href="/rating">
+          rating
+        </AnchorLink>
       </div>
       <canvas ref="canvas" />
     </div>
