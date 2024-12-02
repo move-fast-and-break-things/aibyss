@@ -479,7 +479,7 @@ watch(gameState, async (newState, prevState) => {
         <ButtonLink
           @click="follow"
         >
-          Follow Bot
+          follow my bot
         </ButtonLink>
         <AnchorLink href="/rating">
           rating
