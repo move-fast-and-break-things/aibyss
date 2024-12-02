@@ -77,7 +77,7 @@ function smoothZoom(Pos: { x: number; y: number }, scale: number) {
 }
 
 function animateZoom(currentTime: number) {
-  if (!appRef.value || !startZoomTime || !appRef.value.stage) {
+  if (!appRef.value || !appRef.value.stage || !appRef.value.stage.position || !startZoomTime) {
     return;
   }
 
@@ -115,13 +115,11 @@ function animateZoom(currentTime: number) {
 }
 function followFirstBot(botx: number, boty: number, username: string) {
   if (!appRef.value || !gameState.value) {
-    console.error("App or game state not initialized.");
     return;
   }
 
   const firstBot = Object.values(gameState.value.bots)?.[0];
   if (!firstBot) {
-    console.warn("No bots available to follow.");
     return;
   }
   if (username == firstBot.username) {
