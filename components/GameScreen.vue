@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Application, Graphics, Text, FillGradient } from "pixi.js";
+import { Application, Graphics, Text, FillGradient, Assets, type Texture, Sprite } from "pixi.js";
 
 const refreshIntervalMs = 1000;
 const zoomSpeed = 0.1;
@@ -15,8 +15,22 @@ let isFollowing = false;
 const { data: gameState, refresh } = await useFetch("/api/state");
 const intervalRef = ref<number | null>(null);
 
+const fishTexturesRef = ref<Texture[]>([]);
+
 onMounted(async () => {
   intervalRef.value = window.setInterval(refresh, refreshIntervalMs);
+
+  fishTexturesRef.value = await Promise.all([
+    Assets.load("/sprites/FishVer1Short.png"),
+    Assets.load("/sprites/FishVer2Short.png"),
+    Assets.load("/sprites/FishVer3Short.png"),
+    Assets.load("/sprites/FishVer4Short.png"),
+    Assets.load("/sprites/FishVer5Short.png"),
+    Assets.load("/sprites/FishVer6Short.png"),
+    Assets.load("/sprites/FishVer7Short.png"),
+    Assets.load("/sprites/FishVer8Short.png"),
+    Assets.load("/sprites/FishVer9Short.png"),
+  ]);
 });
 
 onBeforeUnmount(() => {
@@ -41,6 +55,10 @@ type DrawBotArgs = {
     color: string;
     username: string;
   };
+  /**
+   * Bot direction in radians.
+   */
+  botDirection: number;
   graphics: Graphics;
 };
 
@@ -138,50 +156,101 @@ function followFirstBot(botx: number, boty: number, username: string) {
   }
 }
 
-async function drawBot({ bot, graphics }: DrawBotArgs) {
-  graphics.clear();
+function setSpritePositionAndSize({
+  sprite,
+  bot: { x, y, radius },
+  botDirection,
+}: {
+  sprite: Sprite;
+  bot: { x: number; y: number; radius: number };
+  botDirection: number;
+}) {
+  sprite.x = x;
+  sprite.y = y;
+  sprite.width = radius * 2;
+  sprite.height = radius * 2;
+  const shouldFlipBot = botDirection > Math.PI / 2 || botDirection < -Math.PI / 2;
+  sprite.scale.x = (shouldFlipBot ? -1 : 1) * Math.abs(sprite.scale.x);
+}
+
+function setUsernamePosition({
+  username,
+  bot: { x, y, radius },
+}: {
+  username: Text;
+  bot: { x: number; y: number; radius: number };
+}) {
+  username.x = x;
+  username.y = y - radius - 10;
+}
+
+async function drawBot({ bot, graphics, botDirection }: DrawBotArgs) {
+  if (graphics.children.length > 0) {
+    const sprite = graphics.children.find(child => child instanceof Sprite);
+    const username = graphics.children.find(child => child instanceof Text);
+    if (!sprite || !username) {
+      throw new Error("unexpected: sprite or text not found when redrawing the bot");
+    }
+    setSpritePositionAndSize({ sprite, bot, botDirection });
+    setUsernamePosition({ username, bot });
+    return;
+  }
 
   // draw bot
-  graphics.circle(bot.x, bot.y, bot.radius);
-  graphics.fill(bot.color);
-
-  const existingUsername = graphics.children.find(child => child instanceof Text);
-  if (existingUsername) {
-    // avoid recreating username if it already exists
-    existingUsername.x = bot.x;
-    existingUsername.y = bot.y - bot.radius - 10;
-  } else {
-    // draw username
-
-    // we have to use FillGradient because
-    // using color as a fill doesn't work with pixi.js, vue.js, and Text
-    // https://github.com/pixijs/pixijs/discussions/10444
-    const fillGradient = new FillGradient(0, 0, 1, 1);
-    fillGradient.addColorStop(0, bot.color);
-    fillGradient.addColorStop(1, bot.color);
-
-    const username = new Text({
-      anchor: {
-        x: 0.5,
-        y: 0.5,
-      },
-      text: bot.username,
-      style: {
-        fontFamily: "Verdana",
-        fontSize: 12,
-        fontWeight: "100",
-        fill: fillGradient,
-      },
-    });
-    username.x = bot.x;
-    username.y = bot.y - bot.radius - 10;
-
-    graphics.addChild(username);
-
-    // Adjust username text scale to prevent zooming effect
-    const stageScale = appRef.value?.stage.scale.x ?? 1;
-    username.scale.set(1 / stageScale, 1 / stageScale);
+  const usernameHash = bot.username.charCodeAt(0) + (bot.username.charCodeAt(1) || 0) + (bot.username.charCodeAt(2) || 0);
+  const numOfSprite = usernameHash % (fishTexturesRef.value.length);
+  const fishTexture = fishTexturesRef.value[numOfSprite];
+  if (!fishTexture) {
+    throw new Error("Fish sprite is not loaded");
   }
+  const sprite = new Sprite(fishTexture);
+  sprite.anchor.set(0.5);
+  setSpritePositionAndSize({ sprite, bot, botDirection });
+  graphics.addChild(sprite);
+
+  // draw username
+
+  // we have to use FillGradient because
+  // using color as a fill doesn't work with pixi.js, vue.js, and Text
+  // https://github.com/pixijs/pixijs/discussions/10444
+  const fillGradient = new FillGradient(0, 0, 1, 1);
+  fillGradient.addColorStop(0, bot.color);
+  fillGradient.addColorStop(1, bot.color);
+
+  const username = new Text({
+    anchor: {
+      x: 0.5,
+      y: 0.5,
+    },
+    text: bot.username,
+    style: {
+      fontFamily: "Retropix",
+      fontSize: 14,
+      fontWeight: "100",
+      fill: fillGradient,
+    },
+  });
+  setUsernamePosition({ username, bot });
+
+  graphics.addChild(username);
+
+  // Adjust username text scale to prevent zooming effect
+  const stageScale = appRef.value?.stage.scale.x ?? 1;
+  username.scale.set(1 / stageScale, 1 / stageScale);
+}
+
+function destroyGraphics(graphics: Graphics) {
+  for (const child of graphics.children) {
+    child.destroy();
+  }
+  graphics.destroy();
+}
+
+function getDirection(
+  positionA: { x: number; y: number },
+  positionB: { x: number; y: number },
+): number {
+  return Math.atan2(positionB.y - positionA.y, positionB.x - positionA.x);
 }
 
 watch(gameState, async (newState, prevState) => {
@@ -282,18 +351,35 @@ watch(gameState, async (newState, prevState) => {
 
     // render bots
     for (const bot of Object.values(prevState.bots)) {
+      const newBotState = newState.bots[bot.spawnId];
+      if (!newBotState) {
+        continue;
+      }
+
       const graphics = new Graphics();
       app.stage.addChild(graphics);
-      drawBot({ bot, graphics });
+      const botDirection = getDirection(bot, newBotState);
+      drawBot({ bot, graphics, botDirection });
       botSpawnsRef.value[bot.spawnId] = graphics;
     }
   } else {
     // remove eaten food
-    for (const food of foodRef.value) {
+    const foodIdxToRemove: number[] = [];
+    for (const [foodIdx, food] of foodRef.value.entries()) {
       if (!prevState.food.find(f => f.x === food.x && f.y === food.y)) {
-        // @ts-expect-error - food.graphics has some weird type
-        appRef.value.stage.removeChild(food.graphics);
+        foodIdxToRemove.push(foodIdx);
       }
+    }
+    foodIdxToRemove.reverse();
+    for (const idx of foodIdxToRemove) {
+      const food = foodRef.value[idx];
+      if (!food) {
+        throw new Error("unexpected: food to remove not found");
+      }
+      // `food.graphics` has some weird type
+      appRef.value.stage.removeChild(food.graphics as Graphics);
+      destroyGraphics(food.graphics as Graphics);
+      foodRef.value.splice(idx, 1);
     }
 
     // add new food
@@ -314,23 +400,26 @@ watch(gameState, async (newState, prevState) => {
         appRef.value.stage.removeChild(existingBotGraphics);
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
         delete botSpawnsRef.value[spawnId];
+        destroyGraphics(existingBotGraphics);
       }
     }
 
     // move or add bots
     for (const bot of Object.values(prevState.bots)) {
-      if (!newState.bots[bot.spawnId]) {
+      const newBotState = newState.bots[bot.spawnId];
+      if (!newBotState) {
         continue;
       }
 
       const existingBot = botSpawnsRef.value[bot.spawnId];
+      const botDirection = getDirection(bot, newBotState);
 
       if (existingBot) {
-        drawBot({ bot, graphics: existingBot });
+        drawBot({ bot, graphics: existingBot, botDirection });
       } else {
         const graphics = new Graphics();
         appRef.value.stage.addChild(graphics);
-        drawBot({ bot, graphics });
+        drawBot({ bot, graphics, botDirection });
         botSpawnsRef.value[bot.spawnId] = graphics;
       }
     }
@@ -353,7 +442,7 @@ watch(gameState, async (newState, prevState) => {
   const updateTime = Date.now();
   tickFnRef.value = () => {
     const now = Date.now();
-    const progress = (now - updateTime) / refreshIntervalMs;
+    const progress = Math.min((now - updateTime) / refreshIntervalMs, 1);
 
     for (const bot of Object.values(newState.bots)) {
       const existingBot = botSpawnsRef.value[bot.spawnId];
@@ -362,12 +451,13 @@ watch(gameState, async (newState, prevState) => {
       if (existingBot && prevBot) {
         const x = prevBot.x + (bot.x - prevBot.x) * progress;
         const y = prevBot.y + (bot.y - prevBot.y) * progress;
+        const botDirection = getDirection(prevBot, bot);
         // follow bot
         if (isFollowing) {
           followFirstBot(x, y, bot.username);
         }
 
-        drawBot({ bot: { ...bot, x, y }, graphics: existingBot });
+        drawBot({ bot: { ...bot, x, y }, graphics: existingBot, botDirection });
       }
     }
   };
