@@ -115,16 +115,16 @@ function animateZoom(currentTime: number) {
     isZooming = false;
   }
 }
-function followFirstBot(botx: number, boty: number, username: string) {
+function followPlayerBot(botx: number, boty: number, username: string) {
   if (!appRef.value || !gameState.value) {
     return;
   }
 
-  const firstBot = Object.values(gameState.value.bots)?.[0];
-  if (!firstBot) {
+  const playerBot = Object.values(gameState.value.bots)?.[0];
+  if (!playerBot) {
     return;
   }
-  if (username == firstBot.username) {
+  if (username == playerBot.username) {
     const currentPos = appRef.value.stage.position;
     const targetPos = {
       x: -botx * appRef.value.stage.scale.x + appRef.value.screen.width / 2,
@@ -218,7 +218,7 @@ async function drawBot({ bot, graphics, botDirection }: DrawBotArgs) {
 
   graphics.addChild(username);
 
-  // Adjust username text scale to prevent zooming effect
+  // Adjust username text scale to prevent zooming effect on the text
   const stageScale = appRef.value?.stage.scale.x ?? 1;
   username.scale.set(1 / stageScale, 1 / stageScale);
 }
@@ -287,8 +287,7 @@ watch(gameState, async (newState, prevState) => {
     const button = document.getElementById("button");
 
     if (button) {
-      button.addEventListener("click", function (event) {
-        event.preventDefault();
+      button.addEventListener("click", function () {
         follow();
       });
     }
@@ -462,9 +461,9 @@ watch(gameState, async (newState, prevState) => {
         const x = prevBot.x + (bot.x - prevBot.x) * progress;
         const y = prevBot.y + (bot.y - prevBot.y) * progress;
         const botDirection = getDirection(prevBot, bot);
-        // follow bot
+        // follow players bot
         if (isFollowing) {
-          followFirstBot(x, y, bot.username);
+          followPlayerBot(x, y, bot.username);
         }
 
         drawBot({ bot: { ...bot, x, y }, graphics: existingBot, botDirection });
