@@ -115,16 +115,14 @@ function animateZoom(currentTime: number) {
     isZooming = false;
   }
 }
-function followPlayerBot(botx: number, boty: number, username: string) {
+
+function followPlayerBot(botx: number, boty: number) {
   if (!appRef.value || !gameState.value) {
     return;
   }
 
   const playerBot = Object.values(gameState.value.bots)?.[0];
-  if (!playerBot) {
-    return;
-  }
-  if (username == playerBot.username) {
+  if (playerBot) {
     const currentPos = appRef.value.stage.position;
     const targetPos = {
       x: -botx * appRef.value.stage.scale.x + appRef.value.screen.width / 2,
@@ -267,6 +265,7 @@ watch(gameState, async (newState, prevState) => {
       autoDensity: true,
     });
 
+    // Follow player bot
     function follow() {
       isFollowing = !isFollowing;
       if (!gameState.value) {
@@ -284,10 +283,9 @@ watch(gameState, async (newState, prevState) => {
       }
     }
 
-    const button = document.getElementById("button");
-
-    if (button) {
-      button.addEventListener("click", function () {
+    const followButton = document.getElementById("followButton");
+    if (followButton) {
+      followButton.addEventListener("click", function () {
         follow();
       });
     }
@@ -461,9 +459,9 @@ watch(gameState, async (newState, prevState) => {
         const x = prevBot.x + (bot.x - prevBot.x) * progress;
         const y = prevBot.y + (bot.y - prevBot.y) * progress;
         const botDirection = getDirection(prevBot, bot);
-        // follow players bot
+        // Follow players bot
         if (isFollowing) {
-          followPlayerBot(x, y, bot.username);
+          followPlayerBot(x, y);
         }
 
         drawBot({ bot: { ...bot, x, y }, graphics: existingBot, botDirection });
@@ -486,7 +484,7 @@ watch(gameState, async (newState, prevState) => {
     >
       <div class="flex flex-row justify-end mb-2 mt-1 mx-4 gap-6">
         <ButtonLink
-          id="button"
+          id="followButton"
         >
           follow my bot
         </ButtonLink>
