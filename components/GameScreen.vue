@@ -62,22 +62,6 @@ type DrawBotArgs = {
   graphics: Graphics;
 };
 
-function follow() {
-  isFollowing = !isFollowing;
-  if (!gameState.value) {
-    return;
-  }
-  const firstBot = Object.values(gameState.value.bots)[0];
-  if (firstBot) {
-    const botPos = { x: firstBot.x, y: firstBot.y };
-    if (isFollowing) {
-      smoothZoom(botPos, 3);
-    } else {
-      smoothZoom(botPos, 1);
-    }
-  }
-}
-
 function smoothZoom(Pos: { x: number; y: number }, scale: number) {
   if (!appRef.value) {
     return;
@@ -95,7 +79,7 @@ function smoothZoom(Pos: { x: number; y: number }, scale: number) {
 }
 
 function animateZoom(currentTime: number) {
-  if (!appRef.value || !appRef.value.stage || !appRef.value.stage.position || !startZoomTime) {
+  if (!appRef.value || !appRef.value.stage || !startZoomTime) {
     return;
   }
 
@@ -282,6 +266,32 @@ watch(gameState, async (newState, prevState) => {
       resolution: 4,
       autoDensity: true,
     });
+
+    function follow() {
+      isFollowing = !isFollowing;
+      if (!gameState.value) {
+        return;
+      }
+      const firstBot = Object.values(gameState.value.bots)[0];
+      if (firstBot) {
+        const newScale = Math.max(minZoom, Math.min(maxZoom, app.stage.scale.x + 10));
+        const botPos = { x: firstBot.x, y: firstBot.y };
+        if (isFollowing) {
+          smoothZoom(botPos, newScale);
+        } else {
+          smoothZoom(botPos, 1);
+        }
+      }
+    }
+
+    const button = document.getElementById("button");
+
+    if (button) {
+      button.addEventListener("click", function (event) {
+        event.preventDefault();
+        follow();
+      });
+    }
 
     // Mouse wheel event listener
     // Event listeners can be potentially called multiple times.
@@ -477,7 +487,7 @@ watch(gameState, async (newState, prevState) => {
     >
       <div class="flex flex-row justify-end mb-2 mt-1 mx-4 gap-6">
         <ButtonLink
-          @click="follow"
+          id="button"
         >
           follow my bot
         </ButtonLink>
