@@ -294,6 +294,9 @@ watch(gameState, async (newState, prevState) => {
     // Event listeners can be potentially called multiple times.
     // TODO: add .removeEventListener later for refactoring.
     canvas.value?.addEventListener("wheel", (event) => {
+      if (isFollowing) {
+        return;
+      }
       event.preventDefault();
       const mousePos = { x: event.offsetX, y: event.offsetY };
       const zoomFactor = (event.deltaY * -zoomSpeed) * 100;
