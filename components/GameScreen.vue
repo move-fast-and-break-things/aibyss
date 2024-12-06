@@ -436,11 +436,6 @@ watch(gameState, async (newState, prevState) => {
       class="flex flex-col shadow ml-2"
       :style="{ maxWidth: gameState?.width + 'px' }"
     >
-      <div class="flex flex-row justify-end mb-2 mt-1 mx-4 gap-6">
-        <AnchorLink href="/rating">
-          rating
-        </AnchorLink>
-      </div>
       <canvas ref="canvas" />
     </div>
   </div>

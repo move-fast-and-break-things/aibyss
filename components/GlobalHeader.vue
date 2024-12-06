@@ -60,6 +60,10 @@ const onCloseAboutModal = () => {
         </form>
         <span>•</span>
       </div>
+      <AnchorLink href="/rating">
+        rating
+      </AnchorLink>
+      <span>•</span>
       <ButtonLink @click="aboutModalOpen = true">
         ?
       </ButtonLink>
