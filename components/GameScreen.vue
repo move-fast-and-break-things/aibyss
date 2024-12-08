@@ -1,10 +1,17 @@
 <script setup lang="ts">
 import { Application, Graphics, Text, FillGradient, Assets, type Texture, Sprite } from "pixi.js";
 
+const { data: user } = await useFetch("/api/auth/user");
 const refreshIntervalMs = 1000;
-const zoomSpeed = 0.05;
+const zoomSpeed = 0.1;
 const minZoom = 1;
 const maxZoom = 3;
+let startZoomTime: number;
+const zoomDuration = 500;
+let targetScale: number;
+let targetPos: { x: number; y: number };
+let isZooming = false;
+let isFollowing = false;
 
 const { data: gameState, refresh } = await useFetch("/api/state");
 const intervalRef = ref<number | null>(null);
@@ -55,6 +62,80 @@ type DrawBotArgs = {
   botDirection: number;
   graphics: Graphics;
 };
+
+function smoothZoom(Pos: { x: number; y: number }, scale: number) {
+  if (!appRef.value) {
+    return;
+  }
+
+  if (isZooming) {
+    return; // Prevent multiple simultaneous zooms
+  }
+  isZooming = true;
+  targetScale = scale;
+  targetPos = Pos;
+  startZoomTime = performance.now();
+
+  requestAnimationFrame(animateZoom);
+}
+
+function animateZoom(currentTime: number) {
+  if (!appRef.value || !appRef.value.stage || !startZoomTime) {
+    return;
+  }
+
+  const elapsedTime = currentTime - startZoomTime;
+  const progress = Math.min(elapsedTime / zoomDuration, 1);
+
+  // Get the current scale and the scale change based on progress
+  const currentScale = appRef.value.stage.scale.x;
+  const newScale = currentScale + (targetScale - currentScale) * progress;
+
+  // Calculate the world position relative to the current scale
+  const worldPos = {
+    x: (targetPos.x - appRef.value.stage.position.x) / appRef.value.stage.scale.x,
+    y: (targetPos.y - appRef.value.stage.position.y) / appRef.value.stage.scale.y,
+  };
+
+  appRef.value.stage.scale.set(newScale);
+
+  const newScreenPos = {
+    x: worldPos.x * newScale + appRef.value.stage.position.x,
+    y: worldPos.y * newScale + appRef.value.stage.position.y,
+  };
+
+  // Adjust the stage position to follow the zoom focus point
+  appRef.value.stage.position.set(
+    Math.min(0, Math.max(appRef.value.stage.position.x - (newScreenPos.x - targetPos.x), appRef.value.screen.width - appRef.value.screen.width * newScale)),
+    Math.min(0, Math.max(appRef.value.stage.position.y - (newScreenPos.y - targetPos.y), appRef.value.screen.height - appRef.value.screen.height * newScale)),
+  );
+
+  if (progress < 1) {
+    requestAnimationFrame(animateZoom);
+  } else {
+    isZooming = false;
+  }
+}
+
+function followPlayerBot(botx: number, boty: number, username: string) {
+  if (!appRef.value || !gameState.value) {
+    return;
+  }
+  if (user.value?.body.username == username) {
+    const currentPos = appRef.value.stage.position;
+    const targetPos = {
+      x: -botx * appRef.value.stage.scale.x + appRef.value.screen.width / 2,
+      y: -boty * appRef.value.stage.scale.y + appRef.value.screen.height / 2,
+    };
+    const newPosX = currentPos.x + (targetPos.x - currentPos.x) * 0.1;
+    const newPosY = currentPos.y + (targetPos.y - currentPos.y) * 0.1;
+
+    appRef.value.stage.position.set(
+      Math.min(0, Math.max(newPosX, appRef.value.screen.width - appRef.value.screen.width * appRef.value.stage.scale.x)),
+      Math.min(0, Math.max(newPosY, appRef.value.screen.height - appRef.value.screen.height * appRef.value.stage.scale.y)),
+    );
+  }
+}
 
 function setSpritePositionAndSize({
   sprite,
@@ -179,87 +260,55 @@ watch(gameState, async (newState, prevState) => {
       autoDensity: true,
     });
 
-    let isZoomingOut = false;
-    const zoomDuration = 500; // Duration of the zoom-out effect in milliseconds
-    let startZoomTime: number | null = null;
-    let startMousePos = { x: 0, y: 0 };
-
-    // Functions to handle smooth zoom out
-    function smoothZoomOut(mousePos: { x: number; y: number }) {
-      if (!appRef.value) {
+    // Follow player bot
+    function follow() {
+      isFollowing = !isFollowing;
+      const followButton = document.getElementById("followButton");
+      if (followButton) {
+        followButton.textContent = isFollowing ? "stop following my bot" : "follow my bot";
+      }
+      if (!gameState.value) {
         return;
       }
 
-      isZoomingOut = true;
-      startZoomTime = performance.now();
-      startMousePos = mousePos;
-      requestAnimationFrame(animateZoomOut);
+      let playerBot = null;
+      for (const bot of Object.values(gameState.value.bots)) {
+        if (bot.username == user.value?.body.username) {
+          playerBot = bot;
+        }
+      }
+      // const firstBot = Object.values(gameState.value.bots)[1];
+      if (playerBot) {
+        const newScale = Math.max(minZoom, Math.min(maxZoom, app.stage.scale.x + 10));
+        const botPos = { x: playerBot.x, y: playerBot.y };
+        if (isFollowing) {
+          smoothZoom(botPos, newScale);
+        } else {
+          smoothZoom(botPos, 1);
+        }
+      }
     }
 
-    function animateZoomOut(currentTime: number) {
-      if (!appRef.value || !startZoomTime) {
-        return;
-      };
-
-      const elapsedTime = currentTime - startZoomTime;
-      const progress = Math.min(elapsedTime / zoomDuration, 1);
-      const newScale = minZoom + (appRef.value.stage.scale.x - minZoom) * (1 - progress);
-
-      const worldPos = {
-        x: (startMousePos.x - appRef.value.stage.position.x) / appRef.value.stage.scale.x,
-        y: (startMousePos.y - appRef.value.stage.position.y) / appRef.value.stage.scale.y,
-      };
-
-      appRef.value.stage.scale.set(newScale);
-
-      const newScreenPos = {
-        x: worldPos.x * newScale + appRef.value.stage.position.x,
-        y: worldPos.y * newScale + appRef.value.stage.position.y,
-      };
-
-      appRef.value.stage.position.set(
-        Math.min(0, Math.max(appRef.value.stage.position.x - (newScreenPos.x - startMousePos.x), appRef.value.screen.width - appRef.value.screen.width * newScale)),
-        Math.min(0, Math.max(appRef.value.stage.position.y - (newScreenPos.y - startMousePos.y), appRef.value.screen.height - appRef.value.screen.height * newScale)),
-      );
-      if (progress < 1) {
-        requestAnimationFrame(animateZoomOut);
-      } else {
-        isZoomingOut = false;
-      }
+    const followButton = document.getElementById("followButton");
+    if (followButton) {
+      followButton.addEventListener("click", function () {
+        follow();
+      });
     }
 
     // Mouse wheel event listener
     // Event listeners can be potentially called multiple times.
     // TODO: add .removeEventListener later for refactoring.
     canvas.value?.addEventListener("wheel", (event) => {
+      if (isFollowing) {
+        return;
+      }
       event.preventDefault();
       const mousePos = { x: event.offsetX, y: event.offsetY };
-      if (event.deltaY > 0) {
-        // Zoom out when scrolling down
-        if (!isZoomingOut) {
-          smoothZoomOut(mousePos);
-        }
-      } else {
-        // Existing zoom-in functionality
-        const zoomFactor = event.deltaY * -zoomSpeed;
-        const newScale = Math.max(minZoom, Math.min(maxZoom, app.stage.scale.x + zoomFactor));
-
-        const worldPos = {
-          x: (mousePos.x - app.stage.position.x) / app.stage.scale.x,
-          y: (mousePos.y - app.stage.position.y) / app.stage.scale.y,
-        };
-
-        app.stage.scale.set(newScale);
-
-        const newScreenPos = {
-          x: worldPos.x * newScale + app.stage.position.x,
-          y: worldPos.y * newScale + app.stage.position.y,
-        };
-
-        app.stage.position.set(
-          Math.min(0, Math.max(app.stage.position.x - (newScreenPos.x - mousePos.x), app.screen.width - app.screen.width * newScale)),
-          Math.min(0, Math.max(app.stage.position.y - (newScreenPos.y - mousePos.y), app.screen.height - app.screen.height * newScale)),
-        );
+      const zoomFactor = (event.deltaY * -zoomSpeed) * 100;
+      const newScale = Math.max(minZoom, Math.min(maxZoom, app.stage.scale.x + zoomFactor));
+      smoothZoom(mousePos, newScale);
+      if (!isFollowing) {
         if (newScale > 1) {
           gameScreen.value?.classList.add("cursor-grab");
         } else {
@@ -273,15 +322,17 @@ watch(gameState, async (newState, prevState) => {
     let startDragPos = { x: 0, y: 0 };
 
     canvas.value?.addEventListener("mousedown", (event) => {
-      if (app.stage.scale.x > 1) {
-        gameScreen.value?.classList.add("cursor-grabbing");
+      if (!isFollowing) {
+        if (app.stage.scale.x > 1) {
+          gameScreen.value?.classList.add("cursor-grabbing");
+        }
+        isDragging = true;
+        startDragPos = { x: event.offsetX, y: event.offsetY };
       }
-      isDragging = true;
-      startDragPos = { x: event.offsetX, y: event.offsetY };
     });
 
     canvas.value?.addEventListener("mousemove", (event) => {
-      if (isDragging && canvas.value) {
+      if (isDragging && canvas.value && !isFollowing) {
         const dx = event.offsetX - startDragPos.x;
         const dy = event.offsetY - startDragPos.y;
         const newPosX = app.stage.position.x + dx;
@@ -417,6 +468,10 @@ watch(gameState, async (newState, prevState) => {
         const x = prevBot.x + (bot.x - prevBot.x) * progress;
         const y = prevBot.y + (bot.y - prevBot.y) * progress;
         const botDirection = getDirection(prevBot, bot);
+        // Follow players bot
+        if (isFollowing) {
+          followPlayerBot(x, y, bot.username);
+        }
 
         drawBot({ bot: { ...bot, x, y }, graphics: existingBot, botDirection });
       }
@@ -436,6 +491,16 @@ watch(gameState, async (newState, prevState) => {
       class="flex flex-col shadow ml-2"
       :style="{ maxWidth: gameState?.width + 'px' }"
     >
+      <div class="flex flex-row justify-end mb-2 mt-1 mx-4 gap-6">
+        <ButtonLink
+          id="followButton"
+        >
+          follow my bot
+        </ButtonLink>
+        <AnchorLink href="/rating">
+          rating
+        </AnchorLink>
+      </div>
       <canvas ref="canvas" />
     </div>
   </div>
