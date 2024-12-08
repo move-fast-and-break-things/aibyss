@@ -121,8 +121,6 @@ function followPlayerBot(botx: number, boty: number, username: string) {
   if (!appRef.value || !gameState.value) {
     return;
   }
-  // console.log(user.value?.body.username);
-  // const playerBot = Object.values(gameState.value.bots)?.[0];
   if (user.value?.body.username == username) {
     const currentPos = appRef.value.stage.position;
     const targetPos = {
