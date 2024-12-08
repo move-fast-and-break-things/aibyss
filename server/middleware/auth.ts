@@ -7,6 +7,7 @@ const PUBLIC_PATHS = [
   "/metrics",
   "/rating",
   "/api/rating",
+  "/api/state",
 ];
 
 export default defineEventHandler(async (event) => {
