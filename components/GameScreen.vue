@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Application, Graphics, Text, FillGradient, Assets, type Texture, Sprite } from "pixi.js";
 
+const { data: user } = await useFetch("/api/auth/user");
 const refreshIntervalMs = 1000;
 const zoomSpeed = 0.1;
 const minZoom = 1;
@@ -116,13 +117,13 @@ function animateZoom(currentTime: number) {
   }
 }
 
-function followPlayerBot(botx: number, boty: number) {
+function followPlayerBot(botx: number, boty: number, username: string) {
   if (!appRef.value || !gameState.value) {
     return;
   }
-
-  const playerBot = Object.values(gameState.value.bots)?.[0];
-  if (playerBot) {
+  // console.log(user.value?.body.username);
+  // const playerBot = Object.values(gameState.value.bots)?.[0];
+  if (user.value?.body.username == username) {
     const currentPos = appRef.value.stage.position;
     const targetPos = {
       x: -botx * appRef.value.stage.scale.x + appRef.value.screen.width / 2,
@@ -268,13 +269,24 @@ watch(gameState, async (newState, prevState) => {
     // Follow player bot
     function follow() {
       isFollowing = !isFollowing;
+      const followButton = document.getElementById("followButton");
+      if (followButton) {
+        followButton.textContent = isFollowing ? "stop following my bot" : "follow my bot";
+      }
       if (!gameState.value) {
         return;
       }
-      const firstBot = Object.values(gameState.value.bots)[0];
-      if (firstBot) {
+
+      let playerBot = null;
+      for (const bot of Object.values(gameState.value.bots)) {
+        if (bot.username == user.value?.body.username) {
+          playerBot = bot;
+        }
+      }
+      // const firstBot = Object.values(gameState.value.bots)[1];
+      if (playerBot) {
         const newScale = Math.max(minZoom, Math.min(maxZoom, app.stage.scale.x + 10));
-        const botPos = { x: firstBot.x, y: firstBot.y };
+        const botPos = { x: playerBot.x, y: playerBot.y };
         if (isFollowing) {
           smoothZoom(botPos, newScale);
         } else {
@@ -464,7 +476,7 @@ watch(gameState, async (newState, prevState) => {
         const botDirection = getDirection(prevBot, bot);
         // Follow players bot
         if (isFollowing) {
-          followPlayerBot(x, y);
+          followPlayerBot(x, y, bot.username);
         }
 
         drawBot({ bot: { ...bot, x, y }, graphics: existingBot, botDirection });
