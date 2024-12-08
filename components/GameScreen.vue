@@ -214,10 +214,6 @@ async function drawBot({ bot, graphics, botDirection }: DrawBotArgs) {
   setUsernamePosition({ username, bot });
 
   graphics.addChild(username);
-
-  // Adjust username text scale to prevent zooming effect on the text
-  const stageScale = appRef.value?.stage.scale.x ?? 1;
-  username.scale.set(1 / stageScale, 1 / stageScale);
 }
 
 function destroyGraphics(graphics: Graphics) {
