@@ -11,7 +11,8 @@ const zoomDuration = 500;
 let targetScale: number;
 let targetPos: { x: number; y: number };
 let isZooming = false;
-let isFollowing = false;
+const isFollowing = ref<boolean>(false);
+const followFn = ref<(() => void) | null>(null);
 
 const { data: gameState, refresh } = await useFetch("/api/state");
 const intervalRef = ref<number | null>(null);
@@ -117,24 +118,26 @@ function animateZoom(currentTime: number) {
   }
 }
 
-function followPlayerBot(botx: number, boty: number, username: string) {
+function followPlayerBot(x: number, y: number) {
   if (!appRef.value || !gameState.value) {
-    return;
+    throw new Error("unexpected: game not initialized");
   }
-  if (user.value?.body.username == username) {
-    const currentPos = appRef.value.stage.position;
-    const targetPos = {
-      x: -botx * appRef.value.stage.scale.x + appRef.value.screen.width / 2,
-      y: -boty * appRef.value.stage.scale.y + appRef.value.screen.height / 2,
-    };
-    const newPosX = currentPos.x + (targetPos.x - currentPos.x) * 0.1;
-    const newPosY = currentPos.y + (targetPos.y - currentPos.y) * 0.1;
+  const currentPos = appRef.value.stage.position;
+  const targetPos = {
+    x: -x * appRef.value.stage.scale.x + appRef.value.screen.width / 2,
+    y: -y * appRef.value.stage.scale.y + appRef.value.screen.height / 2,
+  };
+  const newPosX = currentPos.x + (targetPos.x - currentPos.x) * 0.1;
+  const newPosY = currentPos.y + (targetPos.y - currentPos.y) * 0.1;
 
-    appRef.value.stage.position.set(
-      Math.min(0, Math.max(newPosX, appRef.value.screen.width - appRef.value.screen.width * appRef.value.stage.scale.x)),
-      Math.min(0, Math.max(newPosY, appRef.value.screen.height - appRef.value.screen.height * appRef.value.stage.scale.y)),
-    );
-  }
+  appRef.value.stage.position.set(
+    Math.min(0, Math.max(newPosX, appRef.value.screen.width - appRef.value.screen.width * appRef.value.stage.scale.x)),
+    Math.min(0, Math.max(newPosY, appRef.value.screen.height - appRef.value.screen.height * appRef.value.stage.scale.y)),
+  );
+}
+
+function followBot() {
+  followFn.value?.();
 }
 
 function setSpritePositionAndSize({
@@ -262,13 +265,9 @@ watch(gameState, async (newState, prevState) => {
 
     // Follow player bot
     function follow() {
-      isFollowing = !isFollowing;
-      const followButton = document.getElementById("followButton");
-      if (followButton) {
-        followButton.textContent = isFollowing ? "stop following my bot" : "follow my bot";
-      }
+      isFollowing.value = !isFollowing.value;
       if (!gameState.value) {
-        return;
+        throw new Error("unexpected: game not initialized");
       }
 
       let playerBot = null;
@@ -277,30 +276,23 @@ watch(gameState, async (newState, prevState) => {
           playerBot = bot;
         }
       }
-      // const firstBot = Object.values(gameState.value.bots)[1];
       if (playerBot) {
-        const newScale = Math.max(minZoom, Math.min(maxZoom, app.stage.scale.x + 10));
+        const newScale = (Math.max(minZoom, Math.min(maxZoom, ((app.stage.scale.x + 3) - ((app.stage.scale.x + 3) * ((playerBot?.radius + 10) / 100))))));
         const botPos = { x: playerBot.x, y: playerBot.y };
-        if (isFollowing) {
+        if (isFollowing.value) {
           smoothZoom(botPos, newScale);
         } else {
           smoothZoom(botPos, 1);
         }
       }
     }
-
-    const followButton = document.getElementById("followButton");
-    if (followButton) {
-      followButton.addEventListener("click", function () {
-        follow();
-      });
-    }
+    followFn.value = follow;
 
     // Mouse wheel event listener
     // Event listeners can be potentially called multiple times.
     // TODO: add .removeEventListener later for refactoring.
     canvas.value?.addEventListener("wheel", (event) => {
-      if (isFollowing) {
+      if (isFollowing.value) {
         return;
       }
       event.preventDefault();
@@ -308,7 +300,7 @@ watch(gameState, async (newState, prevState) => {
       const zoomFactor = (event.deltaY * -zoomSpeed) * 100;
       const newScale = Math.max(minZoom, Math.min(maxZoom, app.stage.scale.x + zoomFactor));
       smoothZoom(mousePos, newScale);
-      if (!isFollowing) {
+      if (!isFollowing.value) {
         if (newScale > 1) {
           gameScreen.value?.classList.add("cursor-grab");
         } else {
@@ -322,7 +314,7 @@ watch(gameState, async (newState, prevState) => {
     let startDragPos = { x: 0, y: 0 };
 
     canvas.value?.addEventListener("mousedown", (event) => {
-      if (!isFollowing) {
+      if (!isFollowing.value) {
         if (app.stage.scale.x > 1) {
           gameScreen.value?.classList.add("cursor-grabbing");
         }
@@ -332,7 +324,7 @@ watch(gameState, async (newState, prevState) => {
     });
 
     canvas.value?.addEventListener("mousemove", (event) => {
-      if (isDragging && canvas.value && !isFollowing) {
+      if (isDragging && canvas.value && !isFollowing.value) {
         const dx = event.offsetX - startDragPos.x;
         const dy = event.offsetY - startDragPos.y;
         const newPosX = app.stage.position.x + dx;
@@ -469,8 +461,8 @@ watch(gameState, async (newState, prevState) => {
         const y = prevBot.y + (bot.y - prevBot.y) * progress;
         const botDirection = getDirection(prevBot, bot);
         // Follow players bot
-        if (isFollowing) {
-          followPlayerBot(x, y, bot.username);
+        if (isFollowing.value && bot.username == user.value?.body.username) {
+          followPlayerBot(x, y);
         }
 
         drawBot({ bot: { ...bot, x, y }, graphics: existingBot, botDirection });
@@ -492,14 +484,9 @@ watch(gameState, async (newState, prevState) => {
       :style="{ maxWidth: gameState?.width + 'px' }"
     >
       <div class="flex flex-row justify-end mb-2 mt-1 mx-4 gap-6">
-        <ButtonLink
-          id="followButton"
-        >
-          follow my bot
+        <ButtonLink @click="followBot">
+          {{ isFollowing ? "stop following my bot" : "follow my bot" }}
         </ButtonLink>
-        <AnchorLink href="/rating">
-          rating
-        </AnchorLink>
       </div>
       <canvas ref="canvas" />
     </div>
