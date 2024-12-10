@@ -136,7 +136,7 @@ function followPlayerBot(x: number, y: number) {
   );
 }
 
-function followBot() {
+function toggleFollowMeMode() {
   followFn.value?.();
 }
 
@@ -484,7 +484,7 @@ watch(gameState, async (newState, prevState) => {
       :style="{ maxWidth: gameState?.width + 'px' }"
     >
       <div class="flex flex-row justify-end mb-2 mt-1 mx-4 gap-6">
-        <ButtonLink @click="followBot">
+        <ButtonLink @click="toggleFollowMeMode">
           {{ isFollowing ? "stop following my bot" : "follow my bot" }}
         </ButtonLink>
       </div>
