@@ -12,7 +12,7 @@ let targetScale: number;
 let targetPos: { x: number; y: number };
 let isZooming = false;
 const isFollowing = ref<boolean>(false);
-const followFn = ref<(() => void) | null>(null);
+const zoomInToPlayerFn = ref<(() => void) | null>(null);
 
 const { data: gameState, refresh } = await useFetch("/api/state");
 const intervalRef = ref<number | null>(null);
@@ -137,7 +137,8 @@ function followPlayerBot(x: number, y: number) {
 }
 
 function toggleFollowMeMode() {
-  followFn.value?.();
+  isFollowing.value = !isFollowing.value;
+  zoomInToPlayerFn.value?.();
 }
 
 function setSpritePositionAndSize({
@@ -264,8 +265,7 @@ watch(gameState, async (newState, prevState) => {
     });
 
     // Follow player bot
-    function follow() {
-      isFollowing.value = !isFollowing.value;
+    function zoomInToPlayer() {
       if (!gameState.value) {
         throw new Error("unexpected: game not initialized");
       }
@@ -286,7 +286,7 @@ watch(gameState, async (newState, prevState) => {
         }
       }
     }
-    followFn.value = follow;
+    zoomInToPlayerFn.value = zoomInToPlayer;
 
     // Mouse wheel event listener
     // Event listeners can be potentially called multiple times.
