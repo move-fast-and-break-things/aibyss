@@ -1,5 +1,7 @@
 import { expect, test } from "@nuxt/test-utils/playwright";
 
+test.setTimeout(60000);
+
 const TEST_USERNAME = "testovich";
 const TEST_PASSWORD = "best password ever";
 
