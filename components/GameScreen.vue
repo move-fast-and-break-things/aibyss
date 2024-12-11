@@ -1,16 +1,12 @@
 <script setup lang="ts">
 import { Application, Graphics, Text, FillGradient, Assets, type Texture, Sprite } from "pixi.js";
+import { getSmoothZoomScreen } from "~/other/zoomUtils";
 
 const { data: user } = await useFetch("/api/auth/user");
 const refreshIntervalMs = 1000;
 const zoomSpeed = 0.1;
 const minZoom = 1;
 const maxZoom = 3;
-let startZoomTime: number;
-const zoomDuration = 500;
-let targetScale: number;
-let targetPos: { x: number; y: number };
-let isZooming = false;
 const isFollowing = ref<boolean>(false);
 const zoomInToPlayerFn = ref<(() => void) | null>(null);
 
@@ -42,10 +38,13 @@ onBeforeUnmount(() => {
 });
 
 const canvas = ref<HTMLCanvasElement | null>(null);
-const appRef = ref<Application | null>(null);
+// const appRef = ref<Application | null>(null);
+const appRef: Ref<Application | null> = ref(null);
 const foodRef = ref<{ x: number; y: number; graphics: Graphics }[]>([]);
 const botSpawnsRef = ref<Record<string, Graphics>>({});
 const gameScreen = ref<HTMLDivElement | null>(null);
+
+const smoothZoomScreen = getSmoothZoomScreen(appRef);
 
 const tickFnRef = ref<() => void>();
 
@@ -63,60 +62,6 @@ type DrawBotArgs = {
   botDirection: number;
   graphics: Graphics;
 };
-
-function smoothZoom(Pos: { x: number; y: number }, scale: number) {
-  if (!appRef.value) {
-    return;
-  }
-
-  if (isZooming) {
-    return; // Prevent multiple simultaneous zooms
-  }
-  isZooming = true;
-  targetScale = scale;
-  targetPos = Pos;
-  startZoomTime = performance.now();
-
-  requestAnimationFrame(animateZoom);
-}
-
-function animateZoom(currentTime: number) {
-  if (!appRef.value || !appRef.value.stage || !startZoomTime) {
-    return;
-  }
-
-  const elapsedTime = currentTime - startZoomTime;
-  const progress = Math.min(elapsedTime / zoomDuration, 1);
-
-  // Get the current scale and the scale change based on progress
-  const currentScale = appRef.value.stage.scale.x;
-  const newScale = currentScale + (targetScale - currentScale) * progress;
-
-  // Calculate the world position relative to the current scale
-  const worldPos = {
-    x: (targetPos.x - appRef.value.stage.position.x) / appRef.value.stage.scale.x,
-    y: (targetPos.y - appRef.value.stage.position.y) / appRef.value.stage.scale.y,
-  };
-
-  appRef.value.stage.scale.set(newScale);
-
-  const newScreenPos = {
-    x: worldPos.x * newScale + appRef.value.stage.position.x,
-    y: worldPos.y * newScale + appRef.value.stage.position.y,
-  };
-
-  // Adjust the stage position to follow the zoom focus point
-  appRef.value.stage.position.set(
-    Math.min(0, Math.max(appRef.value.stage.position.x - (newScreenPos.x - targetPos.x), appRef.value.screen.width - appRef.value.screen.width * newScale)),
-    Math.min(0, Math.max(appRef.value.stage.position.y - (newScreenPos.y - targetPos.y), appRef.value.screen.height - appRef.value.screen.height * newScale)),
-  );
-
-  if (progress < 1) {
-    requestAnimationFrame(animateZoom);
-  } else {
-    isZooming = false;
-  }
-}
 
 function followPlayerBot(x: number, y: number) {
   if (!appRef.value || !gameState.value) {
@@ -280,9 +225,9 @@ watch(gameState, async (newState, prevState) => {
         const newScale = (Math.max(minZoom, Math.min(maxZoom, ((app.stage.scale.x + 3) - ((app.stage.scale.x + 3) * ((playerBot?.radius + 10) / 100))))));
         const botPos = { x: playerBot.x, y: playerBot.y };
         if (isFollowing.value) {
-          smoothZoom(botPos, newScale);
+          smoothZoomScreen({ pos: botPos, scale: newScale });
         } else {
-          smoothZoom(botPos, 1);
+          smoothZoomScreen({ pos: botPos, scale: 1 });
         }
       }
     }
@@ -299,7 +244,7 @@ watch(gameState, async (newState, prevState) => {
       const mousePos = { x: event.offsetX, y: event.offsetY };
       const zoomFactor = (event.deltaY * -zoomSpeed) * 100;
       const newScale = Math.max(minZoom, Math.min(maxZoom, app.stage.scale.x + zoomFactor));
-      smoothZoom(mousePos, newScale);
+      smoothZoomScreen({ pos: mousePos, scale: newScale });
       if (!isFollowing.value) {
         if (newScale > 1) {
           gameScreen.value?.classList.add("cursor-grab");
