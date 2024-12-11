@@ -5,7 +5,6 @@
       <div class="flex min-w-[300px] h-full w-1/2 mr-2">
         <LoginForm />
       </div>
-      <div class="w-1 bg-gray-300" />
       <div class="flex min-w-[300px] w-1/2 overflow-auto">
         <GameScreen />
       </div>
