@@ -430,7 +430,7 @@ watch(gameState, async (newState, prevState) => {
     >
       <div class="flex flex-row justify-end mb-2 mt-1 mx-4 gap-6">
         <ButtonLink
-          v-if="user"
+          v-if="user?.body"
           @click="toggleFollowMeMode"
         >
           {{ isFollowing ? "stop following my bot" : "follow my bot" }}
