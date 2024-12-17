@@ -429,7 +429,10 @@ watch(gameState, async (newState, prevState) => {
       :style="{ maxWidth: gameState?.width + 'px' }"
     >
       <div class="flex flex-row justify-end mb-2 mt-1 mx-4 gap-6">
-        <ButtonLink @click="toggleFollowMeMode">
+        <ButtonLink
+          v-if="user"
+          @click="toggleFollowMeMode"
+        >
           {{ isFollowing ? "stop following my bot" : "follow my bot" }}
         </ButtonLink>
       </div>
