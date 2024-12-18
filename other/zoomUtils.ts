@@ -62,3 +62,43 @@ export function getSmoothZoomScreen(appRef: Ref<Application | null>) {
 
   return smoothZoom;
 }
+
+export function followPlayerBot({
+  appRef,
+  x,
+  y,
+}: {
+  appRef: Ref<Application | null>;
+  x: number;
+  y: number;
+}) {
+  if (!appRef.value) {
+    throw new Error("unexpected: game not initialized");
+  }
+  const currentPos = appRef.value.stage.position;
+  const targetPos = {
+    x: -x * appRef.value.stage.scale.x + appRef.value.screen.width / 2,
+    y: -y * appRef.value.stage.scale.y + appRef.value.screen.height / 2,
+  };
+  const newPosX = currentPos.x + (targetPos.x - currentPos.x) * 0.1;
+  const newPosY = currentPos.y + (targetPos.y - currentPos.y) * 0.1;
+
+  appRef.value.stage.position.set(
+    Math.min(0, Math.max(newPosX, appRef.value.screen.width - appRef.value.screen.width * appRef.value.stage.scale.x)),
+    Math.min(0, Math.max(newPosY, appRef.value.screen.height - appRef.value.screen.height * appRef.value.stage.scale.y)),
+  );
+}
+
+export function getZoomScale({
+  minZoom,
+  maxZoom,
+  stageScale,
+  playerRadius,
+}: {
+  minZoom: number;
+  maxZoom: number;
+  stageScale: number;
+  playerRadius: number;
+}) {
+  return (Math.max(minZoom, Math.min(maxZoom, ((stageScale + 3) - ((stageScale + 3) * ((playerRadius + 10) / 100))))));
+}

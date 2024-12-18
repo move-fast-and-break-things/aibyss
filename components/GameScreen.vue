@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Application, Graphics, Text, FillGradient, Assets, type Texture, Sprite } from "pixi.js";
-import { getSmoothZoomScreen } from "~/other/zoomUtils";
+import { getSmoothZoomScreen, followPlayerBot, getZoomScale } from "~/other/zoomUtils";
 
 const { data: user } = await useFetch("/api/auth/user");
 const refreshIntervalMs = 1000;
@@ -8,7 +8,7 @@ const zoomSpeed = 0.1;
 const minZoom = 1;
 const maxZoom = 3;
 const isFollowing = ref<boolean>(false);
-const zoomInToPlayerFn = ref<(() => void) | null>(null);
+const zoomInToPlayerOrResetZoomFn = ref<(() => void) | null>(null);
 
 const { data: gameState, refresh } = await useFetch("/api/state");
 const intervalRef = ref<number | null>(null);
@@ -38,7 +38,6 @@ onBeforeUnmount(() => {
 });
 
 const canvas = ref<HTMLCanvasElement | null>(null);
-// const appRef = ref<Application | null>(null);
 const appRef: Ref<Application | null> = ref(null);
 const foodRef = ref<{ x: number; y: number; graphics: Graphics }[]>([]);
 const botSpawnsRef = ref<Record<string, Graphics>>({});
@@ -63,27 +62,9 @@ type DrawBotArgs = {
   graphics: Graphics;
 };
 
-function followPlayerBot(x: number, y: number) {
-  if (!appRef.value || !gameState.value) {
-    throw new Error("unexpected: game not initialized");
-  }
-  const currentPos = appRef.value.stage.position;
-  const targetPos = {
-    x: -x * appRef.value.stage.scale.x + appRef.value.screen.width / 2,
-    y: -y * appRef.value.stage.scale.y + appRef.value.screen.height / 2,
-  };
-  const newPosX = currentPos.x + (targetPos.x - currentPos.x) * 0.1;
-  const newPosY = currentPos.y + (targetPos.y - currentPos.y) * 0.1;
-
-  appRef.value.stage.position.set(
-    Math.min(0, Math.max(newPosX, appRef.value.screen.width - appRef.value.screen.width * appRef.value.stage.scale.x)),
-    Math.min(0, Math.max(newPosY, appRef.value.screen.height - appRef.value.screen.height * appRef.value.stage.scale.y)),
-  );
-}
-
 function toggleFollowMeMode() {
   isFollowing.value = !isFollowing.value;
-  zoomInToPlayerFn.value?.();
+  zoomInToPlayerOrResetZoomFn.value?.();
 }
 
 function setSpritePositionAndSize({
@@ -222,7 +203,7 @@ watch(gameState, async (newState, prevState) => {
         }
       }
       if (playerBot) {
-        const newScale = (Math.max(minZoom, Math.min(maxZoom, ((app.stage.scale.x + 3) - ((app.stage.scale.x + 3) * ((playerBot?.radius + 10) / 100))))));
+        const newScale = getZoomScale({ minZoom, maxZoom, stageScale: app.stage.scale.x, playerRadius: playerBot?.radius || 0 });
         const botPos = { x: playerBot.x, y: playerBot.y };
         if (isFollowing.value) {
           smoothZoomScreen({ pos: botPos, scale: newScale });
@@ -231,7 +212,7 @@ watch(gameState, async (newState, prevState) => {
         }
       }
     }
-    zoomInToPlayerFn.value = zoomInToPlayer;
+    zoomInToPlayerOrResetZoomFn.value = zoomInToPlayer;
 
     // Mouse wheel event listener
     // Event listeners can be potentially called multiple times.
@@ -407,7 +388,7 @@ watch(gameState, async (newState, prevState) => {
         const botDirection = getDirection(prevBot, bot);
         // Follow players bot
         if (isFollowing.value && bot.username == user.value?.body.username) {
-          followPlayerBot(x, y);
+          followPlayerBot({ appRef, x, y });
         }
 
         drawBot({ bot: { ...bot, x, y }, graphics: existingBot, botDirection });
