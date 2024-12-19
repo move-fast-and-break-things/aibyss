@@ -22,7 +22,7 @@ describe("getZoomScale", () => {
     expect(result).toBe(1);
   });
 
-  it("should return the maxZoom when the calculated scale is higher than maxZoom", () => {
+  it("should return with proper zoom scale", () => {
     const result = getZoomScale({
       minZoom: 1,
       maxZoom: 3,
