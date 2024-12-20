@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { getZoomScale } from "./zoomUtils";
 
 describe("getZoomScale", () => {
-  it("should return with maximum zoon scale", () => {
+  it("should return maximum zoom scale when player is very small", () => {
     const result = getZoomScale({
       minZoom: 1,
       maxZoom: 3,
@@ -12,10 +12,10 @@ describe("getZoomScale", () => {
     expect(result).toBe(3);
   });
 
-  it("should return with minimum zoom scale", () => {
+  it("should return minimum zoom scale when player is very large", () => {
     const result = getZoomScale({
       minZoom: 1,
-      maxZoom: 2,
+      maxZoom: 3,
       stageScale: 1,
       playerRadius: 100,
     });
