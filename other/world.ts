@@ -108,10 +108,8 @@ export default class World {
   }
 
   private getMaxBotMoveDistance(radius: number): number {
-    const rawSpeed = 1 / Math.pow(radius, this.moveDistanceChangePow);
-    const rawMax = 1 / Math.pow(this.newBotRadius, this.moveDistanceChangePow);
-
-    const normalizedSpeed = (rawSpeed / rawMax) * this.maxMoveDistance;
+    const speedRatio = Math.pow(this.newBotRadius / radius, this.moveDistanceChangePow);
+    const normalizedSpeed = speedRatio * this.maxMoveDistance;
     return Math.max(this.minMoveDistance, normalizedSpeed);
   }
 
