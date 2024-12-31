@@ -57,7 +57,9 @@ export default class World {
   private width: number;
   private height: number;
   private minSpawnDistance = 10;
-  private maxMoveDistance = 2;
+  private minMoveDistance = 2;
+  private maxMoveDistance = 9;
+  private moveDistanceChangePow = 0.45;
   private newBotRadius = 5;
   private maxFoodRadius = 3;
   private initialFoodCount = 200;
@@ -103,6 +105,12 @@ export default class World {
     const x = serializedPosition & 0xFFFF;
     const y = (serializedPosition >> 16) & 0xFFFF;
     return { x, y };
+  }
+
+  private getMaxBotMoveDistance(radius: number): number {
+    const speedRatio = Math.pow(this.newBotRadius / radius, this.moveDistanceChangePow);
+    const normalizedSpeed = speedRatio * this.maxMoveDistance;
+    return Math.max(this.minMoveDistance, normalizedSpeed);
   }
 
   private getAvailableSpawnPositions(newEntityRadius: number): number[] {
@@ -235,10 +243,12 @@ export default class World {
       throw new Error(`Bot with id ${botId} not found`);
     }
 
+    const maxBotMoveDistance = this.getMaxBotMoveDistance(bot.radius);
+
     const distance = World.distance(bot, { x, y });
-    if (distance > this.maxMoveDistance) {
+    if (distance > maxBotMoveDistance) {
       // compute closest possible x and y
-      const { x: newX, y: newY } = World.computeClosestXYWithinDistance(bot, { x, y }, this.maxMoveDistance);
+      const { x: newX, y: newY } = World.computeClosestXYWithinDistance(bot, { x, y }, maxBotMoveDistance);
       x = newX;
       y = newY;
     }
