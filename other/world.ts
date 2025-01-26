@@ -84,7 +84,7 @@ export default class World {
       const { element: randomPosition, idx } = getRandomElement(availablePositions);
       availablePositions.splice(idx, 1);
       const newRadius = Math.floor(Math.random() * this.maxFoodRadius) + 1;
-      this.food.push({ ...World.deserializePosition(randomPosition), radius: newRadius });
+      this.food.push({ ...this.deserializePosition(randomPosition), radius: newRadius });
     }
   }
 
@@ -95,15 +95,15 @@ export default class World {
   }
 
   /**
-   * Expects that both x and y are integers between 0 and 65535
+   * Expects that both x and y are integers between within the world bounds
    */
-  private static serializePosition({ x, y }: { x: number; y: number }): number {
-    return ((y & 0xFFFF) << 16) | (x & 0xFFFF);
+  private serializePosition({ x, y }: { x: number; y: number }): number {
+    return x * this.height + y;
   }
 
-  private static deserializePosition(serializedPosition: number): { x: number; y: number } {
-    const x = serializedPosition & 0xFFFF;
-    const y = (serializedPosition >> 16) & 0xFFFF;
+  private deserializePosition(serializedPosition: number): { x: number; y: number } {
+    const y = serializedPosition % this.height;
+    const x = (serializedPosition - y) / this.height;
     return { x, y };
   }
 
@@ -114,9 +114,8 @@ export default class World {
   }
 
   private getAvailableSpawnPositions(newEntityRadius: number): number[] {
-    const takenPositions: Set<number> = new Set();
+    const takenPositions = new Uint8Array(this.width * this.height);
 
-    // to avoid computing distances between points when spawning new bots, assume that bots are square
     for (const bot of this.botSpawns.values()) {
       const { x, y, radius } = bot;
       const safeRadius = radius + this.minSpawnDistance + newEntityRadius;
@@ -128,7 +127,8 @@ export default class World {
 
       for (let i = minX; i < maxX; i++) {
         for (let j = minY; j < maxY; j++) {
-          takenPositions.add(World.serializePosition({ x: i, y: j }));
+          const serializedPosition = this.serializePosition({ x: i, y: j });
+          takenPositions[serializedPosition] = 1;
         }
       }
     }
@@ -138,23 +138,26 @@ export default class World {
     const minY = newEntityRadius;
     const maxY = this.height - newEntityRadius;
 
-    const availablePositions: number[] = new Array(this.height * this.width - takenPositions.size);
-    let availablePositionsIdx = 0;
+    let availablePositionsCount = 0;
     for (let i = minX; i < maxX; i++) {
       for (let j = minY; j < maxY; j++) {
-        const serializedPosition = World.serializePosition({ x: i, y: j });
-        if (!takenPositions.has(serializedPosition)) {
-          availablePositions[availablePositionsIdx++] = serializedPosition;
+        const serializedPosition = this.serializePosition({ x: i, y: j });
+        if (takenPositions[serializedPosition] === 0) {
+          availablePositionsCount += 1;
         }
       }
     }
 
-    // trim any undefined elements at the end
-    // we may have them because when preallocating the array we subtracted the `takenPosition.size`,
-    // but not the border padding of `newEntityRadius`
-    const lastNumberIdx = availablePositions.findLastIndex(pos => pos !== undefined);
-    availablePositions.length = lastNumberIdx + 1;
-
+    const availablePositions = new Array<number>(availablePositionsCount);
+    let availablePositionsIdx = 0;
+    for (let i = minX; i < maxX; i++) {
+      for (let j = minY; j < maxY; j++) {
+        const serializedPosition = this.serializePosition({ x: i, y: j });
+        if (takenPositions[serializedPosition] === 0) {
+          availablePositions[availablePositionsIdx++] = serializedPosition;
+        }
+      }
+    }
     return availablePositions;
   }
 
@@ -177,7 +180,7 @@ export default class World {
     const spawnId = Math.random().toString(36).substring(5);
 
     const newBot = {
-      ...World.deserializePosition(randomPosition),
+      ...this.deserializePosition(randomPosition),
       botId,
       radius: this.newBotRadius,
       color,
