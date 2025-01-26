@@ -67,10 +67,17 @@ export default class World {
   private foodSpawnProbability = 0.008;
   private foodSpawnCount = 25;
   private startTime = new Date();
+  /**
+   * This is an auxiliary array to keep track of taken positions in the
+   * `getAvailableSpawnPositions` method. We create it once and reuse it to
+   * avoid recreating it on every call to `getAvailableSpawnPositions`.
+   */
+  private takenPositions: Uint8Array;
 
   constructor({ width, height }: WorldArgs) {
     this.width = width;
     this.height = height;
+    this.takenPositions = new Uint8Array(width * height);
     this.generateFood(this.initialFoodCount);
   }
 
@@ -114,22 +121,19 @@ export default class World {
   }
 
   private getAvailableSpawnPositions(newEntityRadius: number): number[] {
-    const takenPositions = new Uint8Array(this.width * this.height);
+    this.takenPositions.fill(0);
 
     for (const bot of this.botSpawns.values()) {
       const { x, y, radius } = bot;
       const safeRadius = radius + this.minSpawnDistance + newEntityRadius;
 
-      const minX = Math.max(x - safeRadius, 0);
-      const maxX = Math.min(x + safeRadius, this.width);
-      const minY = Math.max(y - safeRadius, 0);
-      const maxY = Math.min(y + safeRadius, this.height);
+      const minX = Math.max(Math.floor(x - safeRadius), 0);
+      const maxX = Math.min(Math.ceil(x + safeRadius), this.width);
+      const minY = Math.max(Math.floor(y - safeRadius), 0);
+      const maxY = Math.min(Math.ceil(y + safeRadius), this.height);
 
       for (let i = minX; i < maxX; i++) {
-        for (let j = minY; j < maxY; j++) {
-          const serializedPosition = this.serializePosition({ x: i, y: j });
-          takenPositions[serializedPosition] = 1;
-        }
+        this.takenPositions.fill(1, this.serializePosition({ x: i, y: minY }), this.serializePosition({ x: i, y: maxY }));
       }
     }
 
@@ -142,7 +146,7 @@ export default class World {
     for (let i = minX; i < maxX; i++) {
       for (let j = minY; j < maxY; j++) {
         const serializedPosition = this.serializePosition({ x: i, y: j });
-        if (takenPositions[serializedPosition] === 0) {
+        if (this.takenPositions[serializedPosition] === 0) {
           availablePositionsCount += 1;
         }
       }
@@ -153,7 +157,7 @@ export default class World {
     for (let i = minX; i < maxX; i++) {
       for (let j = minY; j < maxY; j++) {
         const serializedPosition = this.serializePosition({ x: i, y: j });
-        if (takenPositions[serializedPosition] === 0) {
+        if (this.takenPositions[serializedPosition] === 0) {
           availablePositions[availablePositionsIdx++] = serializedPosition;
         }
       }
