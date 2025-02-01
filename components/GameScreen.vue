@@ -280,7 +280,7 @@ watch(gameState, async (newState, prevState) => {
       graphics.circle(food.x, food.y, food.radius);
       graphics.fill("#FF0000");
       app.stage.addChild(graphics);
-      foodRef.value = await Promise.all([Assets.load("/sprites/FoodVer22.png")]);
+      foodRef.value.push({ x: food.x, y: food.y, graphics });
     }
 
     // render bots
@@ -323,7 +323,7 @@ watch(gameState, async (newState, prevState) => {
         graphics.circle(food.x, food.y, food.radius);
         graphics.fill("#FF0000");
         appRef.value.stage.addChild(graphics);
-        foodRef.value = await Promise.all([Assets.load("/sprites/FoodVer22.png")]);
+        foodRef.value.push({ x: food.x, y: food.y, graphics });
       }
     }
 
