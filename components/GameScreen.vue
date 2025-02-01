@@ -14,6 +14,7 @@ const { data: gameState, refresh } = await useFetch("/api/state");
 const intervalRef = ref<number | null>(null);
 
 const fishTexturesRef = ref<Texture[]>([]);
+const foodTexturesRef = ref<Texture>();
 
 onMounted(async () => {
   intervalRef.value = window.setInterval(refresh, refreshIntervalMs);
@@ -29,6 +30,7 @@ onMounted(async () => {
     Assets.load("/sprites/FishVer8Short.png"),
     Assets.load("/sprites/FishVer9Short.png"),
   ]);
+  foodTexturesRef.value = await Assets.load("/sprites/FoodVer22.png");
 });
 
 onBeforeUnmount(() => {
@@ -277,8 +279,17 @@ watch(gameState, async (newState, prevState) => {
     // render food
     for (const food of prevState.food) {
       const graphics = new Graphics();
-      graphics.circle(food.x, food.y, food.radius);
-      graphics.fill("#FF0000");
+      const foodTexture = foodTexturesRef.value;
+      if (!foodTexture) {
+        throw new Error("Fish sprite is not loaded");
+      }
+      const sprite = new Sprite(foodTexture);
+      sprite.anchor.set(0.5);
+      sprite.x = food.x;
+      sprite.y = food.y;
+      sprite.width = food.radius * 2;
+      sprite.height = food.radius * 2;
+      graphics.addChild(sprite);
       app.stage.addChild(graphics);
       foodRef.value.push({ x: food.x, y: food.y, graphics });
     }
@@ -320,8 +331,17 @@ watch(gameState, async (newState, prevState) => {
     for (const food of prevState.food) {
       if (!foodRef.value.find(f => f.x === food.x && f.y === food.y)) {
         const graphics = new Graphics();
-        graphics.circle(food.x, food.y, food.radius);
-        graphics.fill("#FF0000");
+        const foodTexture = foodTexturesRef.value;
+        if (!foodTexture) {
+          throw new Error("Fish sprite is not loaded");
+        }
+        const sprite = new Sprite(foodTexture);
+        sprite.anchor.set(0.5);
+        sprite.x = food.x;
+        sprite.y = food.y;
+        sprite.width = food.radius * 2;
+        sprite.height = food.radius * 2;
+        graphics.addChild(sprite);
         appRef.value.stage.addChild(graphics);
         foodRef.value.push({ x: food.x, y: food.y, graphics });
       }
