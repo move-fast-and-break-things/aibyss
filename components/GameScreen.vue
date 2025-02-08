@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Application, Graphics, Text, FillGradient, Assets, type Texture, Sprite } from "pixi.js";
 import { getSmoothZoomScreen, followPlayerBot, getZoomScale } from "~/other/zoomUtils";
+import getRandomElement from "~/other/getRandomElement";
 
 const { data: user } = await useFetch("/api/auth/user");
 const refreshIntervalMs = 1000;
@@ -15,8 +16,6 @@ const intervalRef = ref<number | null>(null);
 
 const fishTexturesRef = ref<Texture[]>([]);
 const foodTexturesRef = ref<Texture[]>([]);
-
-let numOfFoodSprite = 0;
 
 onMounted(async () => {
   intervalRef.value = window.setInterval(refresh, refreshIntervalMs);
@@ -285,17 +284,7 @@ watch(gameState, async (newState, prevState) => {
     // render food
     for (const food of prevState.food) {
       const graphics = new Graphics();
-      let foodTexture;
-      if (numOfFoodSprite == 0) {
-        foodTexture = foodTexturesRef.value[0];
-        numOfFoodSprite += 1;
-      } else if (numOfFoodSprite == 1) {
-        foodTexture = foodTexturesRef.value[1];
-        numOfFoodSprite += 1;
-      } else {
-        foodTexture = foodTexturesRef.value[2];
-        numOfFoodSprite = 0;
-      }
+      const foodTexture = getRandomElement(foodTexturesRef.value).element;
       if (!foodTexture) {
         throw new Error("Fish sprite is not loaded");
       }
@@ -347,17 +336,7 @@ watch(gameState, async (newState, prevState) => {
     for (const food of prevState.food) {
       if (!foodRef.value.find(f => f.x === food.x && f.y === food.y)) {
         const graphics = new Graphics();
-        let foodTexture = foodTexturesRef.value[0];
-        if (numOfFoodSprite == 0) {
-          foodTexture = foodTexturesRef.value[0];
-          numOfFoodSprite += 1;
-        } else if (numOfFoodSprite == 1) {
-          foodTexture = foodTexturesRef.value[1];
-          numOfFoodSprite += 1;
-        } else {
-          foodTexture = foodTexturesRef.value[2];
-          numOfFoodSprite = 0;
-        }
+        const foodTexture = getRandomElement(foodTexturesRef.value).element;
         if (!foodTexture) {
           throw new Error("Fish sprite is not loaded");
         }
