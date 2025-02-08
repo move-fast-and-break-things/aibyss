@@ -14,7 +14,9 @@ const { data: gameState, refresh } = await useFetch("/api/state");
 const intervalRef = ref<number | null>(null);
 
 const fishTexturesRef = ref<Texture[]>([]);
-const foodTexturesRef = ref<Texture>();
+const foodTexturesRef = ref<Texture[]>([]);
+
+let numOfFoodSprite = 0;
 
 onMounted(async () => {
   intervalRef.value = window.setInterval(refresh, refreshIntervalMs);
@@ -30,7 +32,11 @@ onMounted(async () => {
     Assets.load("/sprites/FishVer8Short.png"),
     Assets.load("/sprites/FishVer9Short.png"),
   ]);
-  foodTexturesRef.value = await Assets.load("/sprites/FoodVer22.png");
+  foodTexturesRef.value = await Promise.all([
+    Assets.load("/sprites/FishFoodVer1.png"),
+    Assets.load("/sprites/FishFoodVer3.png"),
+    Assets.load("/sprites/FishFoodVer4.png"),
+  ]);
 });
 
 onBeforeUnmount(() => {
@@ -279,7 +285,17 @@ watch(gameState, async (newState, prevState) => {
     // render food
     for (const food of prevState.food) {
       const graphics = new Graphics();
-      const foodTexture = foodTexturesRef.value;
+      let foodTexture;
+      if (numOfFoodSprite == 0) {
+        foodTexture = foodTexturesRef.value[0];
+        numOfFoodSprite += 1;
+      } else if (numOfFoodSprite == 1) {
+        foodTexture = foodTexturesRef.value[1];
+        numOfFoodSprite += 1;
+      } else {
+        foodTexture = foodTexturesRef.value[2];
+        numOfFoodSprite = 0;
+      }
       if (!foodTexture) {
         throw new Error("Fish sprite is not loaded");
       }
@@ -331,7 +347,17 @@ watch(gameState, async (newState, prevState) => {
     for (const food of prevState.food) {
       if (!foodRef.value.find(f => f.x === food.x && f.y === food.y)) {
         const graphics = new Graphics();
-        const foodTexture = foodTexturesRef.value;
+        let foodTexture = foodTexturesRef.value[0];
+        if (numOfFoodSprite == 0) {
+          foodTexture = foodTexturesRef.value[0];
+          numOfFoodSprite += 1;
+        } else if (numOfFoodSprite == 1) {
+          foodTexture = foodTexturesRef.value[1];
+          numOfFoodSprite += 1;
+        } else {
+          foodTexture = foodTexturesRef.value[2];
+          numOfFoodSprite = 0;
+        }
         if (!foodTexture) {
           throw new Error("Fish sprite is not loaded");
         }
