@@ -29,11 +29,40 @@ if (import.meta.client) {
 
 const { data: user } = await useFetch("/api/auth/user");
 
+const SPLITTER_WIDTH = 8;
+const DEFAULT_SPLITTER_POSITION = 50;
+
 const state = reactive({
   code: user.value?.body.code || defaultCode,
   codeHasErrors: false,
   showAPIReference: false,
+  splitterPosition: Number(localStorage.getItem('splitterPosition')) || DEFAULT_SPLITTER_POSITION,
+  isDraggingSplitter: false
 });
+
+function handleSplitterMouseDown(event: MouseEvent) {
+  state.isDraggingSplitter = true;
+  document.addEventListener('mousemove', handleSplitterMouseMove);
+  document.addEventListener('mouseup', handleSplitterMouseUp);
+}
+
+function handleSplitterMouseMove(event: MouseEvent) {
+  if (!state.isDraggingSplitter) return;
+  
+  const container = document.querySelector('.split-container');
+  if (!container) return;
+  
+  const rect = container.getBoundingClientRect();
+  const newPosition = ((event.clientX - rect.left) / rect.width) * 100;
+  state.splitterPosition = Math.max(25, Math.min(75, newPosition));
+  localStorage.setItem('splitterPosition', state.splitterPosition.toString());
+}
+
+function handleSplitterMouseUp() {
+  state.isDraggingSplitter = false;
+  document.removeEventListener('mousemove', handleSplitterMouseMove);
+  document.removeEventListener('mouseup', handleSplitterMouseUp);
+}
 
 function onSubmit(event: Event) {
   event.preventDefault();
@@ -61,9 +90,14 @@ function onCloseAPIReferenceModal() {
 
 <template>
   <div
-    class="w-full h-full font-sans flex flex-col"
+    class="w-full h-full font-sans flex"
     data-testid="code-editor"
+    :style="{ cursor: state.isDraggingSplitter ? 'col-resize' : 'default' }"
   >
+    <div 
+      class="split-container flex-grow h-full relative"
+      :style="{ flexBasis: `${state.splitterPosition}%` }"
+    >
     <form
       class="flex flex-grow flex-col"
       @submit="onSubmit"
@@ -86,7 +120,20 @@ function onCloseAPIReferenceModal() {
           }"
         />
       </div>
-      <div class="flex justify-end">
+    </div>
+    <div
+      class="splitter bg-gray-200 hover:bg-gray-300 transition-colors w-2 cursor-col-resize relative"
+      @mousedown="handleSplitterMouseDown"
+      :style="{ 
+        left: `-${SPLITTER_WIDTH/2}px`,
+        width: `${SPLITTER_WIDTH}px`,
+        backgroundColor: state.isDraggingSplitter ? '#9CA3AF' : '#E5E7EB'
+      }"
+    ></div>
+    <div class="game-screen-container flex-grow h-full">
+      <GameScreen />
+    </div>
+    <div class="flex justify-end">
         <button
           type="submit"
           class="h-10 px-6 font-semibold shadow bg-black text-white hover:bg-gray-800 transition disabled:opacity-50 disabled:bg-black disabled:cursor-not-allowed"

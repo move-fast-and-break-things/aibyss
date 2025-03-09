@@ -401,7 +401,7 @@ watch(gameState, async (newState, prevState) => {
 
 <template>
   <div
-    class="h-full w-full"
+    class="h-full w-full game-screen"
     data-testid="game-screen"
   >
     <div
