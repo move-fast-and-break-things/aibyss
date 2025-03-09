@@ -8,6 +8,7 @@ export interface BotCode {
   code: string;
   username: string;
   userId: number;
+  timestamp: number;
 }
 
 export type BotCodes = Record<string, BotCode>;
@@ -63,13 +64,31 @@ function loadBots() {
   }
 }
 
-function saveBot({ id, code, username, userId }: BotCode) {
+function saveBot({ id, code, username, userId, timestamp }: BotCode) {
   if (!fs.existsSync(BOT_CODE_DIR)) {
     fs.mkdirSync(BOT_CODE_DIR);
   }
-  const botCodeFile = `${BOT_CODE_DIR}/${username}-${id}-${userId}.js`;
+  
+  // Save historical version
+  const historicalFile = `${BOT_CODE_DIR}/${userId}-${timestamp}.js`;
+  fs.writeFileSync(historicalFile, code);
+  
+  // Save latest version
+  const latestFile = `${BOT_CODE_DIR}/${userId}-latest.js`;
+  fs.writeFileSync(latestFile, code);
+}
 
-  fs.writeFileSync(botCodeFile, code);
+export function getBotVersions(userId: number): {timestamp: number; code: string}[] {
+  if (!fs.existsSync(BOT_CODE_DIR)) return [];
+  
+  return fs.readdirSync(BOT_CODE_DIR)
+    .filter(file => file.startsWith(`${userId}-`) && !file.endsWith('-latest.js'))
+    .map(file => {
+      const timestamp = parseInt(file.split('-')[1].replace('.js', ''));
+      const code = fs.readFileSync(`${BOT_CODE_DIR}/${file}`, 'utf8');
+      return { timestamp, code };
+    })
+    .sort((a, b) => b.timestamp - a.timestamp);
 }
 
 loadBots();

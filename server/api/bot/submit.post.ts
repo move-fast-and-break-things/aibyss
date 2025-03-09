@@ -6,6 +6,7 @@ import { SUBMIT_COOLDOWN_MS } from "~/other/submitApiRatelimitConstants";
 
 const submitBotCodeSchema = z.object({
   code: z.string(),
+  timestamp: z.number().default(Date.now),
 });
 
 const RATELIMITER = new LRUCache<string, boolean>({
@@ -32,6 +33,7 @@ export default defineEventHandler(async (event) => {
     username: event.context.user.username,
     userId: event.context.user.id,
     code: result.data.code,
+    timestamp: result.data.timestamp,
   });
 
   RATELIMITER.set(event.context.user.id, true);
