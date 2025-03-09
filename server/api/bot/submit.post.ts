@@ -3,6 +3,7 @@ import { z } from "zod";
 import * as botCodeStore from "~/other/botCodeStore";
 import { HTTP_STATUS_CODES } from "~/other/httpStatusCodes";
 import { SUBMIT_COOLDOWN_MS } from "~/other/submitApiRatelimitConstants";
+import prisma from "~/other/db";
 
 const submitBotCodeSchema = z.object({
   code: z.string(),
@@ -32,6 +33,12 @@ export default defineEventHandler(async (event) => {
     username: event.context.user.username,
     userId: event.context.user.id,
     code: result.data.code,
+  });
+
+  // Increment the submissions count for the user
+  await prisma.user.update({
+    where: { id: event.context.user.id },
+    data: { submissions_count: { increment: 1 } },
   });
 
   RATELIMITER.set(event.context.user.id, true);
