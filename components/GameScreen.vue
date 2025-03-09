@@ -3,6 +3,7 @@ import { Application, Graphics, Text, FillGradient, Assets, type Texture, Sprite
 import { getSmoothZoomScreen, followPlayerBot, getZoomScale } from "~/other/zoomUtils";
 
 const { data: user } = await useFetch("/api/auth/user");
+const debugMode = useLocalStorage("debugMode", false);
 const refreshIntervalMs = 1000;
 const zoomSpeed = 0.1;
 const minZoom = 1;
@@ -96,7 +97,15 @@ function setUsernamePosition({
 }
 
 async function drawBot({ bot, graphics, botDirection }: DrawBotArgs) {
-  if (graphics.children.length > 0) {
+  if (debugMode.value) {
+    // Debug mode - draw simple circle
+    graphics.clear();
+    graphics.beginPath();
+    graphics.arc(bot.x, bot.y, bot.radius, 0, 2 * Math.PI);
+    graphics.fill(bot.color);
+  }
+
+  if (graphics.children.length > 0 && !debugMode.value) {
     const sprite = graphics.children.find(child => child instanceof Sprite);
     const username = graphics.children.find(child => child instanceof Text);
     if (!sprite || !username) {
@@ -415,6 +424,11 @@ watch(gameState, async (newState, prevState) => {
           @click="toggleFollowMeMode"
         >
           {{ isFollowing ? "stop following my bot" : "follow my bot" }}
+        </ButtonLink>
+        <ButtonLink
+          @click="debugMode = !debugMode"
+        >
+          {{ debugMode ? 'normal view' : 'debug view' }}
         </ButtonLink>
       </div>
       <canvas ref="canvas" />
