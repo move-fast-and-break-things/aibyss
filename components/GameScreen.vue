@@ -119,6 +119,8 @@ async function drawBot({ bot, graphics, botDirection }: DrawBotArgs) {
   // draw bot
   const usernameHash = bot.username.charCodeAt(0) + (bot.username.charCodeAt(1) || 0) + (bot.username.charCodeAt(2) || 0);
   const numOfSprite = usernameHash % (fishTexturesRef.value.length);
+  if (debugMode.value) return;
+  
   const fishTexture = fishTexturesRef.value[numOfSprite];
   if (!fishTexture) {
     throw new Error("Fish sprite is not loaded");
