@@ -22,6 +22,7 @@ export interface WorldState {
   food: Sprite[];
   width: number;
   height: number;
+  errorStack?: string;
 }
 
 type BotSprites = Map<string, BotSprite>;
@@ -205,6 +206,8 @@ export default class World {
   /**
    * @returns {WorldState} a deep copy of the current state of the world
    */
+  private currentError?: string;
+
   getState(): WorldState {
     const botSpawnsCopy = new Map();
     for (const [botSpawnId, botSpawn] of this.botSpawns.entries()) {
@@ -216,7 +219,16 @@ export default class World {
       food: [...this.food],
       width: this.width,
       height: this.height,
+      errorStack: this.currentError,
     };
+  }
+
+  setBotError(error: string) {
+    this.currentError = error;
+  }
+
+  clearBotError() {
+    this.currentError = undefined;
   }
 
   getStats() {
