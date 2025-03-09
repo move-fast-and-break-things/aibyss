@@ -1,5 +1,6 @@
 import EventEmitter from "node:events";
 import fs from "node:fs";
+import { db } from "./db";
 
 const BOT_CODE_DIR = process.env.BOT_CODE_DIR || "./bot-code";
 
@@ -8,6 +9,7 @@ export interface BotCode {
   code: string;
   username: string;
   userId: number;
+  inactive?: boolean;
 }
 
 export type BotCodes = Record<string, BotCode>;
@@ -22,12 +24,19 @@ type SubmitBotCodeArgs = {
   userId: number;
 };
 
-export function submitBotCode({ code, username, userId }: SubmitBotCodeArgs) {
+export async function submitBotCode({ code, username, userId }: SubmitBotCodeArgs) {
   // ensure each user has only one bot
   const id = Object.values(STORE).find(botCode => botCode.username === username)?.id || Math.random().toString(36).substring(5);
-  const botCode = { id, code, username, userId };
+  const botCode = { id, code, username, userId, inactive: false };
   STORE[id] = botCode;
   saveBot(botCode);
+  
+  // Set inactive=false in the database when a user submits code
+  await db.user.update({
+    where: { id: userId },
+    data: { inactive: false }
+  });
+  
   botEventEmitter.emit("update", STORE);
 }
 
@@ -44,12 +53,16 @@ export function subscribeToBotsUpdate(onUpdate: (bots: BotCodes) => void): () =>
   return () => botEventEmitter.off("update", onUpdate);
 }
 
-function loadBots() {
+async function loadBots() {
   if (!fs.existsSync(BOT_CODE_DIR)) {
     return;
   }
 
   const files = fs.readdirSync(BOT_CODE_DIR);
+  const activeUsers = new Set((await db.user.findMany({
+    where: { inactive: false },
+    select: { id: true }
+  })).map(user => user.id));
 
   for (const file of files) {
     const code = fs.readFileSync(`${BOT_CODE_DIR}/${file}`, "utf8");
@@ -59,7 +72,12 @@ function loadBots() {
     if (!id || !code || !username || !userId) {
       throw new Error(`Invalid bot code file: ${file}`);
     }
-    STORE[id] = { id, code, username, userId: +userId };
+    
+    const numUserId = +userId;
+    // Only load bots for active users
+    if (activeUsers.has(numUserId)) {
+      STORE[id] = { id, code, username, userId: numUserId, inactive: false };
+    }
   }
 }
 
