@@ -8,6 +8,7 @@ const zoomSpeed = 0.1;
 const minZoom = 1;
 const maxZoom = 3;
 const isFollowing = ref<boolean>(false);
+const useSimpleCircles = ref<boolean>(false);
 const zoomInToPlayerOrResetZoomFn = ref<(() => void) | null>(null);
 
 const { data: gameState, refresh } = await useFetch("/api/state");
@@ -67,6 +68,31 @@ function toggleFollowMeMode() {
   zoomInToPlayerOrResetZoomFn.value?.();
 }
 
+function toggleSimpleCircles() {
+  useSimpleCircles.value = !useSimpleCircles.value;
+  
+  // Redraw all bots with the new rendering mode
+  if (gameState.value) {
+    for (const bot of Object.values(gameState.value.bots)) {
+      const existingBot = botSpawnsRef.value[bot.spawnId];
+      if (existingBot) {
+        // Clear existing graphics
+        for (const child of existingBot.children) {
+          child.destroy();
+        }
+        existingBot.clear();
+        
+        // Redraw with new mode
+        const prevBot = gameState.value.bots[bot.spawnId];
+        if (prevBot) {
+          const botDirection = 0; // Default direction when redrawing
+          drawBot({ bot, graphics: existingBot, botDirection });
+        }
+      }
+    }
+  }
+}
+
 function setSpritePositionAndSize({
   sprite,
   bot: { x, y, radius },
@@ -97,27 +123,57 @@ function setUsernamePosition({
 
 async function drawBot({ bot, graphics, botDirection }: DrawBotArgs) {
   if (graphics.children.length > 0) {
-    const sprite = graphics.children.find(child => child instanceof Sprite);
-    const username = graphics.children.find(child => child instanceof Text);
-    if (!sprite || !username) {
-      throw new Error("unexpected: sprite or text not found when redrawing the bot");
+    if (useSimpleCircles.value) {
+      // For simple circles mode, we need to redraw the circle
+      const circle = graphics.children.find(child => child instanceof Graphics);
+      const username = graphics.children.find(child => child instanceof Text);
+      if (!circle || !username) {
+        throw new Error("unexpected: circle or text not found when redrawing the bot");
+      }
+      
+      // Clear and redraw the circle
+      (circle as Graphics).clear();
+      (circle as Graphics).beginFill(bot.color);
+      (circle as Graphics).drawCircle(0, 0, bot.radius);
+      (circle as Graphics).endFill();
+      (circle as Graphics).position.set(bot.x, bot.y);
+      
+      setUsernamePosition({ username, bot });
+    } else {
+      // For sprite mode
+      const sprite = graphics.children.find(child => child instanceof Sprite);
+      const username = graphics.children.find(child => child instanceof Text);
+      if (!sprite || !username) {
+        throw new Error("unexpected: sprite or text not found when redrawing the bot");
+      }
+      setSpritePositionAndSize({ sprite, bot, botDirection });
+      setUsernamePosition({ username, bot });
     }
-    setSpritePositionAndSize({ sprite, bot, botDirection });
-    setUsernamePosition({ username, bot });
     return;
   }
 
-  // draw bot
-  const usernameHash = bot.username.charCodeAt(0) + (bot.username.charCodeAt(1) || 0) + (bot.username.charCodeAt(2) || 0);
-  const numOfSprite = usernameHash % (fishTexturesRef.value.length);
-  const fishTexture = fishTexturesRef.value[numOfSprite];
-  if (!fishTexture) {
-    throw new Error("Fish sprite is not loaded");
+  // Draw bot - either as a circle or sprite
+  if (useSimpleCircles.value) {
+    // Draw as a simple circle
+    const circle = new Graphics();
+    circle.beginFill(bot.color);
+    circle.drawCircle(0, 0, bot.radius);
+    circle.endFill();
+    circle.position.set(bot.x, bot.y);
+    graphics.addChild(circle);
+  } else {
+    // Draw as a sprite
+    const usernameHash = bot.username.charCodeAt(0) + (bot.username.charCodeAt(1) || 0) + (bot.username.charCodeAt(2) || 0);
+    const numOfSprite = usernameHash % (fishTexturesRef.value.length);
+    const fishTexture = fishTexturesRef.value[numOfSprite];
+    if (!fishTexture) {
+      throw new Error("Fish sprite is not loaded");
+    }
+    const sprite = new Sprite(fishTexture);
+    sprite.anchor.set(0.5);
+    setSpritePositionAndSize({ sprite, bot, botDirection });
+    graphics.addChild(sprite);
   }
-  const sprite = new Sprite(fishTexture);
-  sprite.anchor.set(0.5);
-  setSpritePositionAndSize({ sprite, bot, botDirection });
-  graphics.addChild(sprite);
 
   // draw username
 
@@ -415,6 +471,11 @@ watch(gameState, async (newState, prevState) => {
           @click="toggleFollowMeMode"
         >
           {{ isFollowing ? "stop following my bot" : "follow my bot" }}
+        </ButtonLink>
+        <ButtonLink
+          @click="toggleSimpleCircles"
+        >
+          {{ useSimpleCircles ? "use sprites" : "use simple circles" }}
         </ButtonLink>
       </div>
       <canvas ref="canvas" />
