@@ -20,6 +20,19 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: HTTP_STATUS_CODES.TOO_MANY_REQUESTS });
   }
 
+  if (!event.context.user?.id) {
+    throw createError({
+      statusCode: HTTP_STATUS_CODES.UNAUTHORIZED,
+      statusMessage: "Unauthorized",
+    });
+  }
+
+  // Update user to mark as active
+  await db.user.update({
+    where: { id: event.context.user.id },
+    data: { inactive: false },
+  });
+
   const result = await readValidatedBody(event, body => submitBotCodeSchema.safeParse(body));
   if (!result.success) {
     throw createError({
