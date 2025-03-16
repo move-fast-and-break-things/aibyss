@@ -28,11 +28,20 @@ if (import.meta.client) {
 }
 
 const { data: user } = await useFetch("/api/auth/user");
+const { data: gameState } = await useFetch("/api/state");
+
+// Watch for errors in the game state
+watch(() => gameState.value?.errorStack, (newErrorStack) => {
+  if (newErrorStack) {
+    state.executionError = newErrorStack;
+  }
+});
 
 const state = reactive({
   code: user.value?.body.code || defaultCode,
   codeHasErrors: false,
   showAPIReference: false,
+  executionError: null as string | null,
 });
 
 function onSubmit(event: Event) {
@@ -56,6 +65,10 @@ function onShowAPIReferenceClick() {
 
 function onCloseAPIReferenceModal() {
   state.showAPIReference = false;
+}
+
+function dismissError() {
+  state.executionError = null;
 }
 </script>
 
@@ -81,10 +94,24 @@ function onCloseAPIReferenceModal() {
           v-model="state.code"
           lang="javascript"
           class="flex-grow"
+          :class="{ 'h-[85%]': state.executionError }"
           :options="{
             smoothScrolling: true,
           }"
         />
+        
+        <!-- Error display -->
+        <div v-if="state.executionError" class="border-t border-red-300 bg-red-50 text-red-800 p-4 max-h-[15%] overflow-auto relative">
+          <button 
+            @click="dismissError"
+            class="absolute top-2 right-2 text-red-800 hover:text-red-900"
+            title="Dismiss error"
+          >
+            ✕
+          </button>
+          <h3 class="font-bold text-sm mb-1">Bot Execution Error:</h3>
+          <pre class="text-xs whitespace-pre-wrap overflow-x-auto font-mono">{{ state.executionError }}</pre>
+        </div>
       </div>
       <div class="flex justify-end">
         <button

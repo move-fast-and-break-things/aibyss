@@ -10,6 +10,9 @@ const MAX_ROUND_TIME_MS = 15 * 1000 * 60;
 const GAME_STEP_INTERVAL_MS = 250;
 const WORLD_SIZE = 600;
 
+// Store bot execution errors
+export const BOT_ERRORS: Record<string, string> = {};
+
 // Define the schema for bot actions
 const MoveActionSchema = z.object({
   type: z.literal("move"),
@@ -60,10 +63,15 @@ async function runBots({ bots, world, prevBotState, botApi }: RunBotArgs) {
     const botCodeRuntimeStartTs = Date.now();
     try {
       const result = await codeRunner.runCode(preparedCode);
+      // Clear any previous errors for this bot if execution is successful
+      if (BOT_ERRORS[bot.username]) {
+        delete BOT_ERRORS[bot.username];
+      }
       return JSON.parse(result);
     } catch (err) {
-      // TODO(yurij): notify user that their bot crashed
+      // Capture and store error for display to the user
       console.error(err);
+      BOT_ERRORS[bot.username] = err instanceof Error ? err.stack || err.message : String(err);
       return [];
     } finally {
       botCodeRunTimeMs.observe({ username: bot.username }, Date.now() - botCodeRuntimeStartTs);
