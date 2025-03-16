@@ -160,6 +160,42 @@ function getDirection(
   return Math.atan2(positionB.y - positionA.y, positionB.x - positionA.x);
 }
 
+// Handle resize events to adjust the canvas size
+const handleResize = () => {
+  if (appRef.value && canvas.value && gameState.value) {
+    const containerWidth = canvas.value.parentElement?.clientWidth || gameState.value.width;
+    const containerHeight = canvas.value.parentElement?.clientHeight || gameState.value.height;
+    
+    const scaleX = containerWidth / gameState.value.width;
+    const scaleY = containerHeight / gameState.value.height;
+    const scale = Math.min(scaleX, scaleY);
+    
+    const scaledWidth = Math.floor(gameState.value.width * scale);
+    const scaledHeight = Math.floor(gameState.value.height * scale);
+    
+    appRef.value.renderer.resize(scaledWidth, scaledHeight);
+  }
+};
+
+// Add resize observer to handle container size changes
+onMounted(() => {
+  const resizeObserver = new ResizeObserver(() => {
+    handleResize();
+  });
+  
+  if (canvas.value?.parentElement) {
+    resizeObserver.observe(canvas.value.parentElement);
+  }
+  
+  // Also listen for window resize events
+  window.addEventListener('resize', handleResize);
+  
+  onBeforeUnmount(() => {
+    resizeObserver.disconnect();
+    window.removeEventListener('resize', handleResize);
+  });
+});
+
 watch(gameState, async (newState, prevState) => {
   if (!canvas.value) {
     window.alert("Can't render the game. Please, refresh the page. If the problem persists, report the issue at https://github.com/move-fast-and-break-things/aibyss/issues. Include as many details as possible.");
@@ -169,6 +205,9 @@ watch(gameState, async (newState, prevState) => {
   if (!prevState || !newState) {
     return;
   }
+  
+  // Call handleResize to adjust canvas size when game state changes
+  nextTick(() => handleResize());
 
   if (tickFnRef.value) {
     appRef.value?.ticker.remove(tickFnRef.value);
@@ -180,9 +219,22 @@ watch(gameState, async (newState, prevState) => {
     const app = new Application();
     appRef.value = app;
 
+    // Get the container dimensions
+    const containerWidth = canvas.value.parentElement?.clientWidth || prevState.width;
+    const containerHeight = canvas.value.parentElement?.clientHeight || prevState.height;
+    
+    // Calculate the scale to fit the game within the container while maintaining aspect ratio
+    const scaleX = containerWidth / prevState.width;
+    const scaleY = containerHeight / prevState.height;
+    const scale = Math.min(scaleX, scaleY);
+    
+    // Calculate dimensions that maintain the aspect ratio
+    const scaledWidth = Math.floor(prevState.width * scale);
+    const scaledHeight = Math.floor(prevState.height * scale);
+
     await app.init({
-      width: prevState.width,
-      height: prevState.height,
+      width: scaledWidth,
+      height: scaledHeight,
       canvas: canvas.value,
       backgroundColor: "#FFFFFF",
       antialias: true,
@@ -406,8 +458,7 @@ watch(gameState, async (newState, prevState) => {
   >
     <div
       ref="gameScreen"
-      class="flex flex-col shadow ml-2"
-      :style="{ maxWidth: gameState?.width + 'px' }"
+      class="flex flex-col shadow ml-2 h-full w-full"
     >
       <div class="flex flex-row justify-end mb-2 mt-1 mx-4 gap-6">
         <ButtonLink
@@ -417,7 +468,9 @@ watch(gameState, async (newState, prevState) => {
           {{ isFollowing ? "stop following my bot" : "follow my bot" }}
         </ButtonLink>
       </div>
-      <canvas ref="canvas" />
+      <div class="flex justify-center items-center h-full w-full">
+        <canvas ref="canvas" class="max-w-full max-h-full" />
+      </div>
     </div>
   </div>
 </template>

@@ -14,7 +14,7 @@
       />
       <div
         ref="resizeGameElement"
-        class="flex min-w-[300px] w-1/2 overflow-auto"
+        class="flex min-w-[300px] h-full w-1/2"
       >
         <GameScreen />
       </div>
@@ -34,6 +34,23 @@ export default defineComponent({
     const resizeEditorElement = ref<HTMLDivElement | null>(null);
     const resizeGameElement = ref<HTMLDivElement | null>(null);
     const separator = ref<HTMLDivElement | null>(null);
+    
+    // Function to handle window resize events
+    const handleWindowResize = () => {
+      if (appRef.value && canvas.value && gameState.value) {
+        const containerWidth = canvas.value.parentElement?.clientWidth || gameState.value.width;
+        const containerHeight = canvas.value.parentElement?.clientHeight || gameState.value.height;
+        
+        const scaleX = containerWidth / gameState.value.width;
+        const scaleY = containerHeight / gameState.value.height;
+        const scale = Math.min(scaleX, scaleY);
+        
+        const scaledWidth = Math.floor(gameState.value.width * scale);
+        const scaledHeight = Math.floor(gameState.value.height * scale);
+        
+        appRef.value.renderer.resize(scaledWidth, scaledHeight);
+      }
+    };
 
     const startResize = (e: MouseEvent) => {
       if (!resizeEditorElement.value) {
@@ -75,6 +92,9 @@ export default defineComponent({
       separator.value.addEventListener("mousedown", startResize);
       document.addEventListener("mousemove", handleResize);
       document.addEventListener("mouseup", stopResize);
+      
+      // Add window resize event listener
+      window.addEventListener("resize", handleWindowResize);
     });
 
     onUnmounted(() => {
@@ -84,6 +104,9 @@ export default defineComponent({
       separator.value.removeEventListener("mousedown", startResize);
       document.removeEventListener("mousemove", handleResize);
       document.removeEventListener("mouseup", stopResize);
+      
+      // Remove window resize event listener
+      window.removeEventListener("resize", handleWindowResize);
     });
     return {
       resizeEditorElement,
