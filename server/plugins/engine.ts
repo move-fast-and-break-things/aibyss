@@ -63,7 +63,7 @@ async function runBots({ bots, world, prevBotState, botApi }: RunBotArgs) {
       return JSON.parse(result);
     } catch (err) {
       // TODO(yurij): notify user that their bot crashed
-      console.error(err);
+      WORLD_REF.world.setBotError(err instanceof Error ? err.stack : String(err));
       return [];
     } finally {
       botCodeRunTimeMs.observe({ username: bot.username }, Date.now() - botCodeRuntimeStartTs);

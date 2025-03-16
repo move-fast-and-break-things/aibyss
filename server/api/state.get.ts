@@ -8,6 +8,7 @@ export default defineEventHandler(async () => {
 
   return {
     ...gameState,
+    errorStack: gameState.errorStack,
     bots: Object.fromEntries([...gameState.bots.entries()].map(([id, bot]) => {
       const botCode = botCodes[bot.botId];
       if (!botCode) {
