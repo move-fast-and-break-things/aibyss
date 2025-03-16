@@ -29,7 +29,13 @@ type RunBotArgs = {
 
 async function runBots({ bots, world, prevBotState, botApi }: RunBotArgs) {
   for (const bot of Object.values(bots)) {
-    if (!world.hasBot(bot.id)) {
+    // Skip inactive users' bots
+    const user = await db.user.findUnique({
+      where: { id: bot.userId },
+      select: { inactive: true }
+    });
+
+    if (!user?.inactive && !world.hasBot(bot.id)) {
       world.addBot(bot.id);
     }
   }

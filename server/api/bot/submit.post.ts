@@ -3,6 +3,7 @@ import { z } from "zod";
 import * as botCodeStore from "~/other/botCodeStore";
 import { HTTP_STATUS_CODES } from "~/other/httpStatusCodes";
 import { SUBMIT_COOLDOWN_MS } from "~/other/submitApiRatelimitConstants";
+import { db } from "~/other/db";
 
 const submitBotCodeSchema = z.object({
   code: z.string(),
@@ -27,6 +28,12 @@ export default defineEventHandler(async (event) => {
       statusMessage: "Username and password field is required",
     });
   }
+
+  // Activate user if they were inactive
+  await db.user.update({
+    where: { id: event.context.user.id },
+    data: { inactive: false }
+  });
 
   botCodeStore.submitBotCode({
     username: event.context.user.username,
