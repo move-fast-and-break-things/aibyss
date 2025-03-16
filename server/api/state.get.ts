@@ -7,6 +7,7 @@ export default defineEventHandler(async () => {
   const botCodes = botCodeStore.getBots();
 
   return {
+    errorStack: WORLD_REF.lastPlayerBotError,
     ...gameState,
     bots: Object.fromEntries([...gameState.bots.entries()].map(([id, bot]) => {
       const botCode = botCodes[bot.botId];

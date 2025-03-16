@@ -17,7 +17,7 @@ const MoveActionSchema = z.object({
   y: z.number(),
 });
 
-export const WORLD_REF = { world: new World ({ width: WORLD_SIZE, height: WORLD_SIZE }) };
+export const WORLD_REF = { world: new World ({ width: WORLD_SIZE, height: WORLD_SIZE }), lastPlayerBotError: undefined };
 const codeRunners = new Array(10).fill(0).map(() => new CodeRunner());
 
 type RunBotArgs = {
@@ -63,6 +63,9 @@ async function runBots({ bots, world, prevBotState, botApi }: RunBotArgs) {
       return JSON.parse(result);
     } catch (err) {
       // TODO(yurij): notify user that their bot crashed
+      if (bot.userId) {
+          WORLD_REF.lastPlayerBotError = err instanceof Error ? err.stack : String(err);
+      }
       console.error(err);
       return [];
     } finally {
