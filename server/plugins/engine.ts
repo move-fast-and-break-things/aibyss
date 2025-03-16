@@ -28,14 +28,17 @@ type RunBotArgs = {
 };
 
 async function runBots({ bots, world, prevBotState, botApi }: RunBotArgs) {
-  for (const bot of Object.values(bots)) {
+  // Only process bots that are not marked as inactive
+  const activeBots = Object.values(bots).filter(bot => !bot.inactive);
+  
+  for (const bot of activeBots) {
     if (!world.hasBot(bot.id)) {
       world.addBot(bot.id);
     }
   }
 
   const state = world.getState();
-  const botArray = Object.values(bots);
+  const botArray = Object.values(bots).filter(bot => !bot.inactive);
 
   const preparedBotCodes = botArray.map(bot => prepareBotCode({
     bot,
