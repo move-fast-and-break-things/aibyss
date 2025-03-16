@@ -406,7 +406,7 @@ watch(gameState, async (newState, prevState) => {
   >
     <div
       ref="gameScreen"
-      class="flex flex-col shadow ml-2"
+      class="flex flex-col shadow"
       :style="{ maxWidth: gameState?.width + 'px' }"
     >
       <div class="flex flex-row justify-end mb-2 mt-1 mx-4 gap-6">
