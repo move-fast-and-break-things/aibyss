@@ -28,7 +28,8 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  botCodeStore.submitBotCode({
+  // The submitBotCode function is now async, so we need to await it
+  await botCodeStore.submitBotCode({
     username: event.context.user.username,
     userId: event.context.user.id,
     code: result.data.code,
