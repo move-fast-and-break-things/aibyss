@@ -18,3 +18,41 @@ const { open, onClose, extraModalClass } = defineProps<{ open: boolean; onClose:
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+const { open, onClose, extraModalClass } = defineProps<{ 
+  open: boolean; 
+  onClose: () => void; 
+  extraModalClass?: string;
+  showSidebar?: boolean;
+}>();
+
+const slots = useSlots();
+</script>
+
+<style scoped>
+.version-history-modal {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 1rem;
+}
+
+.version-list {
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+}
+
+.version-item {
+  padding: 0.5rem;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+}
+
+.version-item:hover {
+  background-color: #f5f5f5;
+}
+
+.version-item.selected {
+  background-color: #e0f7fa;
+}
+</style>
