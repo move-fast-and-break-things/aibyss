@@ -34,6 +34,12 @@ const isModalOpen = ref(false);
                 scope="col"
                 class="px-6 py-3"
               >
+                submissions
+              </th>
+              <th
+                scope="col"
+                class="px-6 py-3"
+              >
                 score
               </th>
               <th
@@ -121,6 +127,9 @@ const isModalOpen = ref(false);
               >
                 {{ userRating.username }}
               </th>
+              <td class="px-6 py-4">
+                {{ userRating.submissionCount }}
+              </td>
               <td class="px-6 py-4">
                 {{ userRating.score7days }}
               </td>
