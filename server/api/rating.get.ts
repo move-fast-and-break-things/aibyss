@@ -9,6 +9,7 @@ type UserStats = {
   foodEaten: number;
   maxEndgameSize: number;
   avgEndgameSize: number;
+  submissionCount: number;
 };
 
 export type UserRating = UserStats & {
@@ -45,7 +46,9 @@ export default defineEventHandler(async () => {
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
   // don't join users to not slow down the games query with another join
-  const users = await prisma.user.findMany();
+  const users = await prisma.user.findMany({
+    select: { id: true, username: true, submissionCount: true }
+  });
   const games = await prisma.game.findMany({
     where: { start_time: { gte: oneWeekAgo } },
     include: { game_stats: true },
@@ -75,6 +78,7 @@ export default defineEventHandler(async () => {
       const rawUserStat = rawUserStats[stat.user_id] || (rawUserStats[stat.user_id] = {
         userId: stat.user_id,
         username: user.username,
+        submissionCount: user.submissionCount,
         stats7days: getEmptyRawStats(),
         stats24hours: getEmptyRawStats(),
         stats1hour: getEmptyRawStats(),
