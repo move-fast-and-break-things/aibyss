@@ -3,6 +3,7 @@ import { z } from "zod";
 import * as botCodeStore from "~/other/botCodeStore";
 import { HTTP_STATUS_CODES } from "~/other/httpStatusCodes";
 import { SUBMIT_COOLDOWN_MS } from "~/other/submitApiRatelimitConstants";
+import { prisma } from "~/other/db";
 
 const submitBotCodeSchema = z.object({
   code: z.string(),

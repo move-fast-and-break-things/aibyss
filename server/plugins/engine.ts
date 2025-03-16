@@ -5,6 +5,7 @@ import * as botCodeStore from "~/other/botCodeStore";
 import World, { type WorldState } from "~/other/world";
 import { recordGameEnd, type GameStat } from "~/other/recordGamedb";
 import { CodeRunner } from "~/other/CodeRunner";
+import { prisma } from "~/other/db";
 
 const MAX_ROUND_TIME_MS = 15 * 1000 * 60;
 const GAME_STEP_INTERVAL_MS = 250;
@@ -28,16 +29,20 @@ type RunBotArgs = {
 };
 
 async function runBots({ bots, world, prevBotState, botApi }: RunBotArgs) {
-  for (const bot of Object.values(bots)) {
+  const botArray = Object.values(bots);
+  const users = await prisma.user.findMany({ where: { id: { in: botArray.map(bot => bot.userId) } } });
+  const inactiveUserIds = new Set(users.filter(u => u.inactive).map(u => u.id));
+  const activeBotArray = botArray.filter(bot => !inactiveUserIds.has(bot.userId));
+
+  for (const bot of activeBotArray) {
     if (!world.hasBot(bot.id)) {
       world.addBot(bot.id);
     }
   }
 
   const state = world.getState();
-  const botArray = Object.values(bots);
 
-  const preparedBotCodes = botArray.map(bot => prepareBotCode({
+  const preparedBotCodes = activeBotArray.map(bot => prepareBotCode({
     bot,
     botInfo: bots,
     state,
@@ -73,7 +78,7 @@ async function runBots({ bots, world, prevBotState, botApi }: RunBotArgs) {
 
   const moveBotStartTs = Date.now();
   for (const [i, actions] of botActions.entries()) {
-    const botId = botArray[i]?.id;
+    const botId = activeBotArray[i]?.id;
     if (botId && actions?.[0]) {
       try {
         const action = MoveActionSchema.parse(actions[0]);
