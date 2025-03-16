@@ -8,6 +8,7 @@ const zoomSpeed = 0.1;
 const minZoom = 1;
 const maxZoom = 3;
 const isFollowing = ref<boolean>(false);
+const debugDisableSprites = ref(false);
 const zoomInToPlayerOrResetZoomFn = ref<(() => void) | null>(null);
 
 const { data: gameState, refresh } = await useFetch("/api/state");
@@ -96,54 +97,85 @@ function setUsernamePosition({
 }
 
 async function drawBot({ bot, graphics, botDirection }: DrawBotArgs) {
-  if (graphics.children.length > 0) {
-    const sprite = graphics.children.find(child => child instanceof Sprite);
-    const username = graphics.children.find(child => child instanceof Text);
-    if (!sprite || !username) {
-      throw new Error("unexpected: sprite or text not found when redrawing the bot");
+  if (debugDisableSprites.value) {
+    graphics.clear();
+    graphics.beginFill(Number("0x" + bot.color.replace("#", "")));
+    graphics.drawCircle(bot.x, bot.y, bot.radius);
+    graphics.endFill();
+    const textChild = graphics.children.find(child => child instanceof Text);
+    if (textChild) {
+      setUsernamePosition({ username: textChild, bot });
+    } else {
+      const fillGradient = new FillGradient(0, 0, 1, 1);
+      fillGradient.addColorStop(0, bot.color);
+      fillGradient.addColorStop(1, bot.color);
+      const username = new Text({
+        anchor: {
+          x: 0.5,
+          y: 0.5,
+        },
+        text: bot.username,
+        style: {
+          fontFamily: "Retropix",
+          fontSize: 14,
+          fontWeight: "100",
+          fill: fillGradient,
+        },
+      });
+      setUsernamePosition({ username, bot });
+      graphics.addChild(username);
     }
-    setSpritePositionAndSize({ sprite, bot, botDirection });
-    setUsernamePosition({ username, bot });
     return;
+  } else {
+    if (graphics.children.length > 0) {
+      const sprite = graphics.children.find(child => child instanceof Sprite);
+      const username = graphics.children.find(child => child instanceof Text);
+      if (!sprite || !username) {
+        throw new Error("unexpected: sprite or text not found when redrawing the bot");
+      }
+      setSpritePositionAndSize({ sprite, bot, botDirection });
+      setUsernamePosition({ username, bot });
+      return;
+    }
+  
+    // draw bot
+    const usernameHash = bot.username.charCodeAt(0) + (bot.username.charCodeAt(1) || 0) + (bot.username.charCodeAt(2) || 0);
+    const numOfSprite = usernameHash % (fishTexturesRef.value.length);
+    const fishTexture = fishTexturesRef.value[numOfSprite];
+    if (!fishTexture) {
+      throw new Error("Fish sprite is not loaded");
+    }
+    const sprite = new Sprite(fishTexture);
+    sprite.anchor.set(0.5);
+    setSpritePositionAndSize({ sprite, bot, botDirection });
+    graphics.addChild(sprite);
+  
+    // draw username
+  
+    // we have to use FillGradient because
+    // using color as a fill doesn't work with pixi.js, vue.js, and Text
+    // https://github.com/pixijs/pixijs/discussions/10444
+    const fillGradient = new FillGradient(0, 0, 1, 1);
+    fillGradient.addColorStop(0, bot.color);
+    fillGradient.addColorStop(1, bot.color);
+  
+    const username = new Text({
+      anchor: {
+        x: 0.5,
+        y: 0.5,
+      },
+      text: bot.username,
+      style: {
+        fontFamily: "Retropix",
+        fontSize: 14,
+        fontWeight: "100",
+        fill: fillGradient,
+      },
+    });
+    setUsernamePosition({ username, bot });
+  
+    graphics.addChild(username);
   }
-
-  // draw bot
-  const usernameHash = bot.username.charCodeAt(0) + (bot.username.charCodeAt(1) || 0) + (bot.username.charCodeAt(2) || 0);
-  const numOfSprite = usernameHash % (fishTexturesRef.value.length);
-  const fishTexture = fishTexturesRef.value[numOfSprite];
-  if (!fishTexture) {
-    throw new Error("Fish sprite is not loaded");
-  }
-  const sprite = new Sprite(fishTexture);
-  sprite.anchor.set(0.5);
-  setSpritePositionAndSize({ sprite, bot, botDirection });
-  graphics.addChild(sprite);
-
-  // draw username
-
-  // we have to use FillGradient because
-  // using color as a fill doesn't work with pixi.js, vue.js, and Text
-  // https://github.com/pixijs/pixijs/discussions/10444
-  const fillGradient = new FillGradient(0, 0, 1, 1);
-  fillGradient.addColorStop(0, bot.color);
-  fillGradient.addColorStop(1, bot.color);
-
-  const username = new Text({
-    anchor: {
-      x: 0.5,
-      y: 0.5,
-    },
-    text: bot.username,
-    style: {
-      fontFamily: "Retropix",
-      fontSize: 14,
-      fontWeight: "100",
-      fill: fillGradient,
-    },
-  });
-  setUsernamePosition({ username, bot });
-
-  graphics.addChild(username);
 }
 
 function destroyGraphics(graphics: Graphics) {
@@ -415,6 +447,12 @@ watch(gameState, async (newState, prevState) => {
           @click="toggleFollowMeMode"
         >
           {{ isFollowing ? "stop following my bot" : "follow my bot" }}
+        </ButtonLink>
+        <ButtonLink
+          v-if="user?.body"
+          @click="debugDisableSprites = !debugDisableSprites"
+        >
+          {{ debugDisableSprites ? "Use Sprites" : "Use Circles" }}
         </ButtonLink>
       </div>
       <canvas ref="canvas" />
