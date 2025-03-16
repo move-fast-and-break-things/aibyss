@@ -2,6 +2,27 @@
 const { data: rating, status } = await useFetch("/api/rating");
 
 const isModalOpen = ref(false);
+
+// Find max values for each column to highlight
+const maxKills = computed(() => {
+  if (!rating?.length) return 0;
+  return Math.max(...rating.map(user => user.kills || 0));
+});
+
+const maxDeaths = computed(() => {
+  if (!rating?.length) return 0;
+  return Math.max(...rating.map(user => user.deaths || 0));
+});
+
+const maxKdRatio = computed(() => {
+  if (!rating?.length) return 0;
+  return Math.max(...rating.map(user => user.deaths ? (user.kills / user.deaths) : 0));
+});
+
+const maxFoodEaten = computed(() => {
+  if (!rating?.length) return 0;
+  return Math.max(...rating.map(user => user.foodEaten || 0));
+});
 </script>
 
 <template>
@@ -136,16 +157,16 @@ const isModalOpen = ref(false);
               <td class="px-6 py-4">
                 {{ userRating.gamesPlayed }}
               </td>
-              <td class="px-6 py-4 bg-gray-50 dark:bg-gray-800">
+              <td class="px-6 py-4 bg-gray-50 dark:bg-gray-800" :class="{ 'font-bold': userRating.kills === maxKills }">
                 {{ userRating.kills }}
               </td>
-              <td class="px-6 py-4">
+              <td class="px-6 py-4" :class="{ 'font-bold': userRating.deaths === maxDeaths }">
                 {{ userRating.deaths }}
               </td>
-              <td class="px-6 py-4 bg-gray-50 dark:bg-gray-800">
+              <td class="px-6 py-4 bg-gray-50 dark:bg-gray-800" :class="{ 'font-bold': userRating.deaths && (userRating.kills / userRating.deaths) === maxKdRatio }">
                 {{ userRating.deaths ? (userRating.kills / userRating.deaths).toFixed(2) : "n/a" }}
               </td>
-              <td class="px-6 py-4">
+              <td class="px-6 py-4" :class="{ 'font-bold': userRating.foodEaten === maxFoodEaten }">
                 {{ userRating.foodEaten }}
               </td>
               <td class="px-6 py-4 bg-gray-50 dark:bg-gray-800">
