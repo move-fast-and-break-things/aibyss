@@ -25,6 +25,8 @@
 <script lang="ts">
 import { defineComponent, ref, onMounted, onUnmounted } from "vue";
 
+const STORAGE_KEY = "aibyss-splitter-position";
+
 export default defineComponent({
   setup() {
     const isResizing = ref(false);
@@ -65,7 +67,39 @@ export default defineComponent({
     };
 
     const stopResize = () => {
+      if (!isResizing.value || !resizeEditorElement.value) {
+        return;
+      }
       isResizing.value = false;
+
+      // Save the current position to localStorage
+      try {
+        localStorage.setItem(STORAGE_KEY, resizeEditorElement.value.offsetWidth.toString());
+      } catch (e) {
+        console.error("Failed to save splitter position to localStorage:", e);
+      }
+    };
+
+    const loadSavedPosition = () => {
+      if (!resizeEditorElement.value || !resizeGameElement.value) {
+        return;
+      }
+      try {
+        const savedWidth = localStorage.getItem(STORAGE_KEY);
+        if (savedWidth) {
+          const containerWidth = resizeEditorElement.value.offsetWidth + resizeGameElement.value.offsetWidth;
+          const editorWidth = parseInt(savedWidth, 10);
+          const gameWidth = containerWidth - editorWidth;
+
+          // Ensure minimum widths
+          if (editorWidth >= 300 && gameWidth >= 300) {
+            resizeEditorElement.value.style.width = `${editorWidth}px`;
+            resizeGameElement.value.style.width = `${gameWidth}px`;
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load splitter position from localStorage:", e);
+      }
     };
 
     onMounted(() => {
@@ -75,6 +109,9 @@ export default defineComponent({
       separator.value.addEventListener("mousedown", startResize);
       document.addEventListener("mousemove", handleResize);
       document.addEventListener("mouseup", stopResize);
+
+      // Load saved position from localStorage
+      loadSavedPosition();
     });
 
     onUnmounted(() => {
