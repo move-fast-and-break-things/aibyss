@@ -103,14 +103,15 @@ type StartEngineArgs = {
 };
 
 async function startEngine({ botApi }: StartEngineArgs) {
-  let bots = botCodeStore.getBots();
+  let bots = await botCodeStore.getBots();
 
-  botCodeStore.subscribeToBotsUpdate((newBots) => {
-    bots = newBots;
+  botCodeStore.subscribeToBotsUpdate(async () => {
+    // Get updated bots, filtering out inactive users
+    bots = await botCodeStore.getBots();
   });
 
   const gameTimeoutInterval = setInterval(() => {
-    endGame("Time's up");
+    endGame("Time's up").catch(console.error);
     console.debug(`The World was restarted after ${MAX_ROUND_TIME_MS} ms`);
   }, MAX_ROUND_TIME_MS);
 
@@ -131,7 +132,7 @@ async function startEngine({ botApi }: StartEngineArgs) {
     const worldState = WORLD_REF.world.getState();
     for (const bot of worldState.bots.values()) {
       if (bot.radius > worldState.height / 4) {
-        endGame("Player overdominating");
+        endGame("Player overdominating").catch(console.error);
         console.debug(`The World was restarted cus ${bot.botId} was oversized`);
         gameTimeoutInterval.refresh();
       }
@@ -149,17 +150,20 @@ async function startEngine({ botApi }: StartEngineArgs) {
   }
 }
 
-function endGame(reason: string) {
+async function endGame(reason: string) {
   const endTime = new Date();
   const worldState = WORLD_REF.world.getState();
   const worldStats = WORLD_REF.world.getStats();
+
+  // Get current active bots
+  const activeBots = await botCodeStore.getBots();
   recordGameEnd({
     startTime: worldStats.startTime,
     endTime: endTime,
     endReason: reason,
     stats: Array.from(worldStats.stats.entries()).map(([botId, stat]) => {
       return {
-        userId: botCodeStore.getBots()[botId]?.userId,
+        userId: activeBots[botId]?.userId,
         size: worldState.bots.get(WORLD_REF.world.getSpawnId(botId))?.radius ?? 0,
         foodEaten: stat.foodEaten,
         kills: stat.kills,
