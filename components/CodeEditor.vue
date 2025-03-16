@@ -33,6 +33,8 @@ const state = reactive({
   code: user.value?.body.code || defaultCode,
   codeHasErrors: false,
   showAPIReference: false,
+  showVersionHistory: false,
+  selectedVersion: null as string | null,
 });
 
 function onSubmit(event: Event) {
@@ -50,6 +52,10 @@ function onRestoreDefaultCodeClick() {
   state.code = defaultCode;
 }
 
+async function onShowVersionHistoryClick() {
+  state.showVersionHistory = true;
+}
+
 function onShowAPIReferenceClick() {
   state.showAPIReference = true;
 }
@@ -64,6 +70,16 @@ function onCloseAPIReferenceModal() {
     class="w-full h-full font-sans flex flex-col"
     data-testid="code-editor"
   >
+    <ModalDialog
+      :open="state.showVersionHistory"
+      :on-close="() => state.showVersionHistory = false"
+      extra-modal-class="w-[800px] h-[600px]"
+    >
+      <CodeVersionHistory 
+        @restore="(code: string) => { state.code = code; }"
+        @close="() => { state.showVersionHistory = false; }"
+      />
+    </ModalDialog>
     <form
       class="flex flex-grow flex-col"
       @submit="onSubmit"
@@ -72,6 +88,9 @@ function onCloseAPIReferenceModal() {
         <div class="flex flex-row justify-end mb-2 mt-1 mx-2 gap-6">
           <ButtonLink @click="onRestoreDefaultCodeClick">
             restore example code
+          </ButtonLink>
+          <ButtonLink @click="onShowVersionHistoryClick">
+            version history
           </ButtonLink>
           <ButtonLink @click="onShowAPIReferenceClick">
             API reference
