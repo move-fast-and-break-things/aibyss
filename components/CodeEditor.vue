@@ -70,10 +70,10 @@ function onCloseAPIReferenceModal() {
     >
       <div class="flex flex-grow flex-col shadow mb-4">
         <div class="flex flex-row justify-end mb-2 mt-1 mx-2 gap-6">
-          <ButtonLink @click="onRestoreDefaultCodeClick">
+          <ButtonLink type="button" @click="onRestoreDefaultCodeClick">
             restore example code
           </ButtonLink>
-          <ButtonLink @click="onShowAPIReferenceClick">
+          <ButtonLink type="button" @click="onShowAPIReferenceClick">
             API reference
           </ButtonLink>
         </div>
