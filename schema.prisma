@@ -8,10 +8,11 @@ generator client {
 }
 
 model User {
-  id        Int         @id @default(autoincrement())
-  password  String
-  username  String      @unique
-  game_stats GameStats[]
+  id              Int         @id @default(autoincrement())
+  password        String
+  username        String      @unique
+  submission_count Int         @default(0)
+  game_stats      GameStats[]
 }
 
 model Game {

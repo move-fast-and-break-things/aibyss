@@ -69,6 +69,12 @@ const isModalOpen = ref(false);
                 scope="col"
                 class="px-6 py-3 bg-gray-50 dark:bg-gray-800"
               >
+                submissions
+              </th>
+              <th
+                scope="col"
+                class="px-6 py-3"
+              >
                 kills
               </th>
               <th
@@ -137,6 +143,9 @@ const isModalOpen = ref(false);
                 {{ userRating.gamesPlayed }}
               </td>
               <td class="px-6 py-4 bg-gray-50 dark:bg-gray-800">
+                {{ userRating.submissionCount }}
+              </td>
+              <td class="px-6 py-4">
                 {{ userRating.kills }}
               </td>
               <td class="px-6 py-4">
