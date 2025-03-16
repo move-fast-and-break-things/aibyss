@@ -401,8 +401,9 @@ watch(gameState, async (newState, prevState) => {
 
 <template>
   <div
-    class="h-full w-full"
+    class="h-full"
     data-testid="game-screen"
+    :style="{ width: `calc(100% - ${splitterPosition}% - ${SPLITTER_WIDTH}px)` }"
   >
     <div
       ref="gameScreen"
@@ -421,3 +422,14 @@ watch(gameState, async (newState, prevState) => {
     </div>
   </div>
 </template>
+.splitter {
+  transition: background-color 0.2s;
+}
+
+.splitter:active {
+  background-color: #9CA3AF;
+}
+
+.editor-container {
+  min-width: 600px;
+}

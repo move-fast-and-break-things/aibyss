@@ -1,5 +1,50 @@
 <script setup lang="ts">
 import { defaultCode, jsdoc } from "~/other/defaultCode.js";
+import { ref, onMounted } from 'vue';
+
+const SPLITTER_WIDTH = 8;
+const MIN_PANEL_WIDTH = 300;
+const SPLITTER_KEY = 'codeEditorSplitterPosition';
+
+const splitterPosition = ref(50);
+const isDragging = ref(false);
+
+function startDrag() {
+  isDragging.value = true;
+  document.body.style.cursor = 'col-resize';
+  document.body.style.userSelect = 'none';
+}
+
+function stopDrag() {
+  isDragging.value = false;
+  document.body.style.cursor = '';
+  document.body.style.userSelect = '';
+}
+
+function handleDrag(event: MouseEvent) {
+  if (isDragging.value) {
+    const container = document.querySelector('.editor-container');
+    if (container) {
+      const containerRect = container.getBoundingClientRect();
+      const newPosition = ((event.clientX - containerRect.left) / containerRect.width) * 100;
+      splitterPosition.value = Math.max(
+        MIN_PANEL_WIDTH / containerRect.width * 100,
+        Math.min(100 - (MIN_PANEL_WIDTH / containerRect.width * 100), newPosition)
+      );
+      localStorage.setItem(SPLITTER_KEY, splitterPosition.value.toString());
+    }
+  }
+}
+
+onMounted(() => {
+  const savedPosition = localStorage.getItem(SPLITTER_KEY);
+  if (savedPosition) {
+    splitterPosition.value = parseFloat(savedPosition);
+  }
+  
+  document.addEventListener('mousemove', handleDrag);
+  document.addEventListener('mouseup', stopDrag);
+});
 
 if (import.meta.client) {
   // configure monaco editor on client side
@@ -61,9 +106,13 @@ function onCloseAPIReferenceModal() {
 
 <template>
   <div
-    class="w-full h-full font-sans flex flex-col"
+    class="editor-container w-full h-full font-sans flex"
     data-testid="code-editor"
   >
+    <div
+      class="h-full"
+      :style="{ width: `${splitterPosition}%` }"
+    >
     <form
       class="flex flex-grow flex-col"
       @submit="onSubmit"
@@ -97,6 +146,12 @@ function onCloseAPIReferenceModal() {
         </button>
       </div>
     </form>
+    </div>
+    <div
+      class="splitter bg-gray-200 hover:bg-gray-400 cursor-col-resize"
+      :style="{ width: `${SPLITTER_WIDTH}px` }"
+      @mousedown="startDrag"
+    ></div>
   </div>
   <ModalDialog
     :open="state.showAPIReference"
