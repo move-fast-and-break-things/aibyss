@@ -2,6 +2,15 @@
 const { data: rating, status } = await useFetch("/api/rating");
 
 const isModalOpen = ref(false);
+
+// Get max values for highlighting
+const maxKills = computed(() => Math.max(...rating.value?.map(r => r.kills) || 0);
+const maxDeaths = computed(() => Math.max(...rating.value?.map(r => r.deaths) || 0);
+const maxFoodEaten = computed(() => Math.max(...rating.value?.map(r => r.foodEaten) || 0);
+const maxKD = computed(() => {
+  if (!rating.value?.length) return 0;
+  return Math.max(...rating.value.map(r => r.deaths ? (r.kills / r.deaths) : 0);
+});
 </script>
 
 <template>
@@ -137,16 +146,24 @@ const isModalOpen = ref(false);
                 {{ userRating.gamesPlayed }}
               </td>
               <td class="px-6 py-4 bg-gray-50 dark:bg-gray-800">
-                {{ userRating.kills }}
+                <span :class="{ 'top-result': userRating.kills === maxKills }">
+                  {{ userRating.kills }}
+                </span>
               </td>
               <td class="px-6 py-4">
-                {{ userRating.deaths }}
+                <span :class="{ 'top-result': userRating.deaths === maxDeaths }">
+                  {{ userRating.deaths }}
+                </span>
               </td>
               <td class="px-6 py-4 bg-gray-50 dark:bg-gray-800">
-                {{ userRating.deaths ? (userRating.kills / userRating.deaths).toFixed(2) : "n/a" }}
+                <span :class="{ 'top-result': userRating.deaths && (userRating.kills / userRating.deaths) === maxKD }">
+                  {{ userRating.deaths ? (userRating.kills / userRating.deaths).toFixed(2) : "n/a" }}
+                </span>
               </td>
               <td class="px-6 py-4">
-                {{ userRating.foodEaten }}
+                <span :class="{ 'top-result': userRating.foodEaten === maxFoodEaten }">
+                  {{ userRating.foodEaten }}
+                </span>
               </td>
               <td class="px-6 py-4 bg-gray-50 dark:bg-gray-800">
                 {{ userRating.maxEndgameSize.toFixed(2) }}
