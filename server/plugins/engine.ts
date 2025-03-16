@@ -6,6 +6,9 @@ import World, { type WorldState } from "~/other/world";
 import { recordGameEnd, type GameStat } from "~/other/recordGamedb";
 import { CodeRunner } from "~/other/CodeRunner";
 
+// Store bot execution errors by userId
+export const BOT_ERRORS: Record<number, string> = {};
+
 const MAX_ROUND_TIME_MS = 15 * 1000 * 60;
 const GAME_STEP_INTERVAL_MS = 250;
 const WORLD_SIZE = 600;
@@ -62,7 +65,10 @@ async function runBots({ bots, world, prevBotState, botApi }: RunBotArgs) {
       const result = await codeRunner.runCode(preparedCode);
       return JSON.parse(result);
     } catch (err) {
-      // TODO(yurij): notify user that their bot crashed
+      // Store the error for this bot
+      if (bot.userId && err instanceof Error) {
+        BOT_ERRORS[bot.userId] = err.stack || err.message;
+      }
       console.error(err);
       return [];
     } finally {
