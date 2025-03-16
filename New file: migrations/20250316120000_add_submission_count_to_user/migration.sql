@@ -1,0 +1,1 @@
+ALTER TABLE "User" ADD COLUMN "submissionCount" INT NOT NULL DEFAULT 0;
