@@ -20,11 +20,19 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: HTTP_STATUS_CODES.TOO_MANY_REQUESTS });
   }
 
+  // Validate code length and content as basic protection against empty submissions
   const result = await readValidatedBody(event, body => submitBotCodeSchema.safeParse(body));
   if (!result.success) {
     throw createError({
       statusCode: HTTP_STATUS_CODES.UNPROCESSABLE_ENTITY,
-      statusMessage: "Username and password field is required",
+      statusMessage: "Code submission is required",
+    });
+  }
+  
+  if (!result.data.code.trim() || result.data.code.length < 10) {
+    throw createError({
+      statusCode: HTTP_STATUS_CODES.UNPROCESSABLE_ENTITY,
+      statusMessage: "Code must be at least 10 characters long",
     });
   }
 
