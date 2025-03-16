@@ -9,3 +9,9 @@
     src: url(/fonts/retropix.otf);
   }
 }
+
+@layer components {
+  .top-result {
+    @apply font-bold;
+  }
+}
