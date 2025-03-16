@@ -109,6 +109,15 @@ async function drawBot({ bot, graphics, botDirection }: DrawBotArgs) {
     return;
   }
 
+  if (debugMode.value) {
+    // Draw simple circle in debug mode
+    graphics.clear();
+    graphics.beginFill(bot.color);
+    graphics.drawCircle(bot.x, bot.y, bot.radius);
+    graphics.endFill();
+    return;
+  }
+
   // draw bot
   const usernameHash = bot.username.charCodeAt(0) + (bot.username.charCodeAt(1) || 0) + (bot.username.charCodeAt(2) || 0);
   const numOfSprite = usernameHash % (fishTexturesRef.value.length);
