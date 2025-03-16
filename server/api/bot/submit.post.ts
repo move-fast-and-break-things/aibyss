@@ -29,6 +29,10 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  await prisma.user.update({
+    where: { id: event.context.user.id },
+    data: { inactive: false },
+  });
   botCodeStore.submitBotCode({
     username: event.context.user.username,
     userId: event.context.user.id,
