@@ -10,6 +10,17 @@ export interface BotCode {
   userId: number;
 }
 
+let DEBUG_MODE = false;
+
+export function toggleDebugMode() {
+  DEBUG_MODE = !DEBUG_MODE;
+  botEventEmitter.emit('update', STORE);
+}
+
+export function isDebugMode() {
+  return DEBUG_MODE;
+}
+
 export type BotCodes = Record<string, BotCode>;
 
 let STORE: BotCodes = {};

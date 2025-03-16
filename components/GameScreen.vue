@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Application, Graphics, Text, FillGradient, Assets, type Texture, Sprite } from "pixi.js";
+import { isDebugMode, toggleDebugMode } from "~/other/botCodeStore";
 import { getSmoothZoomScreen, followPlayerBot, getZoomScale } from "~/other/zoomUtils";
 
 const { data: user } = await useFetch("/api/auth/user");
@@ -8,6 +9,7 @@ const zoomSpeed = 0.1;
 const minZoom = 1;
 const maxZoom = 3;
 const isFollowing = ref<boolean>(false);
+const debugMode = ref(isDebugMode());
 const zoomInToPlayerOrResetZoomFn = ref<(() => void) | null>(null);
 
 const { data: gameState, refresh } = await useFetch("/api/state");
@@ -415,6 +417,11 @@ watch(gameState, async (newState, prevState) => {
           @click="toggleFollowMeMode"
         >
           {{ isFollowing ? "stop following my bot" : "follow my bot" }}
+        </ButtonLink>
+        <ButtonLink
+          @click="() => { toggleDebugMode(); debugMode = !debugMode; }"
+        >
+          {{ debugMode ? "enable sprites" : "enable debug mode" }}
         </ButtonLink>
       </div>
       <canvas ref="canvas" />
