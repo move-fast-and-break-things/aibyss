@@ -1,7 +1,31 @@
 <script setup lang="ts">
+import { ref, computed } from 'vue';
+
 const { data: rating, status } = await useFetch("/api/rating");
 
 const isModalOpen = ref(false);
+
+const maxKills = computed(() => {
+  if (!rating.value || !rating.value.length) return 0;
+  return Math.max(...rating.value.map(r => r.kills));
+});
+
+const minDeaths = computed(() => {
+  if (!rating.value || !rating.value.length) return Infinity;
+  return Math.min(...rating.value.map(r => r.deaths));
+});
+
+const maxFoodEaten = computed(() => {
+  if (!rating.value || !rating.value.length) return 0;
+  return Math.max(...rating.value.map(r => r.foodEaten));
+});
+
+const maxKD = computed(() => {
+  if (!rating.value || !rating.value.length) return 0;
+  const valid = rating.value.filter(r => r.deaths > 0);
+  if (!valid.length) return 0;
+  return Math.max(...valid.map(r => r.kills / r.deaths));
+});
 </script>
 
 <template>
@@ -136,16 +160,16 @@ const isModalOpen = ref(false);
               <td class="px-6 py-4">
                 {{ userRating.gamesPlayed }}
               </td>
-              <td class="px-6 py-4 bg-gray-50 dark:bg-gray-800">
+              <td :class="['px-6 py-4 bg-gray-50 dark:bg-gray-800', { 'font-bold': userRating.kills === maxKills }]">
                 {{ userRating.kills }}
               </td>
-              <td class="px-6 py-4">
+              <td :class="['px-6 py-4', { 'font-bold': userRating.deaths === minDeaths }]">
                 {{ userRating.deaths }}
               </td>
-              <td class="px-6 py-4 bg-gray-50 dark:bg-gray-800">
+              <td :class="['px-6 py-4 bg-gray-50 dark:bg-gray-800', { 'font-bold': userRating.deaths && (userRating.kills / userRating.deaths) === maxKD }]">
                 {{ userRating.deaths ? (userRating.kills / userRating.deaths).toFixed(2) : "n/a" }}
               </td>
-              <td class="px-6 py-4">
+              <td :class="['px-6 py-4', { 'font-bold': userRating.foodEaten === maxFoodEaten }]">
                 {{ userRating.foodEaten }}
               </td>
               <td class="px-6 py-4 bg-gray-50 dark:bg-gray-800">
