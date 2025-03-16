@@ -102,6 +102,9 @@ function onCloseVersionHistoryModal() {
           <ButtonLink @click="onShowAPIReferenceClick">
             API reference
           </ButtonLink>
+          <ButtonLink @click="onShowVersionHistoryClick">
+            Version History
+          </ButtonLink>
         </div>
         <MonacoEditor
           v-model="state.code"
