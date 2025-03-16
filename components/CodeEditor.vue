@@ -33,6 +33,9 @@ const state = reactive({
   code: user.value?.body.code || defaultCode,
   codeHasErrors: false,
   showAPIReference: false,
+  showVersionHistory: false,
+  versions: [] as { filename: string; timestamp: number; code: string }[],
+  selectedVersionCode: "",
 });
 
 function onSubmit(event: Event) {
@@ -56,6 +59,29 @@ function onShowAPIReferenceClick() {
 
 function onCloseAPIReferenceModal() {
   state.showAPIReference = false;
+}
+
+async function onShowVersionHistoryClick() {
+  state.showVersionHistory = true;
+  const res = await fetch("/api/bot/history");
+  const data = await res.json();
+  state.versions = data.versions;
+  if (state.versions.length > 0) {
+    state.selectedVersionCode = state.versions[0].code;
+  }
+}
+
+function onSelectVersion(version) {
+  state.selectedVersionCode = version.code;
+}
+
+function onRestoreVersion() {
+  state.code = state.selectedVersionCode;
+  state.showVersionHistory = false;
+}
+
+function onCloseVersionHistoryModal() {
+  state.showVersionHistory = false;
 }
 </script>
 
@@ -116,5 +142,42 @@ function onCloseAPIReferenceModal() {
       }"
       class="flex-grow"
     />
+  </ModalDialog>
+  <ModalDialog
+    :open="state.showVersionHistory"
+    :on-close="onCloseVersionHistoryModal"
+    extra-modal-class="w-[800px]"
+  >
+    <div class="flex">
+      <div class="w-1/2 pr-2">
+        <MonacoEditor
+          v-model="state.selectedVersionCode"
+          lang="javascript"
+          :options="{
+            readOnly: true,
+            lineNumbers: 'off',
+            smoothScrolling: true,
+            scrollBeyondLastLine: false,
+            minimap: { enabled: false },
+          }"
+          class="h-full"
+        />
+      </div>
+      <div class="w-1/2 pl-2">
+        <ul>
+          <li v-for="version in state.versions" :key="version.filename" class="mb-2">
+            <div class="flex items-center justify-between">
+              <span>{{ version.filename }}</span>
+              <ButtonLink @click="onSelectVersion(version)">
+                Preview
+              </ButtonLink>
+              <ButtonLink @click="onRestoreVersion">
+                Restore
+              </ButtonLink>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
   </ModalDialog>
 </template>

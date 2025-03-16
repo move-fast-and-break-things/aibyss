@@ -3,6 +3,8 @@ import { z } from "zod";
 import * as botCodeStore from "~/other/botCodeStore";
 import { HTTP_STATUS_CODES } from "~/other/httpStatusCodes";
 import { SUBMIT_COOLDOWN_MS } from "~/other/submitApiRatelimitConstants";
+import fs from "fs/promises";
+import path from "path";
 
 const submitBotCodeSchema = z.object({
   code: z.string(),
@@ -27,7 +29,16 @@ export default defineEventHandler(async (event) => {
       statusMessage: "Username and password field is required",
     });
   }
-
+  
+  const timestamp = Date.now();
+  const filename = `${event.context.user.id}-${timestamp}.js`;
+  const latestFilename = `${event.context.user.id}-latest.js`;
+  const CODE_VERSIONS_DIR = path.join(process.cwd(), "botCodes");
+  const filePath = path.join(CODE_VERSIONS_DIR, filename);
+  const latestFilePath = path.join(CODE_VERSIONS_DIR, latestFilename);
+  await fs.writeFile(filePath, result.data.code);
+  await fs.writeFile(latestFilePath, result.data.code);
+  
   botCodeStore.submitBotCode({
     username: event.context.user.username,
     userId: event.context.user.id,
