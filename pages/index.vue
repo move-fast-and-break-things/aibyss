@@ -66,11 +66,24 @@ export default defineComponent({
 
     const stopResize = () => {
       isResizing.value = false;
+      if (resizeEditorElement.value && resizeGameElement.value) {
+        localStorage.setItem("editorWidth", resizeEditorElement.value.style.width);
+        localStorage.setItem("gameWidth", resizeGameElement.value.style.width);
+      }
     };
 
     onMounted(() => {
       if (!separator.value) {
         throw new Error("unexpected: no separator");
+      }
+      // Load persisted widths from localStorage
+      const storedEditorWidth = localStorage.getItem("editorWidth");
+      const storedGameWidth = localStorage.getItem("gameWidth");
+      if (storedEditorWidth && resizeEditorElement.value) {
+        resizeEditorElement.value.style.width = storedEditorWidth;
+      }
+      if (storedGameWidth && resizeGameElement.value) {
+        resizeGameElement.value.style.width = storedGameWidth;
       }
       separator.value.addEventListener("mousedown", startResize);
       document.addEventListener("mousemove", handleResize);
