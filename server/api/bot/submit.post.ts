@@ -28,6 +28,11 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  await prisma.user.update({
+    where: { id: event.context.user.id },
+    data: { code_submissions: { increment: 1 } },
+  });
+
   botCodeStore.submitBotCode({
     username: event.context.user.username,
     userId: event.context.user.id,
