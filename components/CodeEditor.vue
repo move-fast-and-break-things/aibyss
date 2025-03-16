@@ -33,7 +33,22 @@ const state = reactive({
   code: user.value?.body.code || defaultCode,
   codeHasErrors: false,
   showAPIReference: false,
+  botError: null as string | null,
+  isErrorVisible: false,
 });
+
+const { data: gameState } = await useFetch("/api/state");
+
+watch(gameState, (newState) => {
+  if (newState?.errorStack) {
+    state.botError = newState.errorStack;
+    state.isErrorVisible = true;
+  }
+});
+
+function dismissError() {
+  state.isErrorVisible = false;
+}
 
 function onSubmit(event: Event) {
   event.preventDefault();
@@ -86,7 +101,26 @@ function onCloseAPIReferenceModal() {
           }"
         />
       </div>
-      <div class="flex justify-end">
+      <div class="flex flex-col gap-4">
+        <div
+          v-if="state.isErrorVisible && state.botError"
+          class="relative bg-red-50 border border-red-200 rounded p-4"
+        >
+          <button
+            @click="dismissError"
+            class="absolute top-2 right-2 text-red-500 hover:text-red-700"
+            aria-label="Dismiss error"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+          </button>
+          <div class="text-red-600 font-mono text-sm overflow-auto max-h-40">
+            {{ state.botError }}
+          </div>
+        </div>
+        
+        <div class="flex justify-end">
         <button
           type="submit"
           class="h-10 px-6 font-semibold shadow bg-black text-white hover:bg-gray-800 transition disabled:opacity-50 disabled:bg-black disabled:cursor-not-allowed"
