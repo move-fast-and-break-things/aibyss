@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { defaultCode, jsdoc } from "~/other/defaultCode.js";
+import CodeVersionModal from "~/components/CodeVersionModal.vue";
 
 if (import.meta.client) {
   // configure monaco editor on client side
@@ -33,6 +34,7 @@ const state = reactive({
   code: user.value?.body.code || defaultCode,
   codeHasErrors: false,
   showAPIReference: false,
+  showCodeVersions: false,
 });
 
 function onSubmit(event: Event) {
@@ -57,6 +59,19 @@ function onShowAPIReferenceClick() {
 function onCloseAPIReferenceModal() {
   state.showAPIReference = false;
 }
+
+function onShowCodeVersionsClick() {
+  state.showCodeVersions = true;
+}
+
+function onCloseCodeVersionsModal() {
+  state.showCodeVersions = false;
+}
+
+function onRevertVersion(code: string) {
+  state.code = code;
+  state.showCodeVersions = false;
+}
 </script>
 
 <template>
@@ -75,6 +90,9 @@ function onCloseAPIReferenceModal() {
           </ButtonLink>
           <ButtonLink @click="onShowAPIReferenceClick">
             API reference
+          </ButtonLink>
+          <ButtonLink @click="onShowCodeVersionsClick">
+            Code Versions
           </ButtonLink>
         </div>
         <MonacoEditor
@@ -117,4 +135,9 @@ function onCloseAPIReferenceModal() {
       class="flex-grow"
     />
   </ModalDialog>
+  <CodeVersionModal
+    v-if="state.showCodeVersions"
+    @close="onCloseCodeVersionsModal"
+    @revert="onRevertVersion"
+  />
 </template>
