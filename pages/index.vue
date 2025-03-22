@@ -66,6 +66,10 @@ export default defineComponent({
 
     const stopResize = () => {
       isResizing.value = false;
+      if (resizeEditorElement.value && resizeGameElement.value) {
+        localStorage.setItem("editorWidth", resizeEditorElement.value.offsetWidth.toString());
+        localStorage.setItem("gameWidth", resizeGameElement.value.offsetWidth.toString());
+      }
     };
 
     onMounted(() => {
