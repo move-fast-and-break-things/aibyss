@@ -2,6 +2,29 @@
 const { data: rating, status } = await useFetch("/api/rating");
 
 const isModalOpen = ref(false);
+
+// Compute top values for highlighting
+const topKills = computed(() => {
+  if (!rating.value?.length) return 0;
+  return Math.max(...rating.value.map(user => user.kills));
+});
+
+const topDeaths = computed(() => {
+  if (!rating.value?.length) return 0;
+  return Math.max(...rating.value.map(user => user.deaths));
+});
+
+const topFoodEaten = computed(() => {
+  if (!rating.value?.length) return 0;
+  return Math.max(...rating.value.map(user => user.foodEaten));
+});
+
+const topKD = computed(() => {
+  if (!rating.value?.length) return 0;
+  return Math.max(...rating.value.map(user => 
+    user.deaths ? user.kills / user.deaths : user.kills > 0 ? Infinity : 0
+  ));
+});
 </script>
 
 <template>
@@ -137,16 +160,24 @@ const isModalOpen = ref(false);
                 {{ userRating.gamesPlayed }}
               </td>
               <td class="px-6 py-4 bg-gray-50 dark:bg-gray-800">
-                {{ userRating.kills }}
+                <span :class="{ 'font-bold': userRating.kills === topKills }">
+                  {{ userRating.kills }}
+                </span>
               </td>
               <td class="px-6 py-4">
-                {{ userRating.deaths }}
+                <span :class="{ 'font-bold': userRating.deaths === topDeaths }">
+                  {{ userRating.deaths }}
+                </span>
               </td>
               <td class="px-6 py-4 bg-gray-50 dark:bg-gray-800">
-                {{ userRating.deaths ? (userRating.kills / userRating.deaths).toFixed(2) : "n/a" }}
+                <span :class="{ 'font-bold': userRating.deaths && (userRating.kills / userRating.deaths) === topKD || (!userRating.deaths && userRating.kills > 0 && topKD === Infinity) }">
+                  {{ userRating.deaths ? (userRating.kills / userRating.deaths).toFixed(2) : "n/a" }}
+                </span>
               </td>
               <td class="px-6 py-4">
-                {{ userRating.foodEaten }}
+                <span :class="{ 'font-bold': userRating.foodEaten === topFoodEaten }">
+                  {{ userRating.foodEaten }}
+                </span>
               </td>
               <td class="px-6 py-4 bg-gray-50 dark:bg-gray-800">
                 {{ userRating.maxEndgameSize.toFixed(2) }}
