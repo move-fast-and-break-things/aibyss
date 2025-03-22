@@ -3,6 +3,8 @@ import { z } from "zod";
 import * as botCodeStore from "~/other/botCodeStore";
 import { HTTP_STATUS_CODES } from "~/other/httpStatusCodes";
 import { SUBMIT_COOLDOWN_MS } from "~/other/submitApiRatelimitConstants";
+import { promises as fs } from "fs";
+import { join } from "path";
 
 const submitBotCodeSchema = z.object({
   code: z.string(),
@@ -28,11 +30,14 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  botCodeStore.submitBotCode({
-    username: event.context.user.username,
-    userId: event.context.user.id,
-    code: result.data.code,
-  });
+  const userId = event.context.user.id;
+  const botCodesDir = join(process.cwd(), 'botCodes');
+  await fs.mkdir(botCodesDir, { recursive: true });
+  const timestamp = Date.now();
+  const versionFilename = join(botCodesDir, `${userId}-${timestamp}.js`);
+  const latestFilename = join(botCodesDir, `${userId}-latest.js`);
+  await fs.writeFile(versionFilename, result.data.code, "utf8");
+  await fs.writeFile(latestFilename, result.data.code, "utf8");
 
   RATELIMITER.set(event.context.user.id, true);
 
