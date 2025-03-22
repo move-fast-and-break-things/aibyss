@@ -9,6 +9,10 @@ const minZoom = 1;
 const maxZoom = 3;
 const isFollowing = ref<boolean>(false);
 const zoomInToPlayerOrResetZoomFn = ref<(() => void) | null>(null);
+const useCircles = ref<boolean>(false);
+function toggleUseCircles() {
+  useCircles.value = !useCircles.value;
+}
 
 const { data: gameState, refresh } = await useFetch("/api/state");
 const intervalRef = ref<number | null>(null);
@@ -415,6 +419,12 @@ watch(gameState, async (newState, prevState) => {
           @click="toggleFollowMeMode"
         >
           {{ isFollowing ? "stop following my bot" : "follow my bot" }}
+        </ButtonLink>
+        <ButtonLink
+          v-if="user?.body"
+          @click="toggleUseCircles"
+        >
+          {{ useCircles ? "Switch to Sprites" : "Switch to Circles" }}
         </ButtonLink>
       </div>
       <canvas ref="canvas" />
