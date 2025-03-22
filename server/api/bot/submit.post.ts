@@ -1,6 +1,7 @@
 import { LRUCache } from "lru-cache";
 import { z } from "zod";
 import * as botCodeStore from "~/other/botCodeStore";
+import prisma from "~/other/db";
 import { HTTP_STATUS_CODES } from "~/other/httpStatusCodes";
 import { SUBMIT_COOLDOWN_MS } from "~/other/submitApiRatelimitConstants";
 
@@ -32,6 +33,12 @@ export default defineEventHandler(async (event) => {
     username: event.context.user.username,
     userId: event.context.user.id,
     code: result.data.code,
+  });
+
+  // Update the user's code submission count
+  await prisma.user.update({
+    where: { id: event.context.user.id },
+    data: { code_submissions: { increment: 1 } },
   });
 
   RATELIMITER.set(event.context.user.id, true);

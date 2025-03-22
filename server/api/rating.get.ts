@@ -9,6 +9,7 @@ type UserStats = {
   foodEaten: number;
   maxEndgameSize: number;
   avgEndgameSize: number;
+  codeSubmissions: number;
 };
 
 export type UserRating = UserStats & {
@@ -45,7 +46,13 @@ export default defineEventHandler(async () => {
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
   // don't join users to not slow down the games query with another join
-  const users = await prisma.user.findMany();
+  const users = await prisma.user.findMany({
+    select: {
+      id: true,
+      username: true,
+      code_submissions: true,
+    },
+  });
   const games = await prisma.game.findMany({
     where: { start_time: { gte: oneWeekAgo } },
     include: { game_stats: true },
@@ -148,6 +155,11 @@ export default defineEventHandler(async () => {
       targetLength: expectedDynamicStatCount,
     });
 
+    const user = users.find(u => u.id === rawUserStat.userId);
+    if (!user) {
+      throw new Error(`User with id ${rawUserStat.userId} not found`);
+    }
+
     return {
       ...rawUserStat.stats7days,
       userId: rawUserStat.userId,
@@ -161,6 +173,7 @@ export default defineEventHandler(async () => {
       score24hours: computeScore(rawUserStat.stats24hours),
       score1hour: computeScore(rawUserStat.stats1hour),
       scoreDynamic1hour,
+      codeSubmissions: user.code_submissions,
     };
   }).sort((a, b) => b.score7days - a.score7days);
 
