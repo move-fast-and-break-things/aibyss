@@ -14,6 +14,10 @@ useSeoMeta({
   twitterCard: "summary_large_image",
 });
 
+const openApiReference = () => {
+  window.location.href = '/api-reference';
+};
+
 const aboutModalOpen = ref(false);
 const onCloseAboutModal = () => {
   aboutModalOpen.value = false;
@@ -64,7 +68,11 @@ const onCloseAboutModal = () => {
         rating
       </AnchorLink>
       <span>•</span>
-      <ButtonLink @click="aboutModalOpen = true">
+      <ButtonLink type="button" @click.prevent="openApiReference">
+        API reference
+      </ButtonLink>
+      <span>•</span>
+      <ButtonLink type="button" @click="aboutModalOpen = true">
         ?
       </ButtonLink>
     </div>
