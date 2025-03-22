@@ -101,53 +101,82 @@ function setUsernamePosition({
 
 async function drawBot({ bot, graphics, botDirection }: DrawBotArgs) {
   if (graphics.children.length > 0) {
-    const sprite = graphics.children.find(child => child instanceof Sprite);
-    const username = graphics.children.find(child => child instanceof Text);
-    if (!sprite || !username) {
-      throw new Error("unexpected: sprite or text not found when redrawing the bot");
+    if (useCircles.value) {
+      const circle = graphics.children.find(child => child instanceof Graphics && !(child instanceof Sprite));
+      const username = graphics.children.find(child => child instanceof Text);
+      if (!circle || !username) {
+        throw new Error("unexpected: circle or text not found when redrawing the bot");
+      }
+      circle.clear();
+      circle.beginFill(bot.color);
+      circle.drawCircle(bot.x, bot.y, bot.radius);
+      circle.endFill();
+      setUsernamePosition({ username, bot });
+      return;
+    } else {
+      const sprite = graphics.children.find(child => child instanceof Sprite);
+      const username = graphics.children.find(child => child instanceof Text);
+      if (!sprite || !username) {
+        throw new Error("unexpected: sprite or text not found when redrawing the bot");
+      }
+      setSpritePositionAndSize({ sprite, bot, botDirection });
+      setUsernamePosition({ username, bot });
+      return;
     }
-    setSpritePositionAndSize({ sprite, bot, botDirection });
+  }
+
+  if (useCircles.value) {
+    const circle = new Graphics();
+    circle.beginFill(bot.color);
+    circle.drawCircle(bot.x, bot.y, bot.radius);
+    circle.endFill();
+    graphics.addChild(circle);
+
+    const fillGradient = new FillGradient(0, 0, 1, 1);
+    fillGradient.addColorStop(0, bot.color);
+    fillGradient.addColorStop(1, bot.color);
+
+    const username = new Text({
+      anchor: { x: 0.5, y: 0.5 },
+      text: bot.username,
+      style: {
+        fontFamily: "Retropix",
+        fontSize: 14,
+        fontWeight: "100",
+        fill: fillGradient,
+      },
+    });
     setUsernamePosition({ username, bot });
-    return;
+    graphics.addChild(username);
+  } else {
+    const usernameHash = bot.username.charCodeAt(0) + (bot.username.charCodeAt(1) || 0) + (bot.username.charCodeAt(2) || 0);
+    const numOfSprite = usernameHash % (fishTexturesRef.value.length);
+    const fishTexture = fishTexturesRef.value[numOfSprite];
+    if (!fishTexture) {
+      throw new Error("Fish sprite is not loaded");
+    }
+    const sprite = new Sprite(fishTexture);
+    sprite.anchor.set(0.5);
+    setSpritePositionAndSize({ sprite, bot, botDirection });
+    graphics.addChild(sprite);
+
+    const fillGradient = new FillGradient(0, 0, 1, 1);
+    fillGradient.addColorStop(0, bot.color);
+    fillGradient.addColorStop(1, bot.color);
+
+    const username = new Text({
+      anchor: { x: 0.5, y: 0.5 },
+      text: bot.username,
+      style: {
+        fontFamily: "Retropix",
+        fontSize: 14,
+        fontWeight: "100",
+        fill: fillGradient,
+      },
+    });
+    setUsernamePosition({ username, bot });
+    graphics.addChild(username);
   }
-
-  // draw bot
-  const usernameHash = bot.username.charCodeAt(0) + (bot.username.charCodeAt(1) || 0) + (bot.username.charCodeAt(2) || 0);
-  const numOfSprite = usernameHash % (fishTexturesRef.value.length);
-  const fishTexture = fishTexturesRef.value[numOfSprite];
-  if (!fishTexture) {
-    throw new Error("Fish sprite is not loaded");
-  }
-  const sprite = new Sprite(fishTexture);
-  sprite.anchor.set(0.5);
-  setSpritePositionAndSize({ sprite, bot, botDirection });
-  graphics.addChild(sprite);
-
-  // draw username
-
-  // we have to use FillGradient because
-  // using color as a fill doesn't work with pixi.js, vue.js, and Text
-  // https://github.com/pixijs/pixijs/discussions/10444
-  const fillGradient = new FillGradient(0, 0, 1, 1);
-  fillGradient.addColorStop(0, bot.color);
-  fillGradient.addColorStop(1, bot.color);
-
-  const username = new Text({
-    anchor: {
-      x: 0.5,
-      y: 0.5,
-    },
-    text: bot.username,
-    style: {
-      fontFamily: "Retropix",
-      fontSize: 14,
-      fontWeight: "100",
-      fill: fillGradient,
-    },
-  });
-  setUsernamePosition({ username, bot });
-
-  graphics.addChild(username);
 }
 
 function destroyGraphics(graphics: Graphics) {
