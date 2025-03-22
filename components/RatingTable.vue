@@ -136,16 +136,16 @@ const isModalOpen = ref(false);
               <td class="px-6 py-4">
                 {{ userRating.gamesPlayed }}
               </td>
-              <td class="px-6 py-4 bg-gray-50 dark:bg-gray-800">
+              <td :class="[ 'px-6 py-4', 'bg-gray-50 dark:bg-gray-800', index === 0 ? 'font-bold' : '' ]">
                 {{ userRating.kills }}
               </td>
-              <td class="px-6 py-4">
+              <td :class="[ 'px-6 py-4', index === 0 ? 'font-bold' : '' ]">
                 {{ userRating.deaths }}
               </td>
-              <td class="px-6 py-4 bg-gray-50 dark:bg-gray-800">
+              <td :class="[ 'px-6 py-4', 'bg-gray-50 dark:bg-gray-800', index === 0 ? 'font-bold' : '' ]">
                 {{ userRating.deaths ? (userRating.kills / userRating.deaths).toFixed(2) : "n/a" }}
               </td>
-              <td class="px-6 py-4">
+              <td :class="[ 'px-6 py-4', index === 0 ? 'font-bold' : '' ]">
                 {{ userRating.foodEaten }}
               </td>
               <td class="px-6 py-4 bg-gray-50 dark:bg-gray-800">
