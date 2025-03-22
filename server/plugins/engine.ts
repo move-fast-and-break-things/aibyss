@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { gameStepCodeRunTimeMs, botCodeRunTimeMs, gameStepTimeMs, gameStepMoveBotTimeMs, gameStepCollisionCheckTimeMs, gameStepFoodSpawnTimeMs } from "../other/engineMetrics";
+export const botErrors: Record<string, string> = {};
 import prepareBotCode from "~/other/prepareBotCode";
 import * as botCodeStore from "~/other/botCodeStore";
 import World, { type WorldState } from "~/other/world";
@@ -60,9 +61,12 @@ async function runBots({ bots, world, prevBotState, botApi }: RunBotArgs) {
     const botCodeRuntimeStartTs = Date.now();
     try {
       const result = await codeRunner.runCode(preparedCode);
+      // Clear any previous error when the bot runs successfully
+      delete botErrors[bot.id];
       return JSON.parse(result);
     } catch (err) {
-      // TODO(yurij): notify user that their bot crashed
+      // Store the error with the bot ID
+      botErrors[bot.id] = err instanceof Error ? err.stack || err.message : String(err);
       console.error(err);
       return [];
     } finally {
@@ -153,6 +157,9 @@ function endGame(reason: string) {
   const endTime = new Date();
   const worldState = WORLD_REF.world.getState();
   const worldStats = WORLD_REF.world.getStats();
+  
+  // Clear all bot errors when game restarts
+  Object.keys(botErrors).forEach(key => delete botErrors[key]);
   recordGameEnd({
     startTime: worldStats.startTime,
     endTime: endTime,
