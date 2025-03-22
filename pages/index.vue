@@ -14,7 +14,7 @@
       />
       <div
         ref="resizeGameElement"
-        class="flex min-w-[300px] w-1/2 overflow-auto"
+        class="flex min-w-[300px] flex-grow overflow-auto"
       >
         <GameScreen />
       </div>
@@ -58,9 +58,8 @@ export default defineComponent({
       if (isResizing.value) {
         const dx = e.clientX - initialX.value;
         const newWidthEditor = initialWidthEditor.value + dx;
-        const newWidthGame = initialWidthGame.value - dx;
+        // Only set the editor width - the game screen will take the remaining space
         resizeEditorElement.value.style.width = `${newWidthEditor}px`;
-        resizeGameElement.value.style.width = `${newWidthGame}px`;
       }
     };
 

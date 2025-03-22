@@ -188,6 +188,7 @@ watch(gameState, async (newState, prevState) => {
       antialias: true,
       resolution: 4,
       autoDensity: true,
+      resizeTo: gameScreen.value || undefined,
     });
 
     // Follow player bot
@@ -406,8 +407,7 @@ watch(gameState, async (newState, prevState) => {
   >
     <div
       ref="gameScreen"
-      class="flex flex-col shadow ml-2"
-      :style="{ maxWidth: gameState?.width + 'px' }"
+      class="flex flex-col shadow ml-2 w-full h-full"
     >
       <div class="flex flex-row justify-end mb-2 mt-1 mx-4 gap-6">
         <ButtonLink
@@ -417,7 +417,7 @@ watch(gameState, async (newState, prevState) => {
           {{ isFollowing ? "stop following my bot" : "follow my bot" }}
         </ButtonLink>
       </div>
-      <canvas ref="canvas" />
+      <canvas ref="canvas" class="w-full h-full object-contain" />
     </div>
   </div>
 </template>
