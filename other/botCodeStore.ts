@@ -1,5 +1,6 @@
 import EventEmitter from "node:events";
 import fs from "node:fs";
+import { db } from "./db";
 
 const BOT_CODE_DIR = process.env.BOT_CODE_DIR || "./bot-code";
 
@@ -44,12 +45,19 @@ export function subscribeToBotsUpdate(onUpdate: (bots: BotCodes) => void): () =>
   return () => botEventEmitter.off("update", onUpdate);
 }
 
-function loadBots() {
+async function loadBots() {
   if (!fs.existsSync(BOT_CODE_DIR)) {
     return;
   }
 
   const files = fs.readdirSync(BOT_CODE_DIR);
+  
+  // Get all inactive users
+  const inactiveUsers = await db.user.findMany({
+    where: { inactive: true },
+    select: { id: true }
+  });
+  const inactiveUserIds = new Set(inactiveUsers.map(user => user.id));
 
   for (const file of files) {
     const code = fs.readFileSync(`${BOT_CODE_DIR}/${file}`, "utf8");
@@ -59,6 +67,12 @@ function loadBots() {
     if (!id || !code || !username || !userId) {
       throw new Error(`Invalid bot code file: ${file}`);
     }
+    
+    // Skip bots of inactive users
+    if (inactiveUserIds.has(+userId)) {
+      continue;
+    }
+    
     STORE[id] = { id, code, username, userId: +userId };
   }
 }
@@ -72,4 +86,9 @@ function saveBot({ id, code, username, userId }: BotCode) {
   fs.writeFileSync(botCodeFile, code);
 }
 
-loadBots();
+// Initialize the bot store
+(async () => {
+  await loadBots();
+})().catch(err => {
+  console.error("Failed to load bots:", err);
+});
