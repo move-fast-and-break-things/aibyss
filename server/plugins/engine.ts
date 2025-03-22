@@ -5,6 +5,7 @@ import * as botCodeStore from "~/other/botCodeStore";
 import World, { type WorldState } from "~/other/world";
 import { recordGameEnd, type GameStat } from "~/other/recordGamedb";
 import { CodeRunner } from "~/other/CodeRunner";
+import { db } from "~/other/db";
 
 const MAX_ROUND_TIME_MS = 15 * 1000 * 60;
 const GAME_STEP_INTERVAL_MS = 250;
@@ -120,9 +121,18 @@ async function startEngine({ botApi }: StartEngineArgs) {
   while (true) {
     const startTs = Date.now();
 
+    // Filter inactive bots
+    const activeBots = {};
+    for (const [botId, bot] of Object.entries(bots)) {
+      const user = await db.user.findUnique({ where: { id: bot.userId }});
+      if (user && !user.inactive) {
+         activeBots[botId] = bot;
+      }
+    }
+
     const newPrevWorldState = WORLD_REF.world.getState();
     try {
-      await runBots({ bots, world: WORLD_REF.world, prevBotState: prevWorldState.bots, botApi });
+      await runBots({ bots: activeBots, world: WORLD_REF.world, prevBotState: prevWorldState.bots, botApi });
     } catch (err) {
       console.error("run bots crashed", err);
     }
