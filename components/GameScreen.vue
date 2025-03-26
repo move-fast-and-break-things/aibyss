@@ -401,13 +401,17 @@ watch(gameState, async (newState, prevState) => {
 
 <template>
   <div
-    class="h-full w-full"
+    class="h-full w-full flex-grow overflow-hidden"
     data-testid="game-screen"
   >
     <div
       ref="gameScreen"
-      class="flex flex-col shadow ml-2"
-      :style="{ maxWidth: gameState?.width + 'px' }"
+      class="flex flex-col shadow ml-2 h-full"
+      :style="{ 
+        maxWidth: gameState?.width + 'px',
+        width: '100%',
+        height: '100%'
+      }"
     >
       <div class="flex flex-row justify-end mb-2 mt-1 mx-4 gap-6">
         <ButtonLink
@@ -417,7 +421,7 @@ watch(gameState, async (newState, prevState) => {
           {{ isFollowing ? "stop following my bot" : "follow my bot" }}
         </ButtonLink>
       </div>
-      <canvas ref="canvas" />
+      <canvas ref="canvas" class="flex-grow" />
     </div>
   </div>
 </template>

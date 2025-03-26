@@ -61,7 +61,7 @@ function onCloseAPIReferenceModal() {
 
 <template>
   <div
-    class="w-full h-full font-sans flex flex-col"
+    class="w-full h-full font-sans flex flex-col min-w-[600px]"
     data-testid="code-editor"
   >
     <form
