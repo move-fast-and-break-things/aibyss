@@ -29,6 +29,19 @@ onMounted(async () => {
     Assets.load("/sprites/FishVer8Short.png"),
     Assets.load("/sprites/FishVer9Short.png"),
   ]);
+  
+  // Add resize observer to handle parent container size changes
+  if (gameScreen.value) {
+    const resizeObserver = new ResizeObserver(() => {
+      if (appRef.value && canvas.value) {
+        appRef.value.renderer.resize(
+          canvas.value.clientWidth,
+          canvas.value.clientHeight
+        );
+      }
+    });
+    resizeObserver.observe(gameScreen.value);
+  }
 });
 
 onBeforeUnmount(() => {
@@ -174,20 +187,21 @@ watch(gameState, async (newState, prevState) => {
     appRef.value?.ticker.remove(tickFnRef.value);
   }
 
-  if (!appRef.value || appRef.value.renderer.width !== prevState.width || appRef.value.renderer.height !== prevState.height) {
+  if (!appRef.value) {
     appRef.value?.destroy();
 
     const app = new Application();
     appRef.value = app;
 
     await app.init({
-      width: prevState.width,
+      width: canvas.value.clientWidth || prevState.width,
       height: prevState.height,
       canvas: canvas.value,
       backgroundColor: "#FFFFFF",
       antialias: true,
       resolution: 4,
       autoDensity: true,
+      resizeTo: gameScreen.value || window,
     });
 
     // Follow player bot
@@ -406,8 +420,7 @@ watch(gameState, async (newState, prevState) => {
   >
     <div
       ref="gameScreen"
-      class="flex flex-col shadow ml-2"
-      :style="{ maxWidth: gameState?.width + 'px' }"
+      class="flex flex-col shadow ml-2 w-full"
     >
       <div class="flex flex-row justify-end mb-2 mt-1 mx-4 gap-6">
         <ButtonLink
