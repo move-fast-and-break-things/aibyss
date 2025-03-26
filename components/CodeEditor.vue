@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { defaultCode, jsdoc } from "~/other/defaultCode.js";
+import { CodeVersion } from "~/other/botCodeStore";
 
 if (import.meta.client) {
   // configure monaco editor on client side
@@ -33,7 +34,20 @@ const state = reactive({
   code: user.value?.body.code || defaultCode,
   codeHasErrors: false,
   showAPIReference: false,
+  showVersionHistory: false,
+  codeVersions: [] as CodeVersion[],
 });
+
+// Fetch code versions when needed
+async function fetchCodeVersions() {
+  if (user.value?.body.id) {
+    const response = await fetch(`/api/bot/versions?userId=${user.value.body.id}`);
+    if (response.ok) {
+      const data = await response.json();
+      state.codeVersions = data.versions;
+    }
+  }
+}
 
 function onSubmit(event: Event) {
   event.preventDefault();
@@ -57,6 +71,20 @@ function onShowAPIReferenceClick() {
 function onCloseAPIReferenceModal() {
   state.showAPIReference = false;
 }
+
+function onShowVersionHistoryClick() {
+  fetchCodeVersions().then(() => {
+    state.showVersionHistory = true;
+  });
+}
+
+function onCloseVersionHistoryModal() {
+  state.showVersionHistory = false;
+}
+
+function onRestoreVersion(code: string) {
+  state.code = code;
+}
 </script>
 
 <template>
@@ -72,6 +100,9 @@ function onCloseAPIReferenceModal() {
         <div class="flex flex-row justify-end mb-2 mt-1 mx-2 gap-6">
           <ButtonLink @click="onRestoreDefaultCodeClick">
             restore example code
+          </ButtonLink>
+          <ButtonLink @click="onShowVersionHistoryClick">
+            version history
           </ButtonLink>
           <ButtonLink @click="onShowAPIReferenceClick">
             API reference
@@ -115,6 +146,17 @@ function onCloseAPIReferenceModal() {
         minimap: { enabled: false },
       }"
       class="flex-grow"
+    />
+  </ModalDialog>
+  <ModalDialog
+    :open="state.showVersionHistory"
+    :on-close="onCloseVersionHistoryModal"
+    extra-modal-class="w-[800px]"
+  >
+    <CodeVersionHistory
+      :versions="state.codeVersions"
+      :on-close="onCloseVersionHistoryModal"
+      :on-restore="onRestoreVersion"
     />
   </ModalDialog>
 </template>
