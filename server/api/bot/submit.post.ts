@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
   if (!result.success) {
     throw createError({
       statusCode: HTTP_STATUS_CODES.UNPROCESSABLE_ENTITY,
-      statusMessage: "Username and password field is required",
+      statusMessage: "Code field is required",
     });
   }
 

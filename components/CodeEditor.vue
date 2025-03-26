@@ -33,6 +33,7 @@ const state = reactive({
   code: user.value?.body.code || defaultCode,
   codeHasErrors: false,
   showAPIReference: false,
+  showVersionHistory: false,
 });
 
 function onSubmit(event: Event) {
@@ -57,6 +58,24 @@ function onShowAPIReferenceClick() {
 function onCloseAPIReferenceModal() {
   state.showAPIReference = false;
 }
+
+function onShowVersionHistoryClick() {
+  state.showVersionHistory = true;
+}
+
+function onCloseVersionHistoryModal() {
+  state.showVersionHistory = false;
+}
+
+function onRevertToVersion() {
+  // Refresh the user code after reversion
+  fetch("/api/auth/user").then(async (response) => {
+    if (response.ok) {
+      const data = await response.json();
+      state.code = data.body.code;
+    }
+  });
+}
 </script>
 
 <template>
@@ -70,6 +89,9 @@ function onCloseAPIReferenceModal() {
     >
       <div class="flex flex-grow flex-col shadow mb-4">
         <div class="flex flex-row justify-end mb-2 mt-1 mx-2 gap-6">
+          <ButtonLink @click="onShowVersionHistoryClick">
+            code history
+          </ButtonLink>
           <ButtonLink @click="onRestoreDefaultCodeClick">
             restore example code
           </ButtonLink>
@@ -98,6 +120,8 @@ function onCloseAPIReferenceModal() {
       </div>
     </form>
   </div>
+
+  <!-- API Reference Modal -->
   <ModalDialog
     :open="state.showAPIReference"
     :on-close="onCloseAPIReferenceModal"
@@ -117,4 +141,11 @@ function onCloseAPIReferenceModal() {
       class="flex-grow"
     />
   </ModalDialog>
+
+  <!-- Version History Modal -->
+  <CodeVersionHistoryModal
+    :open="state.showVersionHistory"
+    :on-close="onCloseVersionHistoryModal"
+    @revert="onRevertToVersion"
+  />
 </template>
