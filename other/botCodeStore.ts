@@ -44,7 +44,7 @@ export function subscribeToBotsUpdate(onUpdate: (bots: BotCodes) => void): () =>
   return () => botEventEmitter.off("update", onUpdate);
 }
 
-function loadBots() {
+async function loadBots() {
   if (!fs.existsSync(BOT_CODE_DIR)) {
     return;
   }
@@ -59,7 +59,15 @@ function loadBots() {
     if (!id || !code || !username || !userId) {
       throw new Error(`Invalid bot code file: ${file}`);
     }
-    STORE[id] = { id, code, username, userId: +userId };
+    // Check if user is active
+    const user = await db.user.findUnique({
+      where: { id: +userId },
+      select: { inactive: true }
+    });
+    
+    if (!user?.inactive) {
+      STORE[id] = { id, code, username, userId: +userId };
+    }
   }
 }
 
@@ -72,4 +80,7 @@ function saveBot({ id, code, username, userId }: BotCode) {
   fs.writeFileSync(botCodeFile, code);
 }
 
-loadBots();
+// Load bots on startup with async IIFE
+(async () => {
+  await loadBots();
+})();
