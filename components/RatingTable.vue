@@ -101,6 +101,12 @@ const isModalOpen = ref(false);
               >
                 avg endgame size
               </th>
+              <th
+                scope="col"
+                class="px-6 py-3 bg-gray-50 dark:bg-gray-800"
+              >
+                code submissions
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -153,6 +159,9 @@ const isModalOpen = ref(false);
               </td>
               <td class="px-6 py-4">
                 {{ userRating.avgEndgameSize.toFixed(2) }}
+              </td>
+              <td class="px-6 py-4 bg-gray-50 dark:bg-gray-800">
+                {{ userRating.codeSubmissions }}
               </td>
             </tr>
           </tbody>
