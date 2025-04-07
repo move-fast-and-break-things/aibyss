@@ -139,58 +139,68 @@ it("doesn't allow the bot to go outside the world with negative x and y", () => 
 
 describe(".serializePosition", () => {
   it("returns the same value for the same position", () => {
+    const world = new World({ width: 600, height: 600 });
+
     // @ts-expect-error - world.serializePosition is private
-    expect(World.serializePosition({ x: 1, y: 1 })).toBe(World.serializePosition({ x: 1, y: 1 }));
+    expect(world.serializePosition({ x: 1, y: 1 })).toBe(world.serializePosition({ x: 1, y: 1 }));
     // @ts-expect-error - world.serializePosition is private
-    expect(World.serializePosition({ x: 15212, y: 102 })).toBe(World.serializePosition({ x: 15212, y: 102 }));
+    expect(world.serializePosition({ x: 599, y: 301 })).toBe(world.serializePosition({ x: 599, y: 301 }));
   });
 
   it("returns a unique value for each position on a 1000x1000 grid", () => {
+    const world = new World({ width: 1000, height: 1000 });
+
     const positions = new Set<number>();
     for (let x = 0; x < 1000; ++x) {
       for (let y = 0; y < 1000; ++y) {
         // @ts-expect-error - world.serializePosition is private
-        positions.add(World.serializePosition({ x, y }));
+        positions.add(world.serializePosition({ x, y }));
       }
     }
     expect(positions.size).toBe(1000 * 1000);
   });
 
-  it("returns unique values for large coordinates, just below 65535", () => {
+  it("returns unique values for large coordinates, just below 10000", () => {
+    const world = new World({ width: 10000, height: 10000 });
+
     // @ts-expect-error - world.serializePosition is private
-    expect(World.serializePosition({ x: 65534, y: 65534 })).toBe(-65538);
+    expect(world.serializePosition({ x: 9999, y: 9999 })).toBe(99999999);
     // @ts-expect-error - world.serializePosition is private
-    expect(World.serializePosition({ x: 65534, y: 65535 })).toBe(-2);
+    expect(world.serializePosition({ x: 9998, y: 9999 })).toBe(99989999);
     // @ts-expect-error - world.serializePosition is private
-    expect(World.serializePosition({ x: 65535, y: 65534 })).toBe(-65537);
+    expect(world.serializePosition({ x: 9999, y: 9998 })).toBe(99999998);
     // @ts-expect-error - world.serializePosition is private
-    expect(World.serializePosition({ x: 65535, y: 65535 })).toBe(-1);
+    expect(world.serializePosition({ x: 9998, y: 9998 })).toBe(99989998);
   });
 });
 
 describe(".deserializePosition", () => {
   it("can deserialize every serialized position on a 1000x1000 grid", () => {
+    const world = new World({ width: 1000, height: 1000 });
+
     const position = { x: 0, y: 0 };
     for (; position.x < 1000; ++position.x) {
       for (; position.y < 1000; ++position.y) {
         // @ts-expect-error - world.deserializePosition is private
-        const serializedPosition = World.serializePosition(position);
+        const serializedPosition = world.serializePosition(position);
         // @ts-expect-error - world.deserializePosition is private
-        const deserializedPosition = World.deserializePosition(serializedPosition);
+        const deserializedPosition = world.deserializePosition(serializedPosition);
         expect(deserializedPosition).toStrictEqual(position);
       }
     }
   });
 
-  it("can deserialize large coordinates, just below 65535", () => {
+  it("can deserialize large coordinates, just below 10000", () => {
+    const world = new World({ width: 10000, height: 10000 });
+
     // @ts-expect-error - world.deserializePosition is private
-    expect(World.deserializePosition(World.serializePosition({ x: 65534, y: 65534 }))).toEqual({ x: 65534, y: 65534 });
+    expect(world.deserializePosition(world.serializePosition({ x: 9999, y: 9999 }))).toEqual({ x: 9999, y: 9999 });
     // @ts-expect-error - world.deserializePosition is private
-    expect(World.deserializePosition(World.serializePosition({ x: 65534, y: 65535 }))).toEqual({ x: 65534, y: 65535 });
+    expect(world.deserializePosition(world.serializePosition({ x: 9999, y: 9998 }))).toEqual({ x: 9999, y: 9998 });
     // @ts-expect-error - world.deserializePosition is private
-    expect(World.deserializePosition(World.serializePosition({ x: 65535, y: 65534 }))).toEqual({ x: 65535, y: 65534 });
+    expect(world.deserializePosition(world.serializePosition({ x: 9998, y: 9999 }))).toEqual({ x: 9998, y: 9999 });
     // @ts-expect-error - world.deserializePosition is private
-    expect(World.deserializePosition(World.serializePosition({ x: 65535, y: 65535 }))).toEqual({ x: 65535, y: 65535 });
+    expect(world.deserializePosition(world.serializePosition({ x: 9998, y: 9998 }))).toEqual({ x: 9998, y: 9998 });
   });
 });
 

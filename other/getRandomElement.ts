@@ -1,4 +1,4 @@
-export default function getRandomElement<T>(array: T[]): { element: T; idx: number } {
+export default function getRandomElement<T>(array: ArrayLike<T>): { element: T; idx: number } {
   if (!array.length) {
     throw new Error("Array is empty");
   }

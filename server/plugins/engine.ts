@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { gameStepCodeRunTimeMs, botCodeRunTimeMs, gameStepTimeMs, gameStepMoveBotTimeMs, gameStepCollisionCheckTimeMs, gameStepFoodSpawnTimeMs } from "../other/engineMetrics";
 import prepareBotCode from "~/other/prepareBotCode";
 import * as botCodeStore from "~/other/botCodeStore";
@@ -8,6 +9,13 @@ import { CodeRunner } from "~/other/CodeRunner";
 const MAX_ROUND_TIME_MS = 15 * 1000 * 60;
 const GAME_STEP_INTERVAL_MS = 250;
 const WORLD_SIZE = 600;
+
+// Define the schema for bot actions
+const MoveActionSchema = z.object({
+  type: z.literal("move"),
+  x: z.number(),
+  y: z.number(),
+});
 
 export const WORLD_REF = { world: new World ({ width: WORLD_SIZE, height: WORLD_SIZE }) };
 const codeRunners = new Array(10).fill(0).map(() => new CodeRunner());
@@ -66,8 +74,14 @@ async function runBots({ bots, world, prevBotState, botApi }: RunBotArgs) {
   const moveBotStartTs = Date.now();
   for (const [i, actions] of botActions.entries()) {
     const botId = botArray[i]?.id;
-    if (botId && actions?.[0]?.type === "move") {
-      world.moveBot(botId, actions[0].x, actions[0].y);
+    if (botId && actions?.[0]) {
+      try {
+        const action = MoveActionSchema.parse(actions[0]);
+        world.moveBot(botId, action.x, action.y);
+      } catch (err) {
+        // Invalid action format, skipping
+        console.error(`Invalid action format from bot ${botId}:`, err);
+      }
     }
   }
   gameStepMoveBotTimeMs.observe(Date.now() - moveBotStartTs);
