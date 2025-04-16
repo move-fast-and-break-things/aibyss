@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { Application, Graphics, Text, FillGradient, Assets, type Texture, Sprite } from "pixi.js";
 import { getSmoothZoomScreen, followPlayerBot, getZoomScale } from "~/other/zoomUtils";
+import getRandomElement from "~/other/getRandomElement";
+
+type Food = { x: number; y: number; graphics: Graphics };
 
 const { data: user } = await useFetch("/api/auth/user");
 const refreshIntervalMs = 1000;
@@ -14,6 +17,7 @@ const { data: gameState, refresh } = await useFetch("/api/state");
 const intervalRef = ref<number | null>(null);
 
 const fishTexturesRef = ref<Texture[]>([]);
+const foodTexturesRef = ref<Texture[]>([]);
 
 onMounted(async () => {
   intervalRef.value = window.setInterval(refresh, refreshIntervalMs);
@@ -29,6 +33,11 @@ onMounted(async () => {
     Assets.load("/sprites/FishVer8Short.png"),
     Assets.load("/sprites/FishVer9Short.png"),
   ]);
+  foodTexturesRef.value = await Promise.all([
+    Assets.load("/sprites/FishFoodVer1.png"),
+    Assets.load("/sprites/FishFoodVer3.png"),
+    Assets.load("/sprites/FishFoodVer4.png"),
+  ]);
 });
 
 onBeforeUnmount(() => {
@@ -39,7 +48,7 @@ onBeforeUnmount(() => {
 
 const canvas = ref<HTMLCanvasElement | null>(null);
 const appRef: Ref<Application | null> = ref(null);
-const foodRef = ref<{ x: number; y: number; graphics: Graphics }[]>([]);
+const foodRef = ref<Food[]>([]);
 const botSpawnsRef = ref<Record<string, Graphics>>({});
 const gameScreen = ref<HTMLDivElement | null>(null);
 
@@ -160,6 +169,30 @@ function getDirection(
   return Math.atan2(positionB.y - positionA.y, positionB.x - positionA.x);
 }
 
+function addFoodGraphics(food: { x: number; y: number; radius: number }) {
+  if (!appRef.value) {
+    throw new Error("We didn't find appRef.value.");
+  }
+  const graphics = new Graphics();
+  const foodTexture = getRandomElement(foodTexturesRef.value).element;
+
+  if (!foodTexture) {
+    throw new Error("Fish sprite is not loaded");
+  }
+
+  const sprite = new Sprite(foodTexture);
+  sprite.anchor.set(0.5);
+  sprite.x = food.x;
+  sprite.y = food.y;
+  sprite.width = food.radius * 2;
+  sprite.height = food.radius * 2;
+
+  graphics.addChild(sprite);
+  appRef.value.stage.addChild(graphics);
+
+  foodRef.value.push({ x: food.x, y: food.y, graphics });
+}
+
 watch(gameState, async (newState, prevState) => {
   if (!canvas.value) {
     window.alert("Can't render the game. Please, refresh the page. If the problem persists, report the issue at https://github.com/move-fast-and-break-things/aibyss/issues. Include as many details as possible.");
@@ -273,14 +306,9 @@ watch(gameState, async (newState, prevState) => {
       gameScreen.value?.classList.remove("cursor-grabbing");
       isDragging = false;
     });
-
     // render food
     for (const food of prevState.food) {
-      const graphics = new Graphics();
-      graphics.circle(food.x, food.y, food.radius);
-      graphics.fill("#FF0000");
-      app.stage.addChild(graphics);
-      foodRef.value.push({ x: food.x, y: food.y, graphics });
+      addFoodGraphics(food);
     }
 
     // render bots
@@ -319,11 +347,7 @@ watch(gameState, async (newState, prevState) => {
     // add new food
     for (const food of prevState.food) {
       if (!foodRef.value.find(f => f.x === food.x && f.y === food.y)) {
-        const graphics = new Graphics();
-        graphics.circle(food.x, food.y, food.radius);
-        graphics.fill("#FF0000");
-        appRef.value.stage.addChild(graphics);
-        foodRef.value.push({ x: food.x, y: food.y, graphics });
+        addFoodGraphics(food);
       }
     }
 
