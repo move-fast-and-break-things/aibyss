@@ -24,6 +24,7 @@
 
 <script lang="ts">
 import { defineComponent, ref, onMounted, onUnmounted } from "vue";
+import { useSplitterPosition } from '~/composables/useSplitterPosition';
 
 export default defineComponent({
   setup() {
@@ -34,6 +35,7 @@ export default defineComponent({
     const resizeEditorElement = ref<HTMLDivElement | null>(null);
     const resizeGameElement = ref<HTMLDivElement | null>(null);
     const separator = ref<HTMLDivElement | null>(null);
+    const { position } = useSplitterPosition(50); // default to 50% split
 
     const startResize = (e: MouseEvent) => {
       if (!resizeEditorElement.value) {
@@ -66,9 +68,26 @@ export default defineComponent({
 
     const stopResize = () => {
       isResizing.value = false;
+      
+      // Save the current position as percentage when resizing stops
+      if (resizeEditorElement.value && resizeGameElement.value) {
+        const totalWidth = resizeEditorElement.value.offsetWidth + resizeGameElement.value.offsetWidth;
+        const editorPercentage = (resizeEditorElement.value.offsetWidth / totalWidth) * 100;
+        position.value = editorPercentage;
+      }
     };
 
     onMounted(() => {
+      // Apply the saved position on mount
+      if (resizeEditorElement.value && resizeGameElement.value) {
+        const totalWidth = resizeEditorElement.value.offsetWidth + resizeGameElement.value.offsetWidth;
+        const editorWidth = (position.value / 100) * totalWidth;
+        const gameWidth = totalWidth - editorWidth;
+        
+        resizeEditorElement.value.style.width = `${editorWidth}px`;
+        resizeGameElement.value.style.width = `${gameWidth}px`;
+      }
+      
       if (!separator.value) {
         throw new Error("unexpected: no separator");
       }
