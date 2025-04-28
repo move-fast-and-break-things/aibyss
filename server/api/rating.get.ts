@@ -9,6 +9,7 @@ type UserStats = {
   foodEaten: number;
   maxEndgameSize: number;
   avgEndgameSize: number;
+  submissionsCount: number;
 };
 
 export type UserRating = UserStats & {
@@ -21,6 +22,7 @@ export type UserRating = UserStats & {
    * Contains the last 7 days of `score1hour` values.
    */
   scoreDynamic1hour: number[];
+  submissionsCount: number;
 };
 
 type RawStats = Omit<UserStats, "avgEndgameSize" | "maxEndgameSize"> & {
@@ -148,6 +150,12 @@ export default defineEventHandler(async () => {
       targetLength: expectedDynamicStatCount,
     });
 
+    // Find the user to get the submissions count
+    const user = users.find(user => user.id === rawUserStat.userId);
+    if (!user) {
+      throw new Error(`User with id ${rawUserStat.userId} not found`);
+    }
+
     return {
       ...rawUserStat.stats7days,
       userId: rawUserStat.userId,
@@ -161,6 +169,7 @@ export default defineEventHandler(async () => {
       score24hours: computeScore(rawUserStat.stats24hours),
       score1hour: computeScore(rawUserStat.stats1hour),
       scoreDynamic1hour,
+      submissionsCount: user.submissions_count,
     };
   }).sort((a, b) => b.score7days - a.score7days);
 
