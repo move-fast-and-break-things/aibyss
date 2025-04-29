@@ -11,6 +11,7 @@ model User {
   id        Int         @id @default(autoincrement())
   password  String
   username  String      @unique
+  inactive  Boolean     @default(false)
   game_stats GameStats[]
 }
 
