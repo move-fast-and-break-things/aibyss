@@ -1,5 +1,6 @@
 import EventEmitter from "node:events";
 import fs from "node:fs";
+import { db } from "~/other/db";
 
 const BOT_CODE_DIR = process.env.BOT_CODE_DIR || "./bot-code";
 
@@ -44,7 +45,7 @@ export function subscribeToBotsUpdate(onUpdate: (bots: BotCodes) => void): () =>
   return () => botEventEmitter.off("update", onUpdate);
 }
 
-function loadBots() {
+async function loadBots() {
   if (!fs.existsSync(BOT_CODE_DIR)) {
     return;
   }
@@ -59,7 +60,16 @@ function loadBots() {
     if (!id || !code || !username || !userId) {
       throw new Error(`Invalid bot code file: ${file}`);
     }
-    STORE[id] = { id, code, username, userId: +userId };
+
+    // Check if user is active
+    const user = await db.user.findUnique({
+      where: { id: +userId },
+      select: { inactive: true }
+    });
+
+    if (!user?.inactive) {
+      STORE[id] = { id, code, username, userId: +userId };
+    }
   }
 }
 
