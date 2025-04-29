@@ -430,8 +430,7 @@ watch(gameState, async (newState, prevState) => {
   >
     <div
       ref="gameScreen"
-      class="flex flex-col shadow ml-2"
-      :style="{ maxWidth: gameState?.width + 'px' }"
+      class="flex flex-col shadow ml-2 w-full"
     >
       <div class="flex flex-row justify-end mb-2 mt-1 mx-4 gap-6">
         <ButtonLink
