@@ -33,6 +33,9 @@ const state = reactive({
   code: user.value?.body.code || defaultCode,
   codeHasErrors: false,
   showAPIReference: false,
+  showVersionHistory: false,
+  versions: [] as { code: string; timestamp: number }[],
+  selectedVersion: null as { code: string; timestamp: number } | null,
 });
 
 function onSubmit(event: Event) {
@@ -50,8 +53,29 @@ function onRestoreDefaultCodeClick() {
   state.code = defaultCode;
 }
 
+async function onShowVersionHistoryClick() {
+  if (!user.value?.body.id) return;
+  
+  // Fetch versions
+  const { data } = await useFetch(`/api/bot/versions`);
+  if (data.value) {
+    state.versions = data.value.versions;
+    state.showVersionHistory = true;
+  }
+}
+
 function onShowAPIReferenceClick() {
   state.showAPIReference = true;
+}
+
+function onRestoreVersion(version: { code: string; timestamp: number }) {
+  state.code = version.code;
+  state.showVersionHistory = false;
+}
+
+function onCloseVersionHistoryModal() {
+  state.showVersionHistory = false;
+  state.selectedVersion = null;
 }
 
 function onCloseAPIReferenceModal() {
@@ -72,6 +96,9 @@ function onCloseAPIReferenceModal() {
         <div class="flex flex-row justify-end mb-2 mt-1 mx-2 gap-6">
           <ButtonLink @click="onRestoreDefaultCodeClick">
             restore example code
+          </ButtonLink>
+          <ButtonLink @click="onShowVersionHistoryClick">
+            version history
           </ButtonLink>
           <ButtonLink @click="onShowAPIReferenceClick">
             API reference
@@ -98,6 +125,7 @@ function onCloseAPIReferenceModal() {
       </div>
     </form>
   </div>
+  
   <ModalDialog
     :open="state.showAPIReference"
     :on-close="onCloseAPIReferenceModal"
@@ -116,5 +144,44 @@ function onCloseAPIReferenceModal() {
       }"
       class="flex-grow"
     />
+  </ModalDialog>
+
+  <ModalDialog
+    :open="state.showVersionHistory"
+    :on-close="onCloseVersionHistoryModal"
+    extra-modal-class="w-[800px] version-history-modal"
+  >
+    <MonacoEditor
+      v-model="state.selectedVersion?.code || state.code"
+      lang="javascript"
+      :options="{
+        readOnly: true,
+        readOnlyMessage: { value: 'Select a version to preview' },
+        lineNumbers: 'on',
+        smoothScrolling: true,
+        scrollBeyondLastLine: false,
+        minimap: { enabled: false },
+      }"
+      class="flex-grow"
+    />
+    <div class="version-list">
+      <div
+        v-for="version in state.versions"
+        :key="version.timestamp"
+        class="version-item"
+        :class="{ selected: state.selectedVersion?.timestamp === version.timestamp }"
+        @click="state.selectedVersion = version"
+      >
+        <div class="text-sm">
+          {{ new Date(version.timestamp).toLocaleString() }}
+        </div>
+        <button
+          class="text-sm text-blue-500 hover:text-blue-700"
+          @click.stop="onRestoreVersion(version)"
+        >
+          Restore
+        </button>
+      </div>
+    </div>
   </ModalDialog>
 </template>
