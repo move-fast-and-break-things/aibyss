@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Application, Graphics, Text, FillGradient, Assets, type Texture, Sprite } from "pixi.js";
+import type { Texture } from "pixi.js";
+import { Application, Graphics, Text, FillGradient, Assets, Sprite } from "pixi.js";
 import { getSmoothZoomScreen, followPlayerBot, getZoomScale } from "~/other/zoomUtils";
 import getRandomElement from "~/other/getRandomElement";
 
@@ -18,6 +19,7 @@ const intervalRef = ref<number | null>(null);
 
 const fishTexturesRef = ref<Texture[]>([]);
 const foodTexturesRef = ref<Texture[]>([]);
+const seaTexturesRef = ref<Texture>();
 
 onMounted(async () => {
   intervalRef.value = window.setInterval(refresh, refreshIntervalMs);
@@ -38,6 +40,7 @@ onMounted(async () => {
     Assets.load("/sprites/FishFoodVer3.png"),
     Assets.load("/sprites/FishFoodVer4.png"),
   ]);
+  seaTexturesRef.value = await Assets.load("/sprites/SeaVer1.png");
 });
 
 onBeforeUnmount(() => {
@@ -306,6 +309,20 @@ watch(gameState, async (newState, prevState) => {
       gameScreen.value?.classList.remove("cursor-grabbing");
       isDragging = false;
     });
+    // render sea
+    const graphics = new Graphics();
+    const seaTexture = seaTexturesRef.value;
+    const seaSprite = new Sprite(seaTexture);
+    seaSprite.anchor.set(0.0001);
+    seaSprite.x = 0;
+    seaSprite.y = 0;
+    seaSprite.width = 600;
+    seaSprite.height = 600;
+
+    graphics.addChild(seaSprite);
+    appRef.value.stage.addChild(graphics);
+    // foodRef.value.push({ x: food.x, y: food.y, graphics });
+
     // render food
     for (const food of prevState.food) {
       addFoodGraphics(food);
