@@ -3,7 +3,7 @@ const { data: rating, status } = await useFetch("/api/rating");
 const isModalOpen = ref(false);
 
 const computeKd = (kills: number, deaths: number) => {
-  return deaths ? (kills / deaths) : 0;
+  return deaths ? (kills / deaths) : Infinity;
 };
 
 const maxValues = computed(() => {
@@ -167,7 +167,7 @@ const maxValues = computed(() => {
                 class="px-6 py-4 bg-gray-50 dark:bg-gray-800"
                 :class="{ 'font-bold': computeKd(userRating.kills, userRating.deaths) === maxValues.kd }"
               >
-                {{ userRating.deaths ? computeKd(userRating.kills, userRating.deaths).toFixed(2) : "n/a" }}
+                {{ userRating.deaths ? computeKd(userRating.kills, userRating.deaths).toFixed(2) : "∞" }}
               </td>
               <td
                 class="px-6 py-4"
