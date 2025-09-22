@@ -2,13 +2,19 @@
 const { data: rating, status } = await useFetch("/api/rating");
 const isModalOpen = ref(false);
 
+const computeKd = (kills: number, deaths: number) => {
+  return deaths ? (kills / deaths) : 0;
+};
+
 const maxValues = computed(() => {
-  if (!rating.value) return {};
+  if (!rating.value) {
+    return {};
+  }
   return {
     kills: Math.max(...rating.value.map(u => u.kills)),
     deaths: Math.max(...rating.value.map(u => u.deaths)),
     foodEaten: Math.max(...rating.value.map(u => u.foodEaten)),
-    kd: Math.max(...rating.value.map(u => u.deaths ? (u.kills / u.deaths) : 0))
+    kd: Math.max(...rating.value.map(u => computeKd(u.kills, u.deaths))),
   };
 });
 </script>
@@ -145,16 +151,28 @@ const maxValues = computed(() => {
               <td class="px-6 py-4">
                 {{ userRating.gamesPlayed }}
               </td>
-              <td class="px-6 py-4 bg-gray-50 dark:bg-gray-800" :class="{ 'font-bold': userRating.kills === maxValues.kills }">
+              <td
+                class="px-6 py-4 bg-gray-50 dark:bg-gray-800"
+                :class="{ 'font-bold': userRating.kills === maxValues.kills }"
+              >
                 {{ userRating.kills }}
               </td>
-              <td class="px-6 py-4" :class="{ 'font-bold': userRating.deaths === maxValues.deaths }">
+              <td
+                class="px-6 py-4"
+                :class="{ 'font-bold': userRating.deaths === maxValues.deaths }"
+              >
                 {{ userRating.deaths }}
               </td>
-              <td class="px-6 py-4 bg-gray-50 dark:bg-gray-800" :class="{ 'font-bold': (userRating.deaths ? (userRating.kills / userRating.deaths) : 0) === maxValues.kd }">
-                {{ userRating.deaths ? (userRating.kills / userRating.deaths).toFixed(2) : "n/a" }}
+              <td
+                class="px-6 py-4 bg-gray-50 dark:bg-gray-800"
+                :class="{ 'font-bold': computeKd(userRating.kills, userRating.deaths) === maxValues.kd }"
+              >
+                {{ userRating.deaths ? computeKd(userRating.kills, userRating.deaths).toFixed(2) : "n/a" }}
               </td>
-              <td class="px-6 py-4" :class="{ 'font-bold': userRating.foodEaten === maxValues.foodEaten }">
+              <td
+                class="px-6 py-4"
+                :class="{ 'font-bold': userRating.foodEaten === maxValues.foodEaten }"
+              >
                 {{ userRating.foodEaten }}
               </td>
               <td class="px-6 py-4 bg-gray-50 dark:bg-gray-800">
