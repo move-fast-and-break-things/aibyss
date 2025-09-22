@@ -26,6 +26,7 @@
 import { defineComponent, ref, onMounted, onUnmounted } from "vue";
 
 const STORAGE_KEY = "aibyss-splitter-position";
+const MIN_WIDTH_PX = 300; // Minimum width for each pane in pixels
 
 export default defineComponent({
   setup() {
@@ -67,17 +68,12 @@ export default defineComponent({
     };
 
     const stopResize = () => {
-      if (!isResizing.value || !resizeEditorElement.value) {
-        return;
-      }
       isResizing.value = false;
 
-      // Save the current position to localStorage
-      try {
-        localStorage.setItem(STORAGE_KEY, resizeEditorElement.value.offsetWidth.toString());
-      } catch (e) {
-        console.error("Failed to save splitter position to localStorage:", e);
+      if (!resizeEditorElement.value) {
+        return;
       }
+      localStorage.setItem(STORAGE_KEY, resizeEditorElement.value.offsetWidth.toString());
     };
 
     const loadSavedPosition = () => {
@@ -92,7 +88,7 @@ export default defineComponent({
           const gameWidth = containerWidth - editorWidth;
 
           // Ensure minimum widths
-          if (editorWidth >= 300 && gameWidth >= 300) {
+          if (editorWidth >= MIN_WIDTH_PX && gameWidth >= MIN_WIDTH_PX) {
             resizeEditorElement.value.style.width = `${editorWidth}px`;
             resizeGameElement.value.style.width = `${gameWidth}px`;
           }
@@ -110,7 +106,6 @@ export default defineComponent({
       document.addEventListener("mousemove", handleResize);
       document.addEventListener("mouseup", stopResize);
 
-      // Load saved position from localStorage
       loadSavedPosition();
     });
 
