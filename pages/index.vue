@@ -25,6 +25,9 @@
 <script lang="ts">
 import { defineComponent, ref, onMounted, onUnmounted } from "vue";
 
+const STORAGE_KEY = "aibyss-splitter-position";
+const MIN_WIDTH_PX = 300; // Minimum width for each pane in pixels
+
 export default defineComponent({
   setup() {
     const isResizing = ref(false);
@@ -66,6 +69,33 @@ export default defineComponent({
 
     const stopResize = () => {
       isResizing.value = false;
+
+      if (!resizeEditorElement.value) {
+        return;
+      }
+      localStorage.setItem(STORAGE_KEY, resizeEditorElement.value.offsetWidth.toString());
+    };
+
+    const loadSavedPosition = () => {
+      if (!resizeEditorElement.value || !resizeGameElement.value) {
+        return;
+      }
+      try {
+        const savedWidth = localStorage.getItem(STORAGE_KEY);
+        if (savedWidth) {
+          const containerWidth = resizeEditorElement.value.offsetWidth + resizeGameElement.value.offsetWidth;
+          const editorWidth = parseInt(savedWidth, 10);
+          const gameWidth = containerWidth - editorWidth;
+
+          // Ensure minimum widths
+          if (editorWidth >= MIN_WIDTH_PX && gameWidth >= MIN_WIDTH_PX) {
+            resizeEditorElement.value.style.width = `${editorWidth}px`;
+            resizeGameElement.value.style.width = `${gameWidth}px`;
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load splitter position from localStorage:", e);
+      }
     };
 
     onMounted(() => {
@@ -75,6 +105,8 @@ export default defineComponent({
       separator.value.addEventListener("mousedown", startResize);
       document.addEventListener("mousemove", handleResize);
       document.addEventListener("mouseup", stopResize);
+
+      loadSavedPosition();
     });
 
     onUnmounted(() => {
@@ -85,6 +117,7 @@ export default defineComponent({
       document.removeEventListener("mousemove", handleResize);
       document.removeEventListener("mouseup", stopResize);
     });
+
     return {
       resizeEditorElement,
       resizeGameElement,
