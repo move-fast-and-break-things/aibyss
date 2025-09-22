@@ -117,6 +117,7 @@ export default defineComponent({
       document.removeEventListener("mousemove", handleResize);
       document.removeEventListener("mouseup", stopResize);
     });
+
     return {
       resizeEditorElement,
       resizeGameElement,
