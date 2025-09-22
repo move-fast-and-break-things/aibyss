@@ -11,6 +11,7 @@ const zoomSpeed = 0.1;
 const minZoom = 1;
 const maxZoom = 3;
 const isFollowing = ref<boolean>(false);
+const isDebugMode = ref<boolean>(false);
 const zoomInToPlayerOrResetZoomFn = ref<(() => void) | null>(null);
 
 const { data: gameState, refresh } = await useFetch("/api/state");
@@ -76,6 +77,80 @@ function toggleFollowMeMode() {
   zoomInToPlayerOrResetZoomFn.value?.();
 }
 
+function toggleDebugMode() {
+  isDebugMode.value = !isDebugMode.value;
+  
+  // Redraw all bots with the new rendering mode
+  if (gameState.value && gameState.value.bots) {
+    for (const [spawnId, bot] of Object.entries(gameState.value.bots)) {
+      const graphics = botSpawnsRef.value[spawnId];
+      if (graphics) {
+        // Save the username text element
+        const usernameText = graphics.children.find(child => child instanceof Text);
+        
+        // Clear existing children
+        for (const child of graphics.children) {
+          if (!(child instanceof Text)) {
+            child.destroy();
+          }
+        }
+        
+        // Remove non-text children
+        graphics.removeChildren(0, graphics.children.length, false);
+        
+        // Add back the username text if it exists
+        if (usernameText) {
+          graphics.addChild(usernameText);
+        }
+        
+        // Draw the new visual representation
+        if (isDebugMode.value) {
+          // Draw a circle with direction indicator in debug mode
+          const circle = new Graphics();
+          
+          // Main circle
+          circle.beginFill(bot.color);
+          circle.drawCircle(0, 0, bot.radius);
+          circle.endFill();
+          
+          // Find the direction based on previous position if possible
+          const prevSpawnId = Object.keys(botSpawnsRef.value).find(id => id === spawnId);
+          const prevBotState = prevSpawnId ? gameState.value?.bots[prevSpawnId] : null;
+          let direction = 0;
+          
+          if (prevBotState) {
+            direction = getDirection(prevBotState, bot);
+          }
+          
+          // Direction indicator (a small line pointing in the direction of movement)
+          circle.lineStyle(2, 0xFFFFFF);
+          circle.moveTo(0, 0);
+          const indicatorLength = bot.radius * 1.2;
+          circle.lineTo(
+            Math.cos(direction) * indicatorLength,
+            Math.sin(direction) * indicatorLength
+          );
+          
+          circle.position.set(bot.x, bot.y);
+          graphics.addChildAt(circle, 0);
+        } else {
+          // Draw sprite in normal mode
+          const usernameHash = bot.username.charCodeAt(0) + (bot.username.charCodeAt(1) || 0) + (bot.username.charCodeAt(2) || 0);
+          const numOfSprite = usernameHash % (fishTexturesRef.value.length);
+          const fishTexture = fishTexturesRef.value[numOfSprite];
+          if (!fishTexture) {
+            throw new Error("Fish sprite is not loaded");
+          }
+          const sprite = new Sprite(fishTexture);
+          sprite.anchor.set(0.5);
+          setSpritePositionAndSize({ sprite, bot, botDirection: 0 });
+          graphics.addChildAt(sprite, 0);
+        }
+      }
+    }
+  }
+}
+
 function setSpritePositionAndSize({
   sprite,
   bot: { x, y, radius },
@@ -106,30 +181,79 @@ function setUsernamePosition({
 
 async function drawBot({ bot, graphics, botDirection }: DrawBotArgs) {
   if (graphics.children.length > 0) {
-    const sprite = graphics.children.find(child => child instanceof Sprite);
+    const botVisual = graphics.children.find(child => child instanceof Sprite || child instanceof Graphics);
     const username = graphics.children.find(child => child instanceof Text);
-    if (!sprite || !username) {
-      throw new Error("unexpected: sprite or text not found when redrawing the bot");
+    if (!botVisual || !username) {
+      throw new Error("unexpected: visual element or text not found when redrawing the bot");
     }
-    setSpritePositionAndSize({ sprite, bot, botDirection });
+    
+    if (botVisual instanceof Sprite) {
+      setSpritePositionAndSize({ sprite: botVisual, bot, botDirection });
+    } else if (botVisual instanceof Graphics) {
+      // Update circle position and direction indicator
+      botVisual.position.set(bot.x, bot.y);
+      
+      // Redraw the direction indicator
+      if (isDebugMode.value) {
+        // Clear previous graphics
+        botVisual.clear();
+        
+        // Redraw circle
+        botVisual.beginFill(bot.color);
+        botVisual.drawCircle(0, 0, bot.radius);
+        botVisual.endFill();
+        
+        // Redraw direction indicator
+        botVisual.lineStyle(2, 0xFFFFFF);
+        botVisual.moveTo(0, 0);
+        const indicatorLength = bot.radius * 1.2;
+        botVisual.lineTo(
+          Math.cos(botDirection) * indicatorLength,
+          Math.sin(botDirection) * indicatorLength
+        );
+      }
+    }
+    
     setUsernamePosition({ username, bot });
     return;
   }
 
   // draw bot
-  const usernameHash = bot.username.charCodeAt(0) + (bot.username.charCodeAt(1) || 0) + (bot.username.charCodeAt(2) || 0);
-  const numOfSprite = usernameHash % (fishTexturesRef.value.length);
-  const fishTexture = fishTexturesRef.value[numOfSprite];
-  if (!fishTexture) {
-    throw new Error("Fish sprite is not loaded");
+  if (isDebugMode.value) {
+    // Draw a circle with direction indicator in debug mode
+    const circle = new Graphics();
+    
+    // Main circle
+    circle.beginFill(bot.color);
+    circle.drawCircle(0, 0, bot.radius);
+    circle.endFill();
+    
+    // Direction indicator (a small line pointing in the direction of movement)
+    circle.lineStyle(2, 0xFFFFFF);
+    circle.moveTo(0, 0);
+    const indicatorLength = bot.radius * 1.2;
+    circle.lineTo(
+      Math.cos(botDirection) * indicatorLength,
+      Math.sin(botDirection) * indicatorLength
+    );
+    
+    circle.position.set(bot.x, bot.y);
+    graphics.addChild(circle);
+  } else {
+    // Draw sprite in normal mode
+    const usernameHash = bot.username.charCodeAt(0) + (bot.username.charCodeAt(1) || 0) + (bot.username.charCodeAt(2) || 0);
+    const numOfSprite = usernameHash % (fishTexturesRef.value.length);
+    const fishTexture = fishTexturesRef.value[numOfSprite];
+    if (!fishTexture) {
+      throw new Error("Fish sprite is not loaded");
+    }
+    const sprite = new Sprite(fishTexture);
+    sprite.anchor.set(0.5);
+    setSpritePositionAndSize({ sprite, bot, botDirection });
+    graphics.addChild(sprite);
   }
-  const sprite = new Sprite(fishTexture);
-  sprite.anchor.set(0.5);
-  setSpritePositionAndSize({ sprite, bot, botDirection });
-  graphics.addChild(sprite);
 
   // draw username
-
   // we have to use FillGradient because
   // using color as a fill doesn't work with pixi.js, vue.js, and Text
   // https://github.com/pixijs/pixijs/discussions/10444
@@ -439,6 +563,13 @@ watch(gameState, async (newState, prevState) => {
           @click="toggleFollowMeMode"
         >
           {{ isFollowing ? "stop following my bot" : "follow my bot" }}
+        </ButtonLink>
+        <ButtonLink
+          @click="toggleDebugMode"
+          data-testid="debug-mode-toggle"
+          class="bg-amber-500 hover:bg-amber-600"
+        >
+          {{ isDebugMode ? "show sprites" : "show circles (debug)" }}
         </ButtonLink>
       </div>
       <canvas ref="canvas" />
