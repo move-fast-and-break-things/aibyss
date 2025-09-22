@@ -11,6 +11,7 @@ const zoomSpeed = 0.1;
 const minZoom = 1;
 const maxZoom = 3;
 const isFollowing = ref<boolean>(false);
+const isDebugMode = ref<boolean>(false);
 const zoomInToPlayerOrResetZoomFn = ref<(() => void) | null>(null);
 
 const { data: gameState, refresh } = await useFetch("/api/state");
@@ -76,6 +77,32 @@ function toggleFollowMeMode() {
   zoomInToPlayerOrResetZoomFn.value?.();
 }
 
+function toggleDebugMode() {
+  isDebugMode.value = !isDebugMode.value;
+  
+  // Redraw all existing bots in the new mode
+  if (gameState.value) {
+    for (const bot of Object.values(gameState.value.bots)) {
+      const graphics = botSpawnsRef.value[bot.spawnId];
+      if (graphics) {
+        // Clear existing children
+        for (const child of graphics.children) {
+          child.destroy();
+        }
+        graphics.clear();
+        graphics.removeChildren();
+        
+        // Redraw bot with new mode
+        const prevBot = gameState.value?.bots[bot.spawnId];
+        if (prevBot) {
+          const botDirection = 0; // Default direction when switching modes
+          drawBot({ bot, graphics, botDirection });
+        }
+      }
+    }
+  }
+}
+
 function setSpritePositionAndSize({
   sprite,
   bot: { x, y, radius },
@@ -106,27 +133,62 @@ function setUsernamePosition({
 
 async function drawBot({ bot, graphics, botDirection }: DrawBotArgs) {
   if (graphics.children.length > 0) {
-    const sprite = graphics.children.find(child => child instanceof Sprite);
-    const username = graphics.children.find(child => child instanceof Text);
-    if (!sprite || !username) {
-      throw new Error("unexpected: sprite or text not found when redrawing the bot");
+    // Check if we're in debug mode and current display doesn't match
+    const hasSprite = graphics.children.some(child => child instanceof Sprite);
+    const hasCircle = graphics.children.some(child => child instanceof Graphics);
+    
+    if ((isDebugMode.value && hasSprite) || (!isDebugMode.value && hasCircle)) {
+      // Mode changed, clear and redraw
+      for (const child of graphics.children) {
+        if (!(child instanceof Text)) {
+          child.destroy();
+        }
+      }
+    } else {
+      // Same mode, just update positions
+      const username = graphics.children.find(child => child instanceof Text);
+      
+      if (isDebugMode.value) {
+        const circle = graphics.children.find(child => child instanceof Graphics);
+        if (circle instanceof Graphics) {
+          circle.clear();
+          circle.circle(bot.x, bot.y, bot.radius);
+          circle.fill(bot.color);
+        }
+      } else {
+        const sprite = graphics.children.find(child => child instanceof Sprite);
+        if (sprite instanceof Sprite) {
+          setSpritePositionAndSize({ sprite, bot, botDirection });
+        }
+      }
+      
+      if (username) {
+        setUsernamePosition({ username: username as Text, bot });
+      }
+      return;
     }
-    setSpritePositionAndSize({ sprite, bot, botDirection });
-    setUsernamePosition({ username, bot });
-    return;
   }
 
-  // draw bot
-  const usernameHash = bot.username.charCodeAt(0) + (bot.username.charCodeAt(1) || 0) + (bot.username.charCodeAt(2) || 0);
-  const numOfSprite = usernameHash % (fishTexturesRef.value.length);
-  const fishTexture = fishTexturesRef.value[numOfSprite];
-  if (!fishTexture) {
-    throw new Error("Fish sprite is not loaded");
+  // draw bot - either as sprite or circle based on mode
+  if (isDebugMode.value) {
+    // Debug mode - draw as circle
+    const circle = new Graphics();
+    circle.circle(bot.x, bot.y, bot.radius);
+    circle.fill(bot.color);
+    graphics.addChild(circle);
+  } else {
+    // Normal mode - draw as sprite
+    const usernameHash = bot.username.charCodeAt(0) + (bot.username.charCodeAt(1) || 0) + (bot.username.charCodeAt(2) || 0);
+    const numOfSprite = usernameHash % (fishTexturesRef.value.length);
+    const fishTexture = fishTexturesRef.value[numOfSprite];
+    if (!fishTexture) {
+      throw new Error("Fish sprite is not loaded");
+    }
+    const sprite = new Sprite(fishTexture);
+    sprite.anchor.set(0.5);
+    setSpritePositionAndSize({ sprite, bot, botDirection });
+    graphics.addChild(sprite);
   }
-  const sprite = new Sprite(fishTexture);
-  sprite.anchor.set(0.5);
-  setSpritePositionAndSize({ sprite, bot, botDirection });
-  graphics.addChild(sprite);
 
   // draw username
 
@@ -439,6 +501,11 @@ watch(gameState, async (newState, prevState) => {
           @click="toggleFollowMeMode"
         >
           {{ isFollowing ? "stop following my bot" : "follow my bot" }}
+        </ButtonLink>
+        <ButtonLink
+          @click="toggleDebugMode"
+        >
+          {{ isDebugMode ? "show sprites" : "debug mode (circles)" }}
         </ButtonLink>
       </div>
       <canvas ref="canvas" />
