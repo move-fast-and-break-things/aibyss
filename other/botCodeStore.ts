@@ -1,5 +1,5 @@
 import EventEmitter from "node:events";
-import fs from "node:fs";
+import fs from "node:fs/promises";
 import db from "~/other/db";
 
 const BOT_CODE_DIR = process.env.BOT_CODE_DIR || "./bot-code";
@@ -28,7 +28,7 @@ export async function submitBotCode({ code, username, userId }: SubmitBotCodeArg
   const id = Object.values(STORE).find(botCode => botCode.username === username)?.id || Math.random().toString(36).substring(5);
   const botCode = { id, code, username, userId };
   STORE[id] = botCode;
-  saveBot(botCode);
+  await saveBot(botCode);
 
   // Submitting code makes the user active
   await db.user.update({
@@ -52,12 +52,21 @@ export function subscribeToBotsUpdate(onUpdate: (bots: BotCodes) => void): () =>
   return () => botEventEmitter.off("update", onUpdate);
 }
 
+async function fsExists(path: string) {
+  try {
+    await fs.access(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function loadBots() {
-  if (!fs.existsSync(BOT_CODE_DIR)) {
+  if (!await fsExists(BOT_CODE_DIR)) {
     return;
   }
 
-  const files = fs.readdirSync(BOT_CODE_DIR);
+  const files = await fs.readdir(BOT_CODE_DIR);
 
   const inactiveUsers = await db.user.findMany({
     where: { inactive: true },
@@ -66,7 +75,7 @@ async function loadBots() {
   const inactiveUserIds = new Set(inactiveUsers.map(user => user.id));
 
   for (const file of files) {
-    const code = fs.readFileSync(`${BOT_CODE_DIR}/${file}`, "utf8");
+    const code = await fs.readFile(`${BOT_CODE_DIR}/${file}`, "utf8");
     const username = file.split("-")[0];
     const id = file.split("-")[1];
     const userId = file.split("-")[2]?.replace(".js", "");
@@ -84,13 +93,13 @@ async function loadBots() {
   botEventEmitter.emit("update", STORE);
 }
 
-function saveBot({ id, code, username, userId }: BotCode) {
-  if (!fs.existsSync(BOT_CODE_DIR)) {
-    fs.mkdirSync(BOT_CODE_DIR);
+async function saveBot({ id, code, username, userId }: BotCode) {
+  if (!await fsExists(BOT_CODE_DIR)) {
+    await fs.mkdir(BOT_CODE_DIR);
   }
   const botCodeFile = `${BOT_CODE_DIR}/${username}-${id}-${userId}.js`;
 
-  fs.writeFileSync(botCodeFile, code);
+  await fs.writeFile(botCodeFile, code);
 }
 
 loadBots()
