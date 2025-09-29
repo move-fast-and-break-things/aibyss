@@ -153,7 +153,6 @@ function endGame(reason: string) {
   const endTime = new Date();
   const worldState = WORLD_REF.world.getState();
   const worldStats = WORLD_REF.world.getStats();
-
   recordGameEnd({
     startTime: worldStats.startTime,
     endTime: endTime,
