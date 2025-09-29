@@ -1,5 +1,6 @@
 import EventEmitter from "node:events";
 import fs from "node:fs";
+import db from "~/other/db";
 
 const BOT_CODE_DIR = process.env.BOT_CODE_DIR || "./bot-code";
 
@@ -22,12 +23,19 @@ type SubmitBotCodeArgs = {
   userId: number;
 };
 
-export function submitBotCode({ code, username, userId }: SubmitBotCodeArgs) {
+export async function submitBotCode({ code, username, userId }: SubmitBotCodeArgs) {
   // ensure each user has only one bot
   const id = Object.values(STORE).find(botCode => botCode.username === username)?.id || Math.random().toString(36).substring(5);
   const botCode = { id, code, username, userId };
   STORE[id] = botCode;
   saveBot(botCode);
+
+  // Submitting code makes the user active
+  await db.user.update({
+    where: { id: userId },
+    data: { inactive: false },
+  });
+
   botEventEmitter.emit("update", STORE);
 }
 
@@ -44,12 +52,18 @@ export function subscribeToBotsUpdate(onUpdate: (bots: BotCodes) => void): () =>
   return () => botEventEmitter.off("update", onUpdate);
 }
 
-function loadBots() {
+async function loadBots() {
   if (!fs.existsSync(BOT_CODE_DIR)) {
     return;
   }
 
   const files = fs.readdirSync(BOT_CODE_DIR);
+
+  const inactiveUsers = await db.user.findMany({
+    where: { inactive: true },
+    select: { id: true },
+  });
+  const inactiveUserIds = new Set(inactiveUsers.map(user => user.id));
 
   for (const file of files) {
     const code = fs.readFileSync(`${BOT_CODE_DIR}/${file}`, "utf8");
@@ -59,8 +73,15 @@ function loadBots() {
     if (!id || !code || !username || !userId) {
       throw new Error(`Invalid bot code file: ${file}`);
     }
+
+    if (inactiveUserIds.has(+userId)) {
+      continue;
+    }
+
     STORE[id] = { id, code, username, userId: +userId };
   }
+
+  botEventEmitter.emit("update", STORE);
 }
 
 function saveBot({ id, code, username, userId }: BotCode) {
@@ -72,4 +93,7 @@ function saveBot({ id, code, username, userId }: BotCode) {
   fs.writeFileSync(botCodeFile, code);
 }
 
-loadBots();
+loadBots()
+  .then(() => {
+    console.log(`Loaded ${Object.keys(STORE).length} bots`);
+  });

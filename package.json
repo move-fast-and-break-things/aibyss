@@ -35,6 +35,7 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
+    "prisma:create-migration": "prisma migrate dev",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
     "start": "node .output/server/index.mjs",
