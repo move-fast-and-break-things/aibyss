@@ -80,6 +80,8 @@ async function loadBots() {
 
     STORE[id] = { id, code, username, userId: +userId };
   }
+
+  botEventEmitter.emit("update", STORE);
 }
 
 function saveBot({ id, code, username, userId }: BotCode) {
@@ -94,7 +96,4 @@ function saveBot({ id, code, username, userId }: BotCode) {
 loadBots()
   .then(() => {
     console.log(`Loaded ${Object.keys(STORE).length} bots`);
-  })
-  .catch((err) => {
-    console.error("Failed to load bots:", err);
   });
