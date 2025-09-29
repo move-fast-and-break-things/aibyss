@@ -1,6 +1,6 @@
 import EventEmitter from "node:events";
 import fs from "node:fs";
-import prisma from "~/other/db";
+import db from "~/other/db";
 
 const BOT_CODE_DIR = process.env.BOT_CODE_DIR || "./bot-code";
 
@@ -30,8 +30,8 @@ export async function submitBotCode({ code, username, userId }: SubmitBotCodeArg
   STORE[id] = botCode;
   saveBot(botCode);
 
-  // Set inactive to false when a user submits code
-  await prisma.user.update({
+  // Submitting code makes the user active
+  await db.user.update({
     where: { id: userId },
     data: { inactive: false },
   });
@@ -43,26 +43,8 @@ export function clearBots() {
   STORE = {};
 }
 
-export async function getBots() {
-  // Get all inactive users
-  const inactiveUsers = await prisma.user.findMany({
-    where: { inactive: true },
-    select: { id: true },
-  });
-  const inactiveUserIds = new Set(inactiveUsers.map(user => user.id));
-
-  // Filter out bots from inactive users
-  const activeBots = { ...STORE };
-  const filteredBots: BotCodes = {};
-
-  // Use a safer approach than delete
-  for (const id in activeBots) {
-    if (!inactiveUserIds.has(activeBots[id].userId)) {
-      filteredBots[id] = activeBots[id];
-    }
-  }
-
-  return filteredBots;
+export function getBots() {
+  return { ...STORE };
 }
 
 export function subscribeToBotsUpdate(onUpdate: (bots: BotCodes) => void): () => void {
@@ -77,8 +59,7 @@ async function loadBots() {
 
   const files = fs.readdirSync(BOT_CODE_DIR);
 
-  // Get all inactive users
-  const inactiveUsers = await prisma.user.findMany({
+  const inactiveUsers = await db.user.findMany({
     where: { inactive: true },
     select: { id: true },
   });
@@ -93,7 +74,6 @@ async function loadBots() {
       throw new Error(`Invalid bot code file: ${file}`);
     }
 
-    // Skip inactive users
     if (inactiveUserIds.has(+userId)) {
       continue;
     }
@@ -111,7 +91,10 @@ function saveBot({ id, code, username, userId }: BotCode) {
   fs.writeFileSync(botCodeFile, code);
 }
 
-// Initialize bots on module load
-loadBots().catch((err) => {
-  console.error("Failed to load bots:", err);
-});
+loadBots()
+  .then(() => {
+    console.log(`Loaded ${Object.keys(STORE).length} bots`);
+  })
+  .catch((err) => {
+    console.error("Failed to load bots:", err);
+  });
