@@ -12,6 +12,7 @@ const minZoom = 1;
 const maxZoom = 3;
 const isFollowing = ref<boolean>(false);
 const zoomInToPlayerOrResetZoomFn = ref<(() => void) | null>(null);
+const currentZoomLevel = ref<number>(1);
 
 const { data: gameState, refresh } = await useFetch("/api/state");
 const intervalRef = ref<number | null>(null);
@@ -63,6 +64,9 @@ const minimapBotRef = ref<Record<string, Graphics>>({});
 const minimapViewportRef = ref<Graphics | null>(null);
 
 const smoothZoomScreen = getSmoothZoomScreen(appRef);
+const isZoomedIn = computed(() => {
+  return currentZoomLevel.value > 1;
+});
 
 const tickFnRef = ref<() => void>();
 
@@ -208,7 +212,6 @@ async function renderMinimap() {
   // Current implementation is brute-force: redraws all objects every tick.
   // This works, but may not scale well with larger bot counts.
   if (!minimapCanvas.value || !gameState.value) {
-    console.error("Minimap canvas not found or game state not available");
     return;
   }
 
@@ -366,7 +369,9 @@ watch(gameState, async (newState, prevState) => {
     });
 
     nextTick(() => {
-      renderMinimap();
+      if (currentZoomLevel.value > 1) {
+        renderMinimap();
+      }
     });
 
     // Follow player bot
@@ -386,8 +391,22 @@ watch(gameState, async (newState, prevState) => {
         const botPos = { x: playerBot.x, y: playerBot.y };
         if (isFollowing.value) {
           smoothZoomScreen({ pos: botPos, scale: newScale });
+          currentZoomLevel.value = newScale;
+
+          // Render minimap when following bot
+          if (newScale > 1 && !minimapAppRef.value) {
+            nextTick(() => {
+              renderMinimap();
+            });
+          }
         } else {
           smoothZoomScreen({ pos: botPos, scale: 1 });
+          currentZoomLevel.value = 1;
+
+          if (minimapAppRef.value) {
+            minimapAppRef.value.destroy();
+            minimapAppRef.value = null;
+          }
         }
       }
     }
@@ -405,6 +424,18 @@ watch(gameState, async (newState, prevState) => {
       const zoomFactor = (event.deltaY * -zoomSpeed) * 100;
       const newScale = Math.max(minZoom, Math.min(maxZoom, app.stage.scale.x + zoomFactor));
       smoothZoomScreen({ pos: mousePos, scale: newScale });
+      currentZoomLevel.value = newScale;
+
+      // Render or destroy minimap based on zoom level
+      if (newScale > 1 && !minimapAppRef.value) {
+        nextTick(() => {
+          renderMinimap();
+        });
+      } else if (newScale <= 1 && minimapAppRef.value) {
+        minimapAppRef.value.destroy();
+        minimapAppRef.value = null;
+      }
+
       if (!isFollowing.value) {
         if (newScale > 1) {
           gameScreen.value?.classList.add("cursor-grab");
@@ -588,7 +619,10 @@ watch(gameState, async (newState, prevState) => {
         </ButtonLink>
       </div>
       <canvas ref="canvas" />
-      <div class="absolute top-2 left-2 shadow-lg w-36 h-36 rounded-lg border-2 border-gray-100 cursor-pointer">
+      <div
+        v-if="isZoomedIn"
+        class="absolute top-2 left-2 shadow-lg w-36 h-36 rounded-lg border-2 border-gray-100 cursor-pointer"
+      >
         <canvas
           ref="minimapCanvas"
           class="w-full h-full rounded"
