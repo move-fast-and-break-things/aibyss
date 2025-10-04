@@ -321,7 +321,6 @@ watch(gameState, async (newState, prevState) => {
 
     graphics.addChild(seaSprite);
     appRef.value.stage.addChild(graphics);
-    // foodRef.value.push({ x: food.x, y: food.y, graphics });
 
     // render food
     for (const food of prevState.food) {
