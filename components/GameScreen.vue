@@ -210,6 +210,10 @@ watch(gameState, async (newState, prevState) => {
     appRef.value?.ticker.remove(tickFnRef.value);
   }
 
+  if (!seaTexturesRef.value) {
+    return;
+  }
+
   if (!appRef.value || appRef.value.renderer.width !== prevState.width || appRef.value.renderer.height !== prevState.height) {
     appRef.value?.destroy();
 
@@ -313,7 +317,6 @@ watch(gameState, async (newState, prevState) => {
     const graphics = new Graphics();
     const seaTexture = seaTexturesRef.value;
     const seaSprite = new Sprite(seaTexture);
-    seaSprite.anchor.set(0.0001);
     seaSprite.x = 0;
     seaSprite.y = 0;
     seaSprite.width = 600;
