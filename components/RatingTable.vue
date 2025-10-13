@@ -193,7 +193,7 @@ const maxValues = computed(() => {
     <ModalDialog
       :open="isModalOpen"
       :on-close="() => (isModalOpen = false)"
-      extra-modal-class="max-w-[800px] min-h-0 h-auto w-[800px]"
+      extra-modal-class="w-[80vw] max-w-[1500px] min-h-0 h-auto"
     >
       <RatingChart
         v-if="rating"
