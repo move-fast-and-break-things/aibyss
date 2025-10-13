@@ -140,10 +140,16 @@ const maxValues = computed(() => {
                 {{ userRating.score7days }}
               </td>
               <td class="px-6 py-4 bg-gray-50 dark:bg-gray-800">
-                {{ userRating.score24hours }}
+                <ScoreWithChange
+                  v-if="userRating.score24hours"
+                  :score="userRating.score24hours"
+                />
               </td>
               <td class="px-6 py-4">
-                {{ userRating.score1hour }}
+                <ScoreWithChange
+                  v-if="userRating.score1hour"
+                  :score="userRating.score1hour"
+                />
               </td>
               <td class="px-6 py-4 bg-gray-50 dark:bg-gray-800">
                 {{ userRating.wins }}
