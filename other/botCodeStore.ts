@@ -20,7 +20,7 @@ export type BotCodes = Record<string, BotCode>;
 export type BotCodeVersions = Record<string, BotCodeVersion[]>;
 
 let STORE: BotCodes = {};
-let VERSIONS_STORE: BotCodeVersions = {};
+const VERSIONS_STORE: BotCodeVersions = {};
 
 const botEventEmitter = new EventEmitter();
 
@@ -39,17 +39,17 @@ export function submitBotCode({ code, username, userId }: SubmitBotCodeArgs) {
 
   // Add to the main store (current version)
   STORE[id] = botCode;
-  
+
   // Add to versions store
   if (!VERSIONS_STORE[username]) {
     VERSIONS_STORE[username] = [];
   }
   VERSIONS_STORE[username].push(versionedBotCode);
-  
+
   // Save both the current version and the versioned file
   saveBot(botCode);
   saveVersionedBot(versionedBotCode);
-  
+
   // Notify subscribers
   botEventEmitter.emit("update", STORE);
   botEventEmitter.emit("version-update", VERSIONS_STORE);
@@ -69,13 +69,15 @@ export function getBotVersions(username: string): BotCodeVersion[] {
 
 export function getLatestBotVersion(username: string): BotCodeVersion | null {
   const versions = getBotVersions(username);
-  return versions.length > 0 ? versions[0] : null;
+  return versions.length > 0 ? (versions[0] == undefined ? null : versions[0]) : null;
 }
 
 export function revertToBotVersion(username: string, versionTimestamp: number): boolean {
   const version = VERSIONS_STORE[username]?.find(v => v.timestamp === versionTimestamp);
-  if (!version) return false;
-  
+  if (!version) {
+    return false;
+  }
+
   // Update current version with the code from the selected version
   const currentBot = Object.values(STORE).find(bot => bot.username === username);
   if (currentBot) {
@@ -84,7 +86,7 @@ export function revertToBotVersion(username: string, versionTimestamp: number): 
     botEventEmitter.emit("update", STORE);
     return true;
   }
-  
+
   return false;
 }
 
@@ -104,48 +106,48 @@ function loadBots() {
   }
 
   const files = fs.readdirSync(BOT_CODE_DIR);
-  
+
   // Load regular bot files and versioned bot files
   for (const file of files) {
-    if (file.includes('-latest.js')) {
+    if (file.includes("-latest.js")) {
       // Skip the latest file as it's just a duplicate for easy access
       continue;
     }
-    
+
     try {
       const code = fs.readFileSync(path.join(BOT_CODE_DIR, file), "utf8");
-      
+
       // Check if this is a versioned file (has timestamp)
       if (file.match(/\d{13}\.js$/)) {
         const parts = file.split("-");
         const username = parts[0];
         const id = parts[1];
-        const timestampStr = parts[2].replace(".js", "");
-        const timestamp = parseInt(timestampStr, 10);
+        const timestampStr = parts[2]?.replace(".js", "");
+        const timestamp = parseInt((timestampStr == undefined ? "0" : timestampStr), 10);
         const userId = file.split("-")[3]?.replace(".js", "");
-        
+
         if (!id || !code || !username || !userId || isNaN(timestamp)) {
           console.error(`Invalid versioned bot code file: ${file}`);
           continue;
         }
-        
+
         const versionedBotCode = { id, code, username, userId: +userId, timestamp };
-        
+
         if (!VERSIONS_STORE[username]) {
           VERSIONS_STORE[username] = [];
         }
         VERSIONS_STORE[username].push(versionedBotCode);
-        
+
         // Also add the most recent version to the main store
         const existingVersion = VERSIONS_STORE[username]
           .sort((a, b) => b.timestamp - a.timestamp)[0];
-        
+
         if (existingVersion) {
           STORE[existingVersion.id] = {
             id: existingVersion.id,
             code: existingVersion.code,
             username: existingVersion.username,
-            userId: existingVersion.userId
+            userId: existingVersion.userId,
           };
         }
       } else {
@@ -153,12 +155,12 @@ function loadBots() {
         const username = file.split("-")[0];
         const id = file.split("-")[1];
         const userId = file.split("-")[2]?.replace(".js", "");
-        
+
         if (!id || !code || !username || !userId) {
           console.error(`Invalid bot code file: ${file}`);
           continue;
         }
-        
+
         STORE[id] = { id, code, username, userId: +userId };
       }
     } catch (error) {
@@ -171,11 +173,11 @@ function saveBot({ id, code, username, userId }: BotCode) {
   if (!fs.existsSync(BOT_CODE_DIR)) {
     fs.mkdirSync(BOT_CODE_DIR);
   }
-  
+
   // Regular bot file
   const botCodeFile = `${BOT_CODE_DIR}/${username}-${id}-${userId}.js`;
   fs.writeFileSync(botCodeFile, code);
-  
+
   // Latest bot file (for easy access)
   const latestBotCodeFile = `${BOT_CODE_DIR}/${username}-latest.js`;
   fs.writeFileSync(latestBotCodeFile, code);
@@ -185,7 +187,7 @@ function saveVersionedBot({ id, code, username, userId, timestamp }: BotCodeVers
   if (!fs.existsSync(BOT_CODE_DIR)) {
     fs.mkdirSync(BOT_CODE_DIR);
   }
-  
+
   // Version with timestamp
   const versionedBotCodeFile = `${BOT_CODE_DIR}/${username}-${id}-${timestamp}-${userId}.js`;
   fs.writeFileSync(versionedBotCodeFile, code);
