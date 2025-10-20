@@ -6,7 +6,9 @@
 
 ## Setup
 
-- install [node.js](https://nodejs.org/en)
+- install [node.js](https://nodejs.org/en) v18
+  - we recommend using WSL on Windows
+  - you can use [nvm](https://github.com/nvm-sh/nvm) to install the supported version
 - **(on macOS only)** install `node-gyp`: `npm install -g node-gyp`
 - install the dependencies: `npm ci`
 
