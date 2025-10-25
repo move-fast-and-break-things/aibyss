@@ -13,6 +13,7 @@ const minZoom = 1;
 const maxZoom = 3;
 const isFollowing = ref<boolean>(false);
 const zoomInToPlayerOrResetZoomFn = ref<(() => void) | null>(null);
+const currentZoomLevel = ref<number>(1);
 
 const { data: gameState, refresh } = await useFetch("/api/state");
 const intervalRef = ref<number | null>(null);
@@ -47,6 +48,10 @@ onBeforeUnmount(() => {
   if (intervalRef.value) {
     clearInterval(intervalRef.value);
   }
+
+  if (minimapAppRef.value) {
+    minimapAppRef.value.destroy();
+  }
 });
 
 const canvas = ref<HTMLCanvasElement | null>(null);
@@ -55,7 +60,16 @@ const foodRef = ref<Food[]>([]);
 const botSpawnsRef = ref<Record<string, Graphics>>({});
 const gameScreen = ref<HTMLDivElement | null>(null);
 
+const minimapCanvas = ref<HTMLCanvasElement | null>(null);
+const minimapAppRef: Ref<Application | null> = ref(null);
+const minimapFoodRef = ref<Graphics[]>([]);
+const minimapBotRef = ref<Record<string, Graphics>>({});
+const minimapViewportRef = ref<Graphics | null>(null);
+
 const smoothZoomScreen = getSmoothZoomScreen(appRef);
+const isZoomedIn = computed(() => {
+  return currentZoomLevel.value > 1;
+});
 
 const tickFnRef = ref<() => void>();
 
@@ -196,6 +210,137 @@ function addFoodGraphics(food: { x: number; y: number; radius: number }) {
   foodRef.value.push({ x: food.x, y: food.y, graphics });
 }
 
+async function renderMinimap() {
+  // TODO: Optimize minimap rendering
+  // Current implementation is brute-force: redraws all objects every tick.
+  // This works, but may not scale well with larger bot counts.
+  if (!minimapCanvas.value || !gameState.value) {
+    return;
+  }
+
+  if (minimapAppRef.value) {
+    minimapAppRef.value.destroy();
+  }
+
+  const minimapApp = new Application();
+  minimapAppRef.value = minimapApp;
+
+  await minimapApp.init({
+    width: 150,
+    height: 150,
+    canvas: minimapCanvas.value,
+    backgroundColor: 0xffffff,
+    antialias: true,
+    resolution: 1,
+    autoDensity: true,
+  });
+
+  const minimapContainer = new Graphics();
+  minimapApp.stage.addChild(minimapContainer);
+
+  const viewport = new Graphics();
+  minimapViewportRef.value = viewport;
+  minimapApp.stage.addChild(viewport);
+
+  const scaleX = 150 / gameState.value.width;
+  const scaleY = 150 / gameState.value.height;
+  const scale = Math.min(scaleX, scaleY);
+
+  const offsetX = (150 - gameState.value.width * scale) / 2;
+  const offsetY = (150 - gameState.value.height * scale) / 2;
+
+  minimapContainer.position.set(offsetX, offsetY);
+  minimapContainer.scale.set(scale, scale);
+
+  const updateMinimap = () => {
+    if (!gameState.value || !minimapAppRef.value) {
+      return;
+    }
+
+    minimapContainer.clear();
+
+    minimapContainer.rect(0, 0, gameState.value.width, gameState.value.height).fill({ color: "white" });
+
+    minimapFoodRef.value.forEach(food => food.destroy());
+    minimapFoodRef.value = [];
+
+    for (const food of gameState.value.food) {
+      minimapContainer.circle(food.x, food.y, food.radius);
+    }
+    minimapContainer.fill({ color: "0xb3b3b3" });
+
+    Object.values(minimapBotRef.value).forEach(bot => bot.destroy());
+    minimapBotRef.value = {};
+
+    for (const [spawnId, bot] of Object.entries(gameState.value.bots)) {
+      const botGraphics = new Graphics();
+      botGraphics.circle(bot.x, bot.y, bot.radius);
+      botGraphics.fill({ color: parseInt(bot.color.replace("#", "0x")) });
+
+      minimapContainer.addChild(botGraphics);
+      minimapBotRef.value[spawnId] = botGraphics;
+    }
+
+    if (appRef.value && minimapViewportRef.value) {
+      minimapViewportRef.value.clear();
+      minimapViewportRef.value.setStrokeStyle({ width: 1, color: "0xb3b3b3" });
+
+      const viewportX = offsetX + (-appRef.value.stage.position.x / appRef.value.stage.scale.x) * scale;
+      const viewportY = offsetY + (-appRef.value.stage.position.y / appRef.value.stage.scale.y) * scale;
+      const viewportWidth = (appRef.value.screen.width / appRef.value.stage.scale.x) * scale;
+      const viewportHeight = (appRef.value.screen.height / appRef.value.stage.scale.y) * scale;
+
+      const clampedX = Math.max(offsetX, Math.min(viewportX, offsetX + gameState.value.width * scale - viewportWidth));
+      const clampedY = Math.max(
+        offsetY,
+        Math.min(viewportY, offsetY + gameState.value.height * scale - viewportHeight),
+      );
+
+      minimapViewportRef.value.roundRect(clampedX, clampedY, viewportWidth, viewportHeight, 6);
+      minimapViewportRef.value.stroke();
+    }
+  };
+
+  const handleMinimapClick = (event: MouseEvent) => {
+    if (!gameState.value || !appRef.value || !minimapCanvas.value) {
+      return;
+    }
+
+    const rect = minimapCanvas.value.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
+    const scaleX = 150 / gameState.value.width;
+    const scaleY = 150 / gameState.value.height;
+    const scale = Math.min(scaleX, scaleY);
+
+    const offsetX = (150 - gameState.value.width * scale) / 2;
+    const offsetY = (150 - gameState.value.height * scale) / 2;
+
+    const worldX = (x - offsetX) / scale;
+    const worldY = (y - offsetY) / scale;
+
+    if (!isFollowing.value) {
+      const newPosX = -worldX * appRef.value.stage.scale.x + appRef.value.screen.width / 2;
+      const newPosY = -worldY * appRef.value.stage.scale.y + appRef.value.screen.height / 2;
+
+      const constrainedX = Math.min(
+        0,
+        Math.max(newPosX, appRef.value.screen.width - appRef.value.screen.width * appRef.value.stage.scale.x),
+      );
+      const constrainedY = Math.min(
+        0,
+        Math.max(newPosY, appRef.value.screen.height - appRef.value.screen.height * appRef.value.stage.scale.y),
+      );
+
+      appRef.value.stage.position.set(constrainedX, constrainedY);
+    }
+  };
+
+  minimapCanvas.value.addEventListener("click", handleMinimapClick);
+  minimapApp.ticker.add(updateMinimap);
+}
+
 watch(gameState, async (newState, prevState) => {
   if (!canvas.value) {
     window.alert("Can't render the game. Please, refresh the page. If the problem persists, report the issue at https://github.com/move-fast-and-break-things/aibyss/issues. Include as many details as possible.");
@@ -230,6 +375,12 @@ watch(gameState, async (newState, prevState) => {
       autoDensity: true,
     });
 
+    nextTick(() => {
+      if (currentZoomLevel.value > 1) {
+        renderMinimap();
+      }
+    });
+
     // Follow player bot
     function zoomInToPlayer() {
       if (!gameState.value) {
@@ -247,8 +398,22 @@ watch(gameState, async (newState, prevState) => {
         const botPos = { x: playerBot.x, y: playerBot.y };
         if (isFollowing.value) {
           smoothZoomScreen({ pos: botPos, scale: newScale });
+          currentZoomLevel.value = newScale;
+
+          // Render minimap when following bot
+          if (newScale > 1 && !minimapAppRef.value) {
+            nextTick(() => {
+              renderMinimap();
+            });
+          }
         } else {
           smoothZoomScreen({ pos: botPos, scale: 1 });
+          currentZoomLevel.value = 1;
+
+          if (minimapAppRef.value) {
+            minimapAppRef.value.destroy();
+            minimapAppRef.value = null;
+          }
         }
       }
     }
@@ -266,6 +431,18 @@ watch(gameState, async (newState, prevState) => {
       const zoomFactor = (event.deltaY * -zoomSpeed) * 100;
       const newScale = Math.max(minZoom, Math.min(maxZoom, app.stage.scale.x + zoomFactor));
       smoothZoomScreen({ pos: mousePos, scale: newScale });
+      currentZoomLevel.value = newScale;
+
+      // Render or destroy minimap based on zoom level
+      if (newScale > 1 && !minimapAppRef.value) {
+        nextTick(() => {
+          renderMinimap();
+        });
+      } else if (newScale <= 1 && minimapAppRef.value) {
+        minimapAppRef.value.destroy();
+        minimapAppRef.value = null;
+      }
+
       if (!isFollowing.value) {
         if (newScale > 1) {
           gameScreen.value?.classList.add("cursor-grab");
@@ -449,7 +626,7 @@ watch(gameState, async (newState, prevState) => {
   >
     <div
       ref="gameScreen"
-      class="flex flex-col shadow ml-2"
+      class="flex flex-col shadow ml-2 relative"
       :style="{ maxWidth: gameState?.width + 'px' }"
     >
       <div class="flex flex-row justify-end mb-2 mt-1 mx-4 gap-6">
@@ -461,6 +638,15 @@ watch(gameState, async (newState, prevState) => {
         </ButtonLink>
       </div>
       <canvas ref="canvas" />
+      <div
+        v-if="isZoomedIn"
+        class="absolute top-2 left-2 shadow-lg w-36 h-36 rounded-lg border-2 border-gray-100 cursor-pointer"
+      >
+        <canvas
+          ref="minimapCanvas"
+          class="w-full h-full rounded"
+        />
+      </div>
     </div>
   </div>
 </template>
