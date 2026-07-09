@@ -168,6 +168,12 @@ function endGame(reason: string) {
     }).filter((entry): entry is GameStat => entry.userId !== undefined && entry.size !== undefined),
   }).catch(console.error);
   WORLD_REF.world = new World ({ width: WORLD_SIZE, height: WORLD_SIZE });
+
+  for (const codeRunner of codeRunners) {
+    if (codeRunner.needsRecycle()) {
+      codeRunner.recycle();
+    }
+  }
 }
 
 export default defineNitroPlugin(async () => {

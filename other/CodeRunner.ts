@@ -3,6 +3,7 @@ import ivm from "isolated-vm";
 export class CodeRunner {
   private memoryLimitMb = 64;
   private timeLimitMs = 75;
+  private heapUsageRecycleThreshold = 0.75;
   private isolate: ivm.Isolate;
 
   constructor() {
@@ -35,5 +36,22 @@ export class CodeRunner {
       // always release the context to avoid memory leaks
       context?.release();
     }
+  }
+
+  needsRecycle() {
+    if (this.isolate.isDisposed) {
+      return true;
+    }
+
+    const heapStats = this.isolate.getHeapStatisticsSync();
+    const usedBytes = heapStats.used_heap_size + heapStats.externally_allocated_size;
+    return usedBytes > this.memoryLimitMb * 1024 * 1024 * this.heapUsageRecycleThreshold;
+  }
+
+  recycle() {
+    if (!this.isolate.isDisposed) {
+      this.isolate.dispose();
+    }
+    this.isolate = new ivm.Isolate({ memoryLimit: this.memoryLimitMb });
   }
 }
