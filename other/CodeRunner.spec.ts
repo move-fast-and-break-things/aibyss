@@ -1,7 +1,16 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { CodeRunner } from "./CodeRunner";
 
+const MEMORY_BOMB = `
+  const array = new Array(70 * 1024 * 1024 / 4);
+  array.fill(0);
+`;
+
 describe("CodeRunner", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("can run code", async () => {
     const codeRunner = new CodeRunner();
     const result = await codeRunner.runCode("1 + 1");
@@ -37,11 +46,41 @@ describe("CodeRunner", () => {
   it("crashes if the code consumes too much memory", async () => {
     const codeRunner = new CodeRunner();
     await expect(() => {
-      return codeRunner.runCode(`
-        const array = new Array(70 * 1024 * 1024 / 4);
-        array.fill(0);
-      `);
+      return codeRunner.runCode(MEMORY_BOMB);
     }).rejects.toThrow("Isolate was disposed during execution due to memory limit");
+  });
+
+  it("recovers after the isolate is disposed due to the memory limit", async () => {
+    const codeRunner = new CodeRunner();
+    await expect(() => codeRunner.runCode(MEMORY_BOMB))
+      .rejects
+      .toThrow("Isolate was disposed during execution due to memory limit");
+    const result = await codeRunner.runCode("1 + 1");
+    expect(result).toEqual(2);
+  });
+
+  it("doesn't recreate the disposed isolate more often than once a minute", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    const codeRunner = new CodeRunner();
+
+    await expect(() => codeRunner.runCode(MEMORY_BOMB)).rejects.toThrow("memory limit");
+    expect(await codeRunner.runCode("1 + 1")).toEqual(2);
+
+    await expect(() => codeRunner.runCode(MEMORY_BOMB)).rejects.toThrow("memory limit");
+    await expect(() => codeRunner.runCode("1 + 1"))
+      .rejects
+      .toThrow("the isolate is disposed and is waiting for the recreate cooldown");
+
+    vi.advanceTimersByTime(60_000);
+    expect(await codeRunner.runCode("1 + 1")).toEqual(2);
+  });
+
+  it("throws after an explicit dispose", async () => {
+    const codeRunner = new CodeRunner();
+    codeRunner.dispose();
+    await expect(() => codeRunner.runCode("1 + 1"))
+      .rejects
+      .toThrow("CodeRunner was disposed, create a new instance to run code");
   });
 
   it("crashes if the code runs for too long", async () => {
