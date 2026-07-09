@@ -1,10 +1,9 @@
 import ivm from "isolated-vm";
 
-const ISOLATE_RECREATE_COOLDOWN_MS = 60_000;
-
 export class CodeRunner {
   private memoryLimitMb = 64;
   private timeLimitMs = 75;
+  private isolateRecreateCooldownMs = 60_000;
   private isolate: ivm.Isolate;
   private disposedManually = false;
   private lastIsolateRecreateTs = 0;
@@ -49,7 +48,7 @@ export class CodeRunner {
       return;
     }
 
-    if (Date.now() - this.lastIsolateRecreateTs < ISOLATE_RECREATE_COOLDOWN_MS) {
+    if (Date.now() - this.lastIsolateRecreateTs < this.isolateRecreateCooldownMs) {
       throw new Error("the isolate is disposed and is waiting for the recreate cooldown");
     }
 
