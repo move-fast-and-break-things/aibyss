@@ -128,6 +128,13 @@ async function startEngine({ botApi }: StartEngineArgs) {
     }
     prevWorldState = newPrevWorldState;
 
+    // recycle between ticks, when no bot code is in flight
+    for (const codeRunner of codeRunners) {
+      if (codeRunner.needsRecycle()) {
+        codeRunner.recycle();
+      }
+    }
+
     const worldState = WORLD_REF.world.getState();
     for (const bot of worldState.bots.values()) {
       if (bot.radius > worldState.height / 4) {
@@ -168,12 +175,6 @@ function endGame(reason: string) {
     }).filter((entry): entry is GameStat => entry.userId !== undefined && entry.size !== undefined),
   }).catch(console.error);
   WORLD_REF.world = new World ({ width: WORLD_SIZE, height: WORLD_SIZE });
-
-  for (const codeRunner of codeRunners) {
-    if (codeRunner.needsRecycle()) {
-      codeRunner.recycle();
-    }
-  }
 }
 
 export default defineNitroPlugin(async () => {
