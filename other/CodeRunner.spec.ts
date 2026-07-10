@@ -69,10 +69,19 @@ describe("CodeRunner", () => {
     await expect(() => codeRunner.runCode(MEMORY_BOMB)).rejects.toThrow("memory limit");
     await expect(() => codeRunner.runCode("1 + 1"))
       .rejects
-      .toThrow("the isolate is disposed and is waiting for the recreate cooldown");
+      .toThrow("The isolate is disposed and is waiting for the recreate cooldown");
 
     vi.advanceTimersByTime(60_000);
     expect(await codeRunner.runCode("1 + 1")).toEqual(2);
+  });
+
+  it("dispose() doesn't throw when the isolate is already disposed due to the memory limit", async () => {
+    const codeRunner = new CodeRunner();
+    await expect(() => codeRunner.runCode(MEMORY_BOMB)).rejects.toThrow("memory limit");
+    codeRunner.dispose();
+    await expect(() => codeRunner.runCode("1 + 1"))
+      .rejects
+      .toThrow("CodeRunner was disposed, create a new instance to run code");
   });
 
   it("throws after an explicit dispose", async () => {

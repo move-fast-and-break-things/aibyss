@@ -14,7 +14,9 @@ export class CodeRunner {
 
   dispose() {
     this.disposedManually = true;
-    this.isolate.dispose();
+    if (!this.isolate.isDisposed) {
+      this.isolate.dispose();
+    }
   }
 
   async runCode(code: string) {
@@ -49,7 +51,7 @@ export class CodeRunner {
     }
 
     if (Date.now() - this.lastIsolateRecreateTs < this.isolateRecreateCooldownMs) {
-      throw new Error("the isolate is disposed and is waiting for the recreate cooldown");
+      throw new Error("The isolate is disposed and is waiting for the recreate cooldown");
     }
 
     this.isolate = new ivm.Isolate({ memoryLimit: this.memoryLimitMb });
