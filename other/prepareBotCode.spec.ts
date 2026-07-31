@@ -1,7 +1,22 @@
 import { it, expect } from "vitest";
-import prepareBotCode from "./prepareBotCode";
+import { prepareBotCode, prepareBotState } from "./prepareBotCode";
 
-it("prepares bot code correctly when there is one bot in the world", () => {
+it("prepares bot code correctly", () => {
+  const bot = {
+    id: "1",
+    code: "console.log('hello world');",
+    username: "yurij",
+    userId: 1,
+  };
+
+  const botApi = "console.log('hello bot api');";
+
+  const preparedCode = prepareBotCode({ bot, botApi });
+
+  expect(preparedCode).toMatchSnapshot();
+});
+
+it("prepares bot state correctly when there is one bot in the world", () => {
   const bot = {
     id: "1",
     code: "console.log('hello world');",
@@ -18,14 +33,12 @@ it("prepares bot code correctly when there is one bot in the world", () => {
     height: 100,
   };
 
-  const botApi = "console.log('hello bot api');";
+  const preparedState = prepareBotState({ bot, botInfo: botCodes, state, prevBotState: state.bots });
 
-  const preparedCode = prepareBotCode({ bot, botInfo: botCodes, state, prevBotState: state.bots, botApi });
-
-  expect(preparedCode).toMatchSnapshot();
+  expect(preparedState).toMatchSnapshot();
 });
 
-it("prepares bot code correctly when there are two bots in the world", () => {
+it("prepares bot state correctly when there are two bots in the world", () => {
   const bot = {
     id: "1",
     code: "console.log('hello world');",
@@ -53,14 +66,12 @@ it("prepares bot code correctly when there are two bots in the world", () => {
     height: 100,
   };
 
-  const botApi = "console.log('hello bot api');";
+  const preparedState = prepareBotState({ bot, botInfo: botCodes, state, prevBotState: state.bots });
 
-  const preparedCode = prepareBotCode({ bot, botInfo: botCodes, state, prevBotState: state.bots, botApi });
-
-  expect(preparedCode).toMatchSnapshot();
+  expect(preparedState).toMatchSnapshot();
 });
 
-it("prepares bot code correctly when there are three bots and some food in the world", () => {
+it("prepares bot state correctly when there are three bots and some food in the world", () => {
   const bot = {
     id: "1",
     code: "console.log('hello world');",
@@ -95,11 +106,9 @@ it("prepares bot code correctly when there are three bots and some food in the w
     height: 100,
   };
 
-  const botApi = "console.log('hello bot api');";
+  const preparedState = prepareBotState({ bot, botInfo: botCodes, state, prevBotState: state.bots });
 
-  const preparedCode = prepareBotCode({ bot, botInfo: botCodes, state, prevBotState: state.bots, botApi });
-
-  expect(preparedCode).toMatchSnapshot();
+  expect(preparedState).toMatchSnapshot();
 });
 
 it("handles the case when the bot was not in the previous bot state", () => {
@@ -137,11 +146,9 @@ it("handles the case when the bot was not in the previous bot state", () => {
     height: 100,
   };
 
-  const botApi = "console.log('hello bot api');";
+  const preparedState = prepareBotState({ bot, botInfo: botCodes, state, prevBotState: new Map() });
 
-  const preparedCode = prepareBotCode({ bot, botInfo: botCodes, state, prevBotState: new Map(), botApi });
-
-  expect(preparedCode).toMatchSnapshot();
+  expect(preparedState).toMatchSnapshot();
 });
 
 it("correctly saves values for a different previous state", () => {
@@ -185,9 +192,7 @@ it("correctly saves values for a different previous state", () => {
     ["3", { x: 22, y: 40, radius: 5, botId: "3", color: "#00FF00", spawnId: "s3" }],
   ]);
 
-  const botApi = "console.log('hello bot api');";
+  const preparedState = prepareBotState({ bot, botInfo: botCodes, state, prevBotState });
 
-  const preparedCode = prepareBotCode({ bot, botInfo: botCodes, state, prevBotState, botApi });
-
-  expect(preparedCode).toMatchSnapshot();
+  expect(preparedState).toMatchSnapshot();
 });
