@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { gameStepCodeRunTimeMs, botCodeRunTimeMs, gameStepTimeMs, gameStepMoveBotTimeMs, gameStepCollisionCheckTimeMs, gameStepFoodSpawnTimeMs } from "../other/engineMetrics";
-import prepareBotCode from "~/other/prepareBotCode";
+import { prepareBotCode, prepareBotState } from "~/other/prepareBotCode";
 import * as botCodeStore from "~/other/botCodeStore";
 import World, { type WorldState } from "~/other/world";
 import { recordGameEnd, type GameStat } from "~/other/recordGamedb";
@@ -37,29 +37,18 @@ async function runBots({ bots, world, prevBotState, botApi }: RunBotArgs) {
   const state = world.getState();
   const botArray = Object.values(bots);
 
-  const preparedBotCodes = botArray.map(bot => prepareBotCode({
-    bot,
-    botInfo: bots,
-    state,
-    prevBotState,
-    botApi,
-  }));
-
   const allBotCodeRuntimeStartTs = Date.now();
-  const botActions = await Promise.all(preparedBotCodes.map(async (preparedCode, i) => {
+  const botActions = await Promise.all(botArray.map(async (bot, i) => {
     const codeRunner = codeRunners[i % codeRunners.length];
     if (!codeRunner) {
       throw new Error("unexpected: codeRunner is undefined");
     }
 
-    const bot = botArray[i];
-    if (!bot) {
-      throw new Error("unexpected: bot is undefined");
-    }
-
     const botCodeRuntimeStartTs = Date.now();
     try {
-      const result = await codeRunner.runCode(preparedCode);
+      const code = prepareBotCode({ bot, botApi });
+      const stateJson = prepareBotState({ bot, botInfo: bots, state, prevBotState });
+      const result = await codeRunner.runScript({ cacheKey: bot.id, code, stateJson });
       return JSON.parse(result);
     } catch (err) {
       // TODO(yurij): notify user that their bot crashed
@@ -104,9 +93,11 @@ type StartEngineArgs = {
 
 async function startEngine({ botApi }: StartEngineArgs) {
   let bots = botCodeStore.getBots();
+  let scriptCachesStale = false;
 
   botCodeStore.subscribeToBotsUpdate((newBots) => {
     bots = newBots;
+    scriptCachesStale = true;
   });
 
   const gameTimeoutInterval = setInterval(() => {
@@ -127,6 +118,15 @@ async function startEngine({ botApi }: StartEngineArgs) {
       console.error("run bots crashed", err);
     }
     prevWorldState = newPrevWorldState;
+
+    // bot -> runner mapping shifts when the bot set changes; drop cached scripts
+    // between ticks, when no bot code is in flight
+    if (scriptCachesStale) {
+      scriptCachesStale = false;
+      for (const codeRunner of codeRunners) {
+        codeRunner.clearScripts();
+      }
+    }
 
     const worldState = WORLD_REF.world.getState();
     for (const bot of worldState.bots.values()) {
