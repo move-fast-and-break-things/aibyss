@@ -128,6 +128,13 @@ async function startEngine({ botApi }: StartEngineArgs) {
       }
     }
 
+    // recycle between ticks, when no bot code is in flight
+    for (const codeRunner of codeRunners) {
+      if (codeRunner.needsRecycle()) {
+        codeRunner.recycle();
+      }
+    }
+
     const worldState = WORLD_REF.world.getState();
     for (const bot of worldState.bots.values()) {
       if (bot.radius > worldState.height / 4) {

@@ -88,6 +88,28 @@ describe("CodeRunner", () => {
     expect(results).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
   });
 
+  it("keeps working after recycle()", async () => {
+    const codeRunner = new CodeRunner();
+    expect(await codeRunner.runCode("1 + 1")).toEqual(2);
+    codeRunner.recycle();
+    expect(await codeRunner.runCode("2 + 2")).toEqual(4);
+  });
+
+  it("needsRecycle() is false for a fresh runner and true after the isolate is disposed", async () => {
+    const codeRunner = new CodeRunner();
+    expect(codeRunner.needsRecycle()).toBe(false);
+    await expect(() => {
+      return codeRunner.runCode(`
+        const array = new Array(70 * 1024 * 1024 / 4);
+        array.fill(0);
+      `);
+    }).rejects.toThrow("Isolate was disposed during execution due to memory limit");
+    expect(codeRunner.needsRecycle()).toBe(true);
+    codeRunner.recycle();
+    expect(codeRunner.needsRecycle()).toBe(false);
+    expect(await codeRunner.runCode("1 + 1")).toEqual(2);
+  });
+
   it("runScript() passes the state to the script", async () => {
     const codeRunner = new CodeRunner();
     const result = await codeRunner.runScript({ cacheKey: "bot-1", code: "JSON.parse(globalThis._stateJson).x * 2", stateJson: JSON.stringify({ x: 21 }) });
