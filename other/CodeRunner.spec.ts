@@ -68,9 +68,8 @@ describe("CodeRunner", () => {
     expect(await codeRunner.runCode("1 + 1")).toEqual(2);
 
     await expect(() => codeRunner.runCode(MEMORY_BOMB)).rejects.toThrow("memory limit");
-    await expect(() => codeRunner.runCode("1 + 1"))
-      .rejects
-      .toThrow("The isolate is disposed and is waiting for the recreate cooldown");
+    // within the cooldown the run is skipped instead of recreating the isolate
+    expect(await codeRunner.runCode("1 + 1")).toBeUndefined();
 
     vi.advanceTimersByTime(60_000);
     expect(await codeRunner.runCode("1 + 1")).toEqual(2);

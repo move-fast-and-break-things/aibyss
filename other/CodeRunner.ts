@@ -32,7 +32,10 @@ export class CodeRunner {
       throw new Error("CodeRunner was disposed, create a new instance to run code");
     }
 
-    this.recreateIsolateIfDisposed();
+    if (!this.recreateIsolateIfDisposed()) {
+      // the isolate is disposed and waiting for the recreate cooldown; skip this run
+      return undefined;
+    }
 
     let context: ivm.Context | undefined;
     try {
@@ -73,7 +76,10 @@ export class CodeRunner {
       throw new Error("CodeRunner was disposed, create a new instance to run code");
     }
 
-    this.recreateIsolateIfDisposed();
+    if (!this.recreateIsolateIfDisposed()) {
+      // the isolate is disposed and waiting for the recreate cooldown; skip this run
+      return undefined;
+    }
 
     const script = await this.getScript(cacheKey, code);
 
@@ -98,19 +104,20 @@ export class CodeRunner {
     this.scripts.clear();
   }
 
+  // recreates a disposed isolate, throttled to once per cooldown; returns false while the
+  // cooldown is still active so the caller can skip the run instead of logging on every tick
   private recreateIsolateIfDisposed() {
     if (!this.isolate.isDisposed) {
-      return;
+      return true;
     }
 
-    const msSinceRecreate = Date.now() - this.lastIsolateRecreateTs;
-    if (msSinceRecreate < this.isolateRecreateCooldownMs) {
-      const remainingMs = this.isolateRecreateCooldownMs - msSinceRecreate;
-      throw new Error(`The isolate is disposed and is waiting for the recreate cooldown (${remainingMs}ms left)`);
+    if (Date.now() - this.lastIsolateRecreateTs < this.isolateRecreateCooldownMs) {
+      return false;
     }
 
     this.isolate = new ivm.Isolate({ memoryLimit: this.memoryLimitMb });
     this.lastIsolateRecreateTs = Date.now();
+    return true;
   }
 
   private async createContext() {
