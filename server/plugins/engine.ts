@@ -49,6 +49,10 @@ async function runBots({ bots, world, prevBotState, botApi }: RunBotArgs) {
       const code = prepareBotCode({ bot, botApi });
       const stateJson = prepareBotState({ bot, botInfo: bots, state, prevBotState });
       const result = await codeRunner.runScript({ cacheKey: bot.id, code, stateJson });
+      if (result === undefined) {
+        // the runner's isolate is disposed and waiting for the recreate cooldown; skip this tick
+        return [];
+      }
       return JSON.parse(result);
     } catch (err) {
       // TODO(yurij): notify user that their bot crashed

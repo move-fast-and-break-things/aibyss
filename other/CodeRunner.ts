@@ -10,20 +10,31 @@ export class CodeRunner {
   private memoryLimitMb = 64;
   private timeLimitMs = 75;
   private heapUsageRecycleThreshold = 0.75;
+  private isolateRecreateCooldownMs = 60_000;
   private isolate: ivm.Isolate;
   private scripts = new Map<string, { code: string; isolate: ivm.Isolate; script: ivm.Script }>();
+  private disposedManually = false;
+  private lastIsolateRecreateTs = 0;
 
   constructor() {
     this.isolate = new ivm.Isolate({ memoryLimit: this.memoryLimitMb });
   }
 
   dispose() {
-    this.isolate.dispose();
+    this.disposedManually = true;
+    if (!this.isolate.isDisposed) {
+      this.isolate.dispose();
+    }
   }
 
   async runCode(code: string) {
-    if (this.isolate.isDisposed) {
+    if (this.disposedManually) {
       throw new Error("CodeRunner was disposed, create a new instance to run code");
+    }
+
+    if (!this.recreateIsolateIfDisposed()) {
+      // the isolate is disposed and waiting for the recreate cooldown; skip this run
+      return undefined;
     }
 
     let context: ivm.Context | undefined;
@@ -38,8 +49,10 @@ export class CodeRunner {
   }
 
   needsRecycle() {
+    // a disposed isolate is recreated (throttled) on the next run; recycle only
+    // proactively replaces a live isolate whose heap grew close to the limit
     if (this.isolate.isDisposed) {
-      return true;
+      return false;
     }
 
     const heapStats = this.isolate.getHeapStatisticsSync();
@@ -48,6 +61,10 @@ export class CodeRunner {
   }
 
   recycle() {
+    if (this.disposedManually) {
+      return;
+    }
+
     if (!this.isolate.isDisposed) {
       this.isolate.dispose();
     }
@@ -55,8 +72,13 @@ export class CodeRunner {
   }
 
   async runScript({ cacheKey, code, stateJson }: RunScriptArgs) {
-    if (this.isolate.isDisposed) {
+    if (this.disposedManually) {
       throw new Error("CodeRunner was disposed, create a new instance to run code");
+    }
+
+    if (!this.recreateIsolateIfDisposed()) {
+      // the isolate is disposed and waiting for the recreate cooldown; skip this run
+      return undefined;
     }
 
     const script = await this.getScript(cacheKey, code);
@@ -80,6 +102,22 @@ export class CodeRunner {
       }
     }
     this.scripts.clear();
+  }
+
+  // recreates a disposed isolate, throttled to once per cooldown; returns false while the
+  // cooldown is still active so the caller can skip the run instead of logging on every tick
+  private recreateIsolateIfDisposed() {
+    if (!this.isolate.isDisposed) {
+      return true;
+    }
+
+    if (Date.now() - this.lastIsolateRecreateTs < this.isolateRecreateCooldownMs) {
+      return false;
+    }
+
+    this.isolate = new ivm.Isolate({ memoryLimit: this.memoryLimitMb });
+    this.lastIsolateRecreateTs = Date.now();
+    return true;
   }
 
   private async createContext() {
