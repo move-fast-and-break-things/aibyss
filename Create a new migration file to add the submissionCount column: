@@ -1,0 +1,2 @@
+-- Migration: Add submissionCount column to User table for tracking code submissions
+ALTER TABLE "User" ADD COLUMN "submissionCount" INTEGER NOT NULL DEFAULT 0;

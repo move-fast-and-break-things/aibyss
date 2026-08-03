@@ -14,6 +14,7 @@ type UserStats = {
 export type UserRating = UserStats & {
   userId: number;
   username: string;
+  submissionCount: number;
   score7days: number;
   score24hours: number;
   score1hour: number;
@@ -152,6 +153,7 @@ export default defineEventHandler(async () => {
       ...rawUserStat.stats7days,
       userId: rawUserStat.userId,
       username: rawUserStat.username,
+      submissionCount: users.find(user => user.id === rawUserStat.userId)?.submissionCount ?? 0,
       maxEndgameSize: Math.max(...rawUserStat.stats7days.endgameSizes),
       avgEndgameSize: (
         rawUserStat.stats7days.endgameSizes.reduce((acc, size) => acc + size, 0)
