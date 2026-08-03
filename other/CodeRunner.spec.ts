@@ -142,14 +142,21 @@ describe("CodeRunner", () => {
     expect(await codeRunner.runCode("2 + 2")).toEqual(4);
   });
 
-  it("needsRecycle() is false for a fresh runner and stays false after the isolate is disposed", async () => {
+  it("heapCheck() reports live heap usage without recycle for a fresh runner and skips a disposed isolate", async () => {
     const codeRunner = new CodeRunner();
-    expect(codeRunner.needsRecycle()).toBe(false);
+    const fresh = codeRunner.heapCheck();
+    expect(fresh.usageMb).toBeGreaterThan(0);
+    expect(fresh.usageMb).toBeLessThan(64);
+    expect(fresh.shouldRecycle).toBe(false);
+
     await expect(() => codeRunner.runCode(MEMORY_BOMB))
       .rejects
       .toThrow("Isolate was disposed during execution due to memory limit");
+
     // a disposed isolate is recovered lazily on the next run (throttled), not via recycle()
-    expect(codeRunner.needsRecycle()).toBe(false);
+    const disposed = codeRunner.heapCheck();
+    expect(disposed.usageMb).toBeNull();
+    expect(disposed.shouldRecycle).toBe(false);
     expect(await codeRunner.runCode("1 + 1")).toEqual(2);
   });
 

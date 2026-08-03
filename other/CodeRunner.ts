@@ -48,16 +48,20 @@ export class CodeRunner {
     }
   }
 
-  needsRecycle() {
-    // a disposed isolate is recreated (throttled) on the next run; recycle only
-    // proactively replaces a live isolate whose heap grew close to the limit
+  // single heap-stats snapshot for between-tick maintenance: the isolate's used + external heap
+  // in MB (null when disposed) and whether it grew past the recycle threshold. a disposed isolate
+  // is recreated (throttled) on the next run, so it never needs a proactive recycle
+  heapCheck() {
     if (this.isolate.isDisposed) {
-      return false;
+      return { usageMb: null, shouldRecycle: false };
     }
 
     const heapStats = this.isolate.getHeapStatisticsSync();
     const usedBytes = heapStats.used_heap_size + heapStats.externally_allocated_size;
-    return usedBytes > this.memoryLimitMb * 1024 * 1024 * this.heapUsageRecycleThreshold;
+    return {
+      usageMb: usedBytes / (1024 * 1024),
+      shouldRecycle: usedBytes > this.memoryLimitMb * 1024 * 1024 * this.heapUsageRecycleThreshold,
+    };
   }
 
   recycle() {

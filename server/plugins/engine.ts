@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { gameStepCodeRunTimeMs, botCodeRunTimeMs, gameStepTimeMs, gameStepMoveBotTimeMs, gameStepCollisionCheckTimeMs, gameStepFoodSpawnTimeMs } from "../other/engineMetrics";
+import { gameStepCodeRunTimeMs, botCodeRunTimeMs, gameStepTimeMs, gameStepMoveBotTimeMs, gameStepCollisionCheckTimeMs, gameStepFoodSpawnTimeMs, isolateHeapUsageMb, isolateRecycleTotal } from "../other/engineMetrics";
 import { prepareBotCode, prepareBotState } from "~/other/prepareBotCode";
 import * as botCodeStore from "~/other/botCodeStore";
 import World, { type WorldState } from "~/other/world";
@@ -134,8 +134,14 @@ async function startEngine({ botApi }: StartEngineArgs) {
 
     // recycle between ticks, when no bot code is in flight
     for (const codeRunner of codeRunners) {
-      if (codeRunner.needsRecycle()) {
+      const { usageMb, shouldRecycle } = codeRunner.heapCheck();
+      if (usageMb !== null) {
+        isolateHeapUsageMb.observe(usageMb);
+      }
+
+      if (shouldRecycle) {
         codeRunner.recycle();
+        isolateRecycleTotal.inc();
       }
     }
 
