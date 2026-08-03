@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .game-editor-container {
+    @apply flex flex-row h-[calc(100vh-4rem)] min-h-0;
+  }
+  .code-editor-container {
+    @apply flex-1 min-w-0;
+  }
+}
+
 @layer base {
   @font-face {
     font-family: 'Retropix';
