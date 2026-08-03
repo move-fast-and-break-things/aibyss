@@ -14,7 +14,7 @@
       />
       <div
         ref="resizeGameElement"
-        class="flex min-w-[300px] w-1/2 overflow-auto"
+        class="flex min-w-[300px] flex-grow overflow-auto"
       >
         <GameScreen />
       </div>
