@@ -23,7 +23,7 @@ onMounted(() => {
           data: userRating.scoreDynamic1hour,
           pointStyle: false,
           tension: 0.2,
-          borderWidth: 2,
+          borderWidth: 1,
         })),
       },
       options: {
